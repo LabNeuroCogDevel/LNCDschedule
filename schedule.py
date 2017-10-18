@@ -28,23 +28,42 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.fullname.textChanged.connect(self.search_people_by_name)
         self.fullname.setText('%')
 
-        # setup search table "people_table"
+        ## setup search table "people_table"
         pep_columns=['fullname','lunaid','curagefloor','dob','sex','lastvisit','maxdrop','studies']
         self.people_table.setColumnCount(len(pep_columns))
         self.people_table.setHorizontalHeaderLabels(pep_columns)
         self.people_table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
+        # wire up clicks
+        self.people_table.itemClicked.connect(self.people_item_select)
 
-        # setup search calendar "cal_table"
+        ## setup search calendar "cal_table"
         cal_columns=['date','time','what']
         self.cal_table.setColumnCount(len(cal_columns))
         self.cal_table.setHorizontalHeaderLabels(cal_columns)
         self.cal_table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
-
         # and hook up the calendar to a query
         self.calendarWidget.selectionChanged.connect(self.search_cal_by_date)
 
+        ## visit table
+        visit_columns=['day', 'study', 'vtype', 'vscore', 'age', 'note', 'dvisit','dperson','vid']
+        self.visit_table.setColumnCount(len(visit_columns))
+        self.visit_table.setHorizontalHeaderLabels(visit_columns)
+
+        # contact table
+        contact_columns=['who','cvalue', 'relation', 'nogood', 'added', 'cid']
+        self.contact_table.setColumnCount(len(contact_columns))
+        self.contact_table.setHorizontalHeaderLabels(contact_columns)
+        
         self.show()
 
+    ###### Generic
+    def generic_fill_table(self,table,res):
+        table.setRowCount(len(res))
+        for row_i,row in enumerate(res):
+            for col_i,value in enumerate(row):
+                item=QtWidgets.QTableWidgetItem(str(value))
+                table.setItem(row_i,col_i,item)
+        
         
     ###### PEOPLE
 
@@ -71,6 +90,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
     res is a list of vectors(8) from sql query
     """ 
     def fill_search_table(self,res):
+        self.people_table_data = res
         self.people_table.setRowCount(len(res))
         # seems like we need to fill each item individually
         # loop across rows (each result) and then into columns (each value)
@@ -80,6 +100,19 @@ class ScheduleApp(QtWidgets.QMainWindow):
                 self.people_table.setItem(row_i,col_i,item)
 
 
+    def people_item_select(self,thing):
+        row_i =self.people_table.currentRow()
+        d = self.people_table_data[row_i]
+        pid=d[8]
+        # update visit table
+        self.visit_table_data = self.sql.query.visit_by_pid(pid=pid)
+        self.generic_fill_table(self.visit_table,self.visit_table_data)
+        # update contact table
+        self.contact_table_data=self.sql.query.contact_by_pid(pid=pid)
+        self.generic_fill_table(self.contact_table,self.contact_table_data)
+
+    ###### VISIT
+        
     ###### CALENDAR
     
     def search_cal_by_date(self):
@@ -97,8 +130,9 @@ class ScheduleApp(QtWidgets.QMainWindow):
     calres is list of dict with keys ['summary', 'note', 'calid', 'starttime', 'creator', 'dur_hr', 'start']
     """
     def fill_calendar_table(self,calres):
-       self.cal_table.setRowCount(len(calres))
-       for row_i,calevent in enumerate(calres):
+        self.cal_table_data = calres
+        self.cal_table.setRowCount(len(calres))
+        for row_i,calevent in enumerate(calres):
            # google uses UTC, but we are in EST or EDT
            #st   = str(calevent['starttime'] + tzfromutc)
            #st=str(calevent['starttime'])
