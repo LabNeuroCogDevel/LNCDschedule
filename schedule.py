@@ -11,6 +11,10 @@ import datetime
 launchtime=int(datetime.datetime.now().strftime('%s'))
 tzfromutc = datetime.datetime.fromtimestamp(launchtime) - datetime.datetime.utcfromtimestamp(launchtime)
 
+# get combobox value
+def comboval(cb):
+    return(cb.itemText(cb.currentIndex()))
+
 class ScheduleApp(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
@@ -20,16 +24,30 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.cal = gcal_serviceAccount.LNCDcal()
         self.sql = lncdSql.lncdSql()
 
+        # schedule and checkin data
+        self.schedule_what_data = {'fullname': '', 'pid': None, 'date': None, 'time': None}
+        self.checkin_what_data =  {'fullname': '', 'vid': None, 'datetime': None}
+        
+
         # load gui (created with qtcreator)
         uic.loadUi('./mainwindow.ui',self)
         self.setWindowTitle('LNCD Scheduler')
 
-        # setup person search field
+        ## setup person search field
+        # by name
         self.fullname.textChanged.connect(self.search_people_by_name)
         self.fullname.setText('%')
+        # by lunaid
+        self.subjid_search.textChanged.connect(self.search_people_by_id)
+
+        # by attribute
+        self.min_age_search.textChanged.connect(self.search_people_by_att)
+        self.max_age_search.textChanged.connect(self.search_people_by_att)
+        self.sex_search.activated.connect(self.search_people_by_att)
+        self.study_search.activated.connect(self.search_people_by_att)
 
         ## setup search table "people_table"
-        pep_columns=['fullname','lunaid','curagefloor','dob','sex','lastvisit','maxdrop','studies']
+        pep_columns=['fullname','lunaid','age','dob','sex','lastvisit','maxdrop','studies']
         self.people_table.setColumnCount(len(pep_columns))
         self.people_table.setHorizontalHeaderLabels(pep_columns)
         self.people_table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
@@ -41,8 +59,11 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.cal_table.setColumnCount(len(cal_columns))
         self.cal_table.setHorizontalHeaderLabels(cal_columns)
         self.cal_table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
-        # and hook up the calendar to a query
+        self.cal_table.itemClicked.connect(self.cal_item_select)
+        # and hook up the calendar date select widget to a query
         self.calendarWidget.selectionChanged.connect(self.search_cal_by_date)
+        self.search_cal_by_date() # update for current day
+        # TODO: eventually want to use DB instead of calendar. need to update backend!
 
         ## visit table
         visit_columns=['day', 'study', 'vtype', 'vscore', 'age', 'note', 'dvisit','dperson','vid']
@@ -53,10 +74,20 @@ class ScheduleApp(QtWidgets.QMainWindow):
         contact_columns=['who','cvalue', 'relation', 'nogood', 'added', 'cid']
         self.contact_table.setColumnCount(len(contact_columns))
         self.contact_table.setHorizontalHeaderLabels(contact_columns)
-        
+
+        # schedule time widget
+        self.timeEdit.timeChanged.connect(self.update_checkin_time)
+
+        ## general db info
+        # study list used for checkin and search
+        self.study_list = [ r[0] for r in self.sql.query.list_studies() ]
+        # populate search with results
+        self.study_search.addItems(self.study_list)
+
         self.show()
 
     ###### Generic
+    # used for visit
     def generic_fill_table(self,table,res):
         table.setRowCount(len(res))
         for row_i,row in enumerate(res):
@@ -67,11 +98,6 @@ class ScheduleApp(QtWidgets.QMainWindow):
         
     ###### PEOPLE
 
-    def search_people_by_id(self,lunaid):
-        return
-        if(len(fullname) != 5 ): return
-        res = self.sql.query.id_search(lunaid=lunaid)
-        self.fill_search_table(res)
 
     """
     connector for on text change of fullname textline search bar
@@ -84,6 +110,22 @@ class ScheduleApp(QtWidgets.QMainWindow):
         res = self.sql.query.name_search(fullname=fullname)
         self.fill_search_table(res)
 
+    # seach by id
+    def search_people_by_id(self,lunaid):
+        if(len(lunaid) != 5 ): return
+        res = self.sql.query.lunaid_search(lunaid=lunaid)
+        self.fill_search_table(res)
+
+    # by attributes
+    def search_people_by_att(self,*argv):
+        d={ 'study': comboval(self.study_search), \
+                     'sex': comboval(self.sex_search), \
+                     'minage': self.min_age_search.text(), \
+                     'maxage': self.max_age_search.text() }
+        print(d)
+        res = self.sql.query.att_search(**d)
+        #res = self.sql.query.att_search(sex=d['sex'],study=d['study'], minage=d['minage'],maxage=d['maxage'])
+        self.fill_search_table(res)
     """
     fill the person search table
     expected columns are from pep_columns (8)
@@ -110,8 +152,27 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # update contact table
         self.contact_table_data=self.sql.query.contact_by_pid(pid=pid)
         self.generic_fill_table(self.contact_table,self.contact_table_data)
+        # update schedule text
+        self.schedule_what_data['pid']=pid
+        self.schedule_what_data['fullname']=d[1]
+        self.update_schedule_what_label()
 
     ###### VISIT
+    # see generic_fill_table
+
+    ###### Labels
+    def update_schedule_what_label(self):
+        text = "%(fullname)s: %(date)s@%(time)s"%(self.schedule_what_data)
+        self.schedule_what_label.setText(text)
+    def update_checkin_what_label(self):
+        text = "%(fullname)s - %(datetime)s"%(self.checkin_what_data)
+        self.schedule_checkin_label.setText(text)
+
+    def update_checkin_time(self):
+        time = self.timeEdit.dateTime().time().toPyTime()
+        self.schedule_what_data['time'] = time
+        self.update_schedule_what_label()
+
         
     ###### CALENDAR
     
@@ -119,6 +180,10 @@ class ScheduleApp(QtWidgets.QMainWindow):
         selectedQdate=self.calendarWidget.selectedDate().toPyDate()
         dt=datetime.datetime.fromordinal( selectedQdate.toordinal() )
         print(dt)
+        # update schedule 
+        self.schedule_what_data['date']=dt.date()
+        self.update_schedule_what_label()
+        # update calendar table
         #now=datetime.datetime.now()
         delta =datetime.timedelta(days=5)
         dmin=dt - delta
@@ -142,6 +207,16 @@ class ScheduleApp(QtWidgets.QMainWindow):
            self.cal_table.setItem(row_i, 1, QtWidgets.QTableWidgetItem(tm) )
            eventname = calevent['summary']
            self.cal_table.setItem(row_i, 2, QtWidgets.QTableWidgetItem(eventname) )
+
+    """
+    when we hit an item in the calendar table, update
+     * potential checkin data and label
+     * potental schedual data and srings 
+    """
+    def cal_item_select(self):
+        pass
+        row_i =self.cal_table.currentRow()
+        d = self.cal_table_data[row_i]
 
 # actually launch everything
 if __name__ == '__main__':
