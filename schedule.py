@@ -25,11 +25,6 @@ class ScheduleApp(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
 
-        # get other modules for querying db and calendar
-        # need ~/.pgpass
-        self.cal = gcal_serviceAccount.LNCDcal()
-        self.sql = lncdSql.lncdSql()
-
         # schedule and checkin data
         self.schedule_what_data = {'fullname': '', 'pid': None, 'date': None, 'time': None}
         self.checkin_what_data =  {'fullname': '', 'vid': None, 'datetime': None}
@@ -38,6 +33,20 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # load gui (created with qtcreator)
         uic.loadUi('./mainwindow.ui',self)
         self.setWindowTitle('LNCD Scheduler')
+
+        # data store
+        self.disp_model = {'pid': None, 'fullname': None}
+
+        # message box for warnings/errors
+        self.msg=QtWidgets.QMessageBox()
+
+        # get other modules for querying db and calendar
+        try:
+          self.cal = gcal_serviceAccount.LNCDcal()
+          self.sql = lncdSql.lncdSql() # need ~/.pgpass
+        except Exception as e:
+          self.mkmsg("ERROR: app will not work!\n%s"%str(e))
+          return
 
         ## setup person search field
         # by name
@@ -96,8 +105,14 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.add_person_button.clicked.connect(self.add_person_pushed)
         self.AddPerson.accepted.connect(self.add_person_to_db)
 
-        # message box for warnings/errors
-        self.msg=QtWidgets.QMessageBox()
+        ## add contact
+        self.AddContact = AddContactWindow(self)
+        # autocomple stuffs
+        self.AddContact.add_ctypes( [ r[0] for r in self.sql.query.list_ctype() ] )
+        self.AddContact.suggest_relation([ r[0] for r in self.sql.query.list_relation() ] )
+        # connect it up
+        self.add_contact_button.clicked.connect(self.add_contact_pushed)
+        self.AddContact.accepted.connect(self.add_contact_to_db)
 
         self.show()
 
@@ -179,16 +194,24 @@ class ScheduleApp(QtWidgets.QMainWindow):
         row_i =self.people_table.currentRow()
         d = self.people_table_data[row_i]
         pid=d[8]
+        fullname=d[0]
+        # main model
+        self.disp_model['pid'] = pid
+        self.disp_model['fullname'] = fullname
+
         # update visit table
         self.visit_table_data = self.sql.query.visit_by_pid(pid=pid)
         self.generic_fill_table(self.visit_table,self.visit_table_data)
         # update contact table
-        self.contact_table_data=self.sql.query.contact_by_pid(pid=pid)
-        self.generic_fill_table(self.contact_table,self.contact_table_data)
+        self.update_contact_table()
         # update schedule text
         self.schedule_what_data['pid']=pid
-        self.schedule_what_data['fullname']=d[1]
+        self.schedule_what_data['fullname']=fullname
         self.update_schedule_what_label()
+
+    def update_contact_table(self):
+        self.contact_table_data=self.sql.query.contact_by_pid(pid=self.disp_model['pid'])
+        self.generic_fill_table(self.contact_table,self.contact_table_data)
 
     """
     person to db
@@ -209,7 +232,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
           self.mkmsg(str(e))
           return
 
-        self.search_people_by_name(self.fullname.text()):
+        self.search_people_by_name(self.fullname.text())
 
     ###### VISIT
     # see generic_fill_table
@@ -273,6 +296,31 @@ class ScheduleApp(QtWidgets.QMainWindow):
         row_i =self.cal_table.currentRow()
         d = self.cal_table_data[row_i]
 
+    ### CONTACTS
+    
+    # self.add_contact_button.clicked.connect(self.add_contact_pushed)
+    def add_contact_pushed(self):
+        #self.AddContact.setpersondata(d)
+        self.AddContact.set_contact(self.disp_model['pid'],self.disp_model['fullname'])
+        self.AddContact.show()
+
+    # self.AddContact.accepted.connect(self.add_contact_to_db)
+    def add_contact_to_db(self):
+        check=self.AddContact.isvalid()
+        if(not check['valid']):
+            mkmsg('Cannot add contact: %s',check['msg'])
+            return
+        # catch sql error
+        self.sqlInsertOrShowErr('contact',self.AddContact.contact_model)
+        self.update_contact_table()
+
+    def sqlInsertOrShowErr(self,table,d):
+        try:
+          #self.sql.query.insert_person(**(self.AddPerson.persondata))
+          self.sql.insert(table,d)
+        except Exception as e:
+          self.mkmsg(str(e))
+          return
 
 
 """
@@ -339,6 +387,67 @@ class AddPersonWindow(QtWidgets.QDialog):
         # TODO: check dob is not today
         self._want_to_close = True
         return(True)
+    
+"""
+This class provides a window for adding contact information
+data in conact_model
+"""
+class AddContactWindow(QtWidgets.QDialog):
+
+    def __init__(self,parent=None):
+        columns=['ctype','cvalue','relation','who','pid']
+        self.contact_model = { k: None for k in columns }
+        super(AddContactWindow,self).__init__(parent)
+        uic.loadUi('./add_contact.ui',self)
+        self.setWindowTitle('Add Contact')
+
+        # change this to true when validation works
+        self._want_to_close = False
+
+        ## autocompelte?!
+        self.suggestions = {'relation': ['Subject']}
+
+        ## wire up buttons and boxes
+        self.ctype_box.activated.connect(lambda: self.allvals('ctype'))
+        self.who_edit.textChanged.connect(lambda: self.allvals('who'))
+        self.relation_edit.textChanged.connect(lambda: self.allvals('relation'))
+        self.cvalue_edit.textChanged.connect(lambda: self.allvals('cvalue'))
+
+    def add_ctypes(self,vals): self.ctype_box.addItems(vals)
+    def suggest_relation(self,vals): self.suggestions['relation']=vals
+    def set_contact(self,pid,name):
+        print('updating contact with %s and %s'%(pid,name))
+        self.contact_model['pid'] = pid
+        self.contact_name.setText(name)
+        self.relation_edit.setText('Subject')
+        self.who_edit.setText(name)
+
+    """
+    set data from gui edit value
+    optionally be specific
+    """
+    def allvals(self,key='all'):
+        print('contact: updating %s'%key)
+        if(key in ['ctype'   ,'all']): self.contact_model['ctype']    = comboval(self.ctype_box)
+        if(key in ['who'     ,'all']): self.contact_model['who']      = self.who_edit.text()
+        if(key in ['relation','all']): self.contact_model['relation'] = self.relation_edit.text()
+        if(key in ['cvalue'  ,'all']): self.contact_model['cvalue']   = self.cvalue_edit.text()
+        
+
+    """
+    do we have good data? just check that no key is null
+    return (valid:T/F,msg:....)
+    """
+    def isvalid(self):
+        self.allvals('all')
+        print("add contact is valid?\n%s"%str(self.contact_model))
+        #print("close?: %s; checking if %s is valid"%(self._want_to_close,str(self.persondata)))
+        for k in self.contact_model.keys():
+            if self.contact_model[k] == None or self.contact_model[k] == '':
+                return({'valid':False,'msg':'bad %s'%k})
+        # TODO: check dob is not today
+        self._want_to_close = True
+        return({'valid':True,'msg':'OK'})
     
         
 
