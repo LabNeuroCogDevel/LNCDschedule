@@ -15,6 +15,12 @@ tzfromutc = datetime.datetime.fromtimestamp(launchtime) - datetime.datetime.utcf
 def comboval(cb):
     return(cb.itemText(cb.currentIndex()))
 
+# get date from qdate widge 
+def caltodate(qdate_widget):
+    ordinal = qdate_widget.selectedDate().toPyDate().toordinal()
+    dt=datetime.datetime.fromordinal(ordinal)
+    return(dt)
+
 class ScheduleApp(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
@@ -37,9 +43,10 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # by name
         self.fullname.textChanged.connect(self.search_people_by_name)
         self.fullname.setText('%')
+        self.search_people_by_name(self.fullname.text()) # doesnt already happens, why?
+
         # by lunaid
         self.subjid_search.textChanged.connect(self.search_people_by_id)
-
         # by attribute
         self.min_age_search.textChanged.connect(self.search_people_by_att)
         self.max_age_search.textChanged.connect(self.search_people_by_att)
@@ -84,9 +91,22 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # populate search with results
         self.study_search.addItems(self.study_list)
 
+        ## add person
+        self.AddPerson = AddPersonWindow(self)
+        self.add_person_button.clicked.connect(self.add_person_pushed)
+        self.AddPerson.accepted.connect(self.add_person_to_db)
+
+        # message box for warnings/errors
+        self.msg=QtWidgets.QMessageBox()
+
         self.show()
 
     ###### Generic
+    # message to warn about issues
+    def mkmsg(self,msg,icon=QtWidgets.QMessageBox.Critical):
+           self.msg.setIcon(icon)
+           self.msg.setText(msg)
+           self.msg.show()
     # used for visit
     def generic_fill_table(self,table,res):
         table.setRowCount(len(res))
@@ -97,6 +117,14 @@ class ScheduleApp(QtWidgets.QMainWindow):
         
         
     ###### PEOPLE
+    def add_person_pushed(self):
+        name = self.fullname.text().title().split(' ')
+        print('spliting name at len %d'%len(name))
+        fname=name[0] if len(name)>=1 else ''
+        lname=" ".join(name[1:]) if len(name)>=2 else ''
+        d = {'fname': fname, 'lname': lname}
+        self.AddPerson.setpersondata(d)
+        self.AddPerson.show()
 
 
     """
@@ -113,6 +141,11 @@ class ScheduleApp(QtWidgets.QMainWindow):
     # seach by id
     def search_people_by_id(self,lunaid):
         if(len(lunaid) != 5 ): return
+        try:
+          lunaid=int(lunaid)
+        except:
+            self.mkmsg("LunaID should only be numbers")
+            return
         res = self.sql.query.lunaid_search(lunaid=lunaid)
         self.fill_search_table(res)
 
@@ -157,6 +190,27 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.schedule_what_data['fullname']=d[1]
         self.update_schedule_what_label()
 
+    """
+    person to db
+    """
+    def add_person_to_db(self):
+        print(self.AddPerson.persondata)
+        # pop up window and return if not valid
+        if(not self.AddPerson.isvalid() ):
+           self.mkmsg("Missing data must be provided before we can continue adding the person")
+           return 
+
+        self.fullname.setText( '%(fname)s %(lname)s'%self.AddPerson.persondata)
+        # put error into dialog box
+        try:
+          #self.sql.query.insert_person(**(self.AddPerson.persondata))
+          self.sql.insert('person',self.AddPerson.persondata)
+        except Exception as e:
+          self.mkmsg(str(e))
+          return
+
+        self.search_people_by_name(self.fullname.text()):
+
     ###### VISIT
     # see generic_fill_table
 
@@ -177,8 +231,9 @@ class ScheduleApp(QtWidgets.QMainWindow):
     ###### CALENDAR
     
     def search_cal_by_date(self):
-        selectedQdate=self.calendarWidget.selectedDate().toPyDate()
-        dt=datetime.datetime.fromordinal( selectedQdate.toordinal() )
+        #selectedQdate=self.calendarWidget.selectedDate().toPyDate()
+        #dt=datetime.datetime.fromordinal( selectedQdate.toordinal() )
+        dt=caltodate(self.calendarWidget)
         print(dt)
         # update schedule 
         self.schedule_what_data['date']=dt.date()
@@ -217,6 +272,75 @@ class ScheduleApp(QtWidgets.QMainWindow):
         pass
         row_i =self.cal_table.currentRow()
         d = self.cal_table_data[row_i]
+
+
+
+"""
+This class provides a window for adding a person
+persondata should be used to modified data
+"""
+class AddPersonWindow(QtWidgets.QDialog):
+
+    def __init__(self,parent=None):
+        self.persondata={'fname': None, 'lname': None, 'dob': None, 'sex': None,'hand': None, 'source': None}
+        super(AddPersonWindow,self).__init__(parent)
+        uic.loadUi('./addperson.ui',self)
+        self.setWindowTitle('Add Person')
+
+        # change this to true when validation works
+        self._want_to_close = False
+
+        ## wire up buttons and boxes
+        self.dob_edit.selectionChanged.connect(lambda: self.allvals('dob'))
+        self.hand_edit.activated.connect(lambda: self.allvals('hand'))
+        self.sex_edit.activated.connect(lambda: self.allvals('sex'))
+        self.fname_edit.textChanged.connect(lambda: self.allvals('fname'))
+        self.lname_edit.textChanged.connect(lambda: self.allvals('lname'))
+        # source
+        # todo: toggle visitble of text edit if source is not other, use that value
+        self.source_text_edit.textChanged.connect(lambda:self.allvals('source'))
+
+    """
+    use provided dictionary d to set persondata
+    """
+    def setpersondata(self,d):
+        print("set person data: %s"%str(d))
+        for k in self.persondata.keys():
+            if k in d: self.persondata[k] = d[k]
+
+        self.fname_edit.setText(self.persondata['fname'] )
+        self.lname_edit.setText(self.persondata['lname'] )
+
+    """
+    set data from gui edit value
+    optionally be specific
+    """
+    def allvals(self,key='all'):
+        print('updating %s'%key)
+        if(key in ['dob','all']):   self.persondata['dob']   = caltodate(self.dob_edit)
+        if(key in ['hand','all']):  self.persondata['hand']  = comboval(self.hand_edit)
+        if(key in ['sex','all']):   self.persondata['sex']   = comboval(self.sex_edit)
+        if(key in ['fname','all']): self.persondata['fname'] = self.fname_edit.text()
+        if(key in ['lname','all']): self.persondata['lname'] = self.lname_edit.text()
+        # todo, toggle visibility and pick combo or text
+        if(key in ['source','all']):
+            self.persondata['source']= self.source_text_edit.text()
+        
+
+    """
+    do we have good data? just check that no key is null
+    """
+    def isvalid(self):
+        self.allvals('all')
+        print("add person is valid?\n%s"%str(self.persondata))
+        #print("close?: %s; checking if %s is valid"%(self._want_to_close,str(self.persondata)))
+        for k in self.persondata.keys():
+            if self.persondata[k] == None or self.persondata[k] == '': return(False)
+        # TODO: check dob is not today
+        self._want_to_close = True
+        return(True)
+    
+        
 
 # actually launch everything
 if __name__ == '__main__':

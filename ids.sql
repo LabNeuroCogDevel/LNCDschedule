@@ -45,3 +45,10 @@ select
 
 --name: list_studies
 select distinct(study) from study
+
+--name: list_sources
+select distinct("source") from person
+
+--name: insert_person
+insert into person (fname,lname,sex,hand,dob,"source")
+ values (%(fname)s,%(lname)s,%(sex)s,%(hand)s,%(dob)s,%(source)s)
