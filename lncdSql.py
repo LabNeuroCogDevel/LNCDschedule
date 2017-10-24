@@ -5,6 +5,7 @@ class lncdSql():
     def __init__(self):
         #self.conn = psycopg2.connect('dbname=lncddb user=lncd host=arnold.wpic.upmc.edu')
         self.conn = psycopg2.connect('dbname=lncddb user=lncd host=localhost')
+        self.conn.set_session(autocommit=True)
 
         sqls = pyesql.parse_file('./ids.sql')
         self.query = sqls(self.conn)
