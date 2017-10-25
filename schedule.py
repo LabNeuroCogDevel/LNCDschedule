@@ -4,7 +4,7 @@ import sys
 sys.path.append('../pull_from_sheets')
 import gcal_serviceAccount 
 import lncdSql
-import AddContact, ScheduleVisit
+import AddContact, ScheduleVisit, AddPerson
 from PyQt5 import uic,QtCore, QtWidgets
 import datetime
 import subprocess,re # for whoami
@@ -61,15 +61,17 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.sex_search.activated.connect(self.search_people_by_att)
         self.study_search.activated.connect(self.search_people_by_att)
 
-        ## setup search table "people_table"
+        ## people_talbe: setup search table "people_table"
         pep_columns=['fullname','lunaid','age','dob','sex','lastvisit','maxdrop','studies']
         self.people_table.setColumnCount(len(pep_columns))
         self.people_table.setHorizontalHeaderLabels(pep_columns)
         self.people_table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
         # wire up clicks
         self.people_table.itemClicked.connect(self.people_item_select)
+        #people_table_menu = QtWidgets.QMenu(self)
+        #self.people_table.contextMenuEvent(people_table_menu)
 
-        ## setup search calendar "cal_table"
+        ## cal_table: setup search calendar "cal_table"
         cal_columns=['date','time','what']
         self.cal_table.setColumnCount(len(cal_columns))
         self.cal_table.setHorizontalHeaderLabels(cal_columns)
@@ -79,6 +81,11 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.calendarWidget.selectionChanged.connect(self.search_cal_by_date)
         self.search_cal_by_date() # update for current day
         # TODO: eventually want to use DB instead of calendar. need to update backend!
+
+        ## note table
+        note_columns=['note','dropcode','ndate','vtimestamp','ra','vid']
+        self.note_table.setColumnCount(len(note_columns))
+        self.note_table.setHorizontalHeaderLabels(note_columns)
 
         ## visit table
         visit_columns=['day', 'study', 'vtype', 'vscore', 'age', 'note', 'dvisit','dperson','vid']
@@ -100,7 +107,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.study_search.addItems(self.study_list)
 
         ## add person
-        self.AddPerson = AddPersonWindow(self)
+        self.AddPerson = AddPerson.AddPersonWindow(self)
         self.add_person_button.clicked.connect(self.add_person_pushed)
         self.AddPerson.accepted.connect(self.add_person_to_db)
 
@@ -216,6 +223,9 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.schedule_what_data['pid']=pid
         self.schedule_what_data['fullname']=fullname
         self.update_schedule_what_label()
+        # update notes
+        self.note_table_data = self.sql.query.note_by_pid(pid=pid)
+        self.generic_fill_table(self.note_table,self.note_table_data)
 
     def update_contact_table(self):
         self.contact_table_data=self.sql.query.contact_by_pid(pid=self.disp_model['pid'])
@@ -261,6 +271,9 @@ class ScheduleApp(QtWidgets.QMainWindow):
     def schedule_to_db(self):
         print("need to actuall add to db")
         pass
+
+    ###### Notes
+    # see generic_fill_table
 
     ###### Labels
     def update_schedule_what_label(self):
@@ -346,73 +359,6 @@ class ScheduleApp(QtWidgets.QMainWindow):
         except Exception as e:
           self.mkmsg(str(e))
           return
-
-
-"""
-This class provides a window for adding a person
-persondata should be used to modified data
-"""
-class AddPersonWindow(QtWidgets.QDialog):
-
-    def __init__(self,parent=None):
-        self.persondata={'fname': None, 'lname': None, 'dob': None, 'sex': None,'hand': None, 'source': None}
-        super(AddPersonWindow,self).__init__(parent)
-        uic.loadUi('./ui/add_person.ui',self)
-        self.setWindowTitle('Add Person')
-
-        # change this to true when validation works
-        self._want_to_close = False
-
-        ## wire up buttons and boxes
-        self.dob_edit.selectionChanged.connect(lambda: self.allvals('dob'))
-        self.hand_edit.activated.connect(lambda: self.allvals('hand'))
-        self.sex_edit.activated.connect(lambda: self.allvals('sex'))
-        self.fname_edit.textChanged.connect(lambda: self.allvals('fname'))
-        self.lname_edit.textChanged.connect(lambda: self.allvals('lname'))
-        # source
-        # todo: toggle visitble of text edit if source is not other, use that value
-        self.source_text_edit.textChanged.connect(lambda:self.allvals('source'))
-
-    """
-    use provided dictionary d to set persondata
-    """
-    def setpersondata(self,d):
-        print("set person data: %s"%str(d))
-        for k in self.persondata.keys():
-            if k in d: self.persondata[k] = d[k]
-
-        self.fname_edit.setText(self.persondata['fname'] )
-        self.lname_edit.setText(self.persondata['lname'] )
-
-    """
-    set data from gui edit value
-    optionally be specific
-    """
-    def allvals(self,key='all'):
-        print('updating %s'%key)
-        if(key in ['dob','all']):   self.persondata['dob']   = caltodate(self.dob_edit)
-        if(key in ['hand','all']):  self.persondata['hand']  = comboval(self.hand_edit)
-        if(key in ['sex','all']):   self.persondata['sex']   = comboval(self.sex_edit)
-        if(key in ['fname','all']): self.persondata['fname'] = self.fname_edit.text()
-        if(key in ['lname','all']): self.persondata['lname'] = self.lname_edit.text()
-        # todo, toggle visibility and pick combo or text
-        if(key in ['source','all']):
-            self.persondata['source']= self.source_text_edit.text()
-        
-
-    """
-    do we have good data? just check that no key is null
-    """
-    def isvalid(self):
-        self.allvals('all')
-        print("add person is valid?\n%s"%str(self.persondata))
-        #print("close?: %s; checking if %s is valid"%(self._want_to_close,str(self.persondata)))
-        for k in self.persondata.keys():
-            if self.persondata[k] == None or self.persondata[k] == '': return(False)
-        # TODO: check dob is not today
-        self._want_to_close = True
-        return(True)
-    
 
 # actually launch everything
 if __name__ == '__main__':

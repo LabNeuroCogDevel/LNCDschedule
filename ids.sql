@@ -35,6 +35,13 @@ select
   -- and "action" = 'checkedin'
   order by vtimestamp desc
 
+-- name: note_by_pid
+select note,dropcode, ndate, vtimestamp, note.ra, vid from note 
+   natural left  join visit_note natural left join visit
+   natural left join dropped
+   where pid = %(pid)s
+   order by vtimestamp desc, ndate desc 
+
 
 -- name: contact_by_pid
 select
