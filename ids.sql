@@ -5,7 +5,7 @@ select * from enroll natural join person where etype like 'LunaID'
 select
  fullname,lunaid,curagefloor,dob,sex,lastvisit,maxdrop,studies,pid
  from person_search_view
- where fullname like %(fullname)s
+ where fullname ilike %(fullname)s
  limit 20
 
 -- name: lunaid_search
@@ -44,7 +44,17 @@ select
   order by relation = 'Subject' desc, relation, who
 
 --name: list_studies
-select distinct(study) from study
+-- we want to sort studies by the last checkin
+-- but we need to left join incase we have a (new) study with no visits
+with vs as (
+  select max(vtimestamp) latest, study from visit natural join visit_study group by study 
+)
+select study from study
+ natural left join vs
+ order by latest desc
+
+--name: list_vtypes
+select distinct(vtype) from visit;
 
 --name: list_sources
 select distinct("source") from person

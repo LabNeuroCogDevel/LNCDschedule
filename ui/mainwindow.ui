@@ -134,6 +134,13 @@
       <height>23</height>
      </rect>
     </property>
+    <property name="time">
+     <time>
+      <hour>12</hour>
+      <minute>0</minute>
+      <second>0</second>
+     </time>
+    </property>
    </widget>
    <widget class="QLabel" name="checkin_what_label">
     <property name="geometry">

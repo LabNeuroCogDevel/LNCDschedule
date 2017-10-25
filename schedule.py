@@ -4,22 +4,15 @@ import sys
 sys.path.append('../pull_from_sheets')
 import gcal_serviceAccount 
 import lncdSql
+import AddContact, ScheduleVisit
 from PyQt5 import uic,QtCore, QtWidgets
 import datetime
+import subprocess,re # for whoami
+from LNCDutils import  *
 
 # google reports UTC, we are EST or EDT. get the diff between google and us
 launchtime=int(datetime.datetime.now().strftime('%s'))
 tzfromutc = datetime.datetime.fromtimestamp(launchtime) - datetime.datetime.utcfromtimestamp(launchtime)
-
-# get combobox value
-def comboval(cb):
-    return(cb.itemText(cb.currentIndex()))
-
-# get date from qdate widge 
-def caltodate(qdate_widget):
-    ordinal = qdate_widget.selectedDate().toPyDate().toordinal()
-    dt=datetime.datetime.fromordinal(ordinal)
-    return(dt)
 
 class ScheduleApp(QtWidgets.QMainWindow):
     def __init__(self):
@@ -31,7 +24,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         
 
         # load gui (created with qtcreator)
-        uic.loadUi('./mainwindow.ui',self)
+        uic.loadUi('./ui/mainwindow.ui',self)
         self.setWindowTitle('LNCD Scheduler')
 
         # data store
@@ -47,6 +40,12 @@ class ScheduleApp(QtWidgets.QMainWindow):
         except Exception as e:
           self.mkmsg("ERROR: app will not work!\n%s"%str(e))
           return
+
+        ## who is using the app?
+        self.RA = subprocess.check_output("whoami").decode().replace('\n','').replace('\r','')
+        print("RA: %s"%self.RA)
+        #if re.search('lncd|localadmin',self.RA,ignore.case=True):
+        #    print("login: TODO: launch modal window")
 
         ## setup person search field
         # by name
@@ -106,13 +105,22 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.AddPerson.accepted.connect(self.add_person_to_db)
 
         ## add contact
-        self.AddContact = AddContactWindow(self)
+        self.AddContact = AddContact.AddContactWindow(self)
         # autocomple stuffs
         self.AddContact.add_ctypes( [ r[0] for r in self.sql.query.list_ctype() ] )
         self.AddContact.suggest_relation([ r[0] for r in self.sql.query.list_relation() ] )
         # connect it up
         self.add_contact_button.clicked.connect(self.add_contact_pushed)
         self.AddContact.accepted.connect(self.add_contact_to_db)
+
+        ### Visit
+        ## schedule
+        self.ScheduleVisit = ScheduleVisit.ScheduleVisitWindow(self)
+        self.ScheduleVisit.add_studies(self.study_list)
+        self.ScheduleVisit.add_vtypes([ r[0] for r in self.sql.query.list_vtypes() ])
+        self.schedule_button.clicked.connect(self.schedule_button_pushed)
+        self.ScheduleVisit.accepted.connect(self.schedule_to_db)
+
 
         self.show()
 
@@ -236,6 +244,23 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
     ###### VISIT
     # see generic_fill_table
+    def schedule_button_pushed(self):
+        d=self.schedule_what_data['date'] 
+        t=self.schedule_what_data['time']
+        pid=self.disp_model['pid']
+        fullname=self.disp_model['fullname']
+        if d==None or t==None:
+            self.mkmsg('set a date and time before scheduling')
+            return()
+        if pid == None or fullname == None:
+            self.mkmsg('select a person before trying to schedule')
+            return()
+        dt=datetime.datetime.combine(d, t)
+        self.ScheduleVisit.setup(pid,fullname,self.RA,dt)
+        self.ScheduleVisit.show()
+    def schedule_to_db(self):
+        print("need to actuall add to db")
+        pass
 
     ###### Labels
     def update_schedule_what_label(self):
@@ -332,7 +357,7 @@ class AddPersonWindow(QtWidgets.QDialog):
     def __init__(self,parent=None):
         self.persondata={'fname': None, 'lname': None, 'dob': None, 'sex': None,'hand': None, 'source': None}
         super(AddPersonWindow,self).__init__(parent)
-        uic.loadUi('./addperson.ui',self)
+        uic.loadUi('./ui/add_person.ui',self)
         self.setWindowTitle('Add Person')
 
         # change this to true when validation works
@@ -388,68 +413,6 @@ class AddPersonWindow(QtWidgets.QDialog):
         self._want_to_close = True
         return(True)
     
-"""
-This class provides a window for adding contact information
-data in conact_model
-"""
-class AddContactWindow(QtWidgets.QDialog):
-
-    def __init__(self,parent=None):
-        columns=['ctype','cvalue','relation','who','pid']
-        self.contact_model = { k: None for k in columns }
-        super(AddContactWindow,self).__init__(parent)
-        uic.loadUi('./add_contact.ui',self)
-        self.setWindowTitle('Add Contact')
-
-        # change this to true when validation works
-        self._want_to_close = False
-
-        ## autocompelte?!
-        self.suggestions = {'relation': ['Subject']}
-
-        ## wire up buttons and boxes
-        self.ctype_box.activated.connect(lambda: self.allvals('ctype'))
-        self.who_edit.textChanged.connect(lambda: self.allvals('who'))
-        self.relation_edit.textChanged.connect(lambda: self.allvals('relation'))
-        self.cvalue_edit.textChanged.connect(lambda: self.allvals('cvalue'))
-
-    def add_ctypes(self,vals): self.ctype_box.addItems(vals)
-    def suggest_relation(self,vals): self.suggestions['relation']=vals
-    def set_contact(self,pid,name):
-        print('updating contact with %s and %s'%(pid,name))
-        self.contact_model['pid'] = pid
-        self.contact_name.setText(name)
-        self.relation_edit.setText('Subject')
-        self.who_edit.setText(name)
-
-    """
-    set data from gui edit value
-    optionally be specific
-    """
-    def allvals(self,key='all'):
-        print('contact: updating %s'%key)
-        if(key in ['ctype'   ,'all']): self.contact_model['ctype']    = comboval(self.ctype_box)
-        if(key in ['who'     ,'all']): self.contact_model['who']      = self.who_edit.text()
-        if(key in ['relation','all']): self.contact_model['relation'] = self.relation_edit.text()
-        if(key in ['cvalue'  ,'all']): self.contact_model['cvalue']   = self.cvalue_edit.text()
-        
-
-    """
-    do we have good data? just check that no key is null
-    return (valid:T/F,msg:....)
-    """
-    def isvalid(self):
-        self.allvals('all')
-        print("add contact is valid?\n%s"%str(self.contact_model))
-        #print("close?: %s; checking if %s is valid"%(self._want_to_close,str(self.persondata)))
-        for k in self.contact_model.keys():
-            if self.contact_model[k] == None or self.contact_model[k] == '':
-                return({'valid':False,'msg':'bad %s'%k})
-        # TODO: check dob is not today
-        self._want_to_close = True
-        return({'valid':True,'msg':'OK'})
-    
-        
 
 # actually launch everything
 if __name__ == '__main__':
