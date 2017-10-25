@@ -14,7 +14,7 @@ class ScheduleVisitWindow(QtWidgets.QDialog):
         self.setWindowTitle('Schedule Visit')
 
         # what data do we need
-        columns=['vtimestamp','study','vtype','visitno','RA','pid']
+        columns=['vtimestamp','study','vtype','visitno','ra','pid','cohort']
         self.model = { k: None for k in columns }
 
         # change this to true when validation works
@@ -24,6 +24,7 @@ class ScheduleVisitWindow(QtWidgets.QDialog):
         self.study_box.activated.connect(lambda: self.allvals('study'))
         self.vtype_box.activated.connect(lambda: self.allvals('vtype'))
         self.visitno_spin.valueChanged.connect(lambda: self.allvals('visitno'))
+        self.cohort_edit.textChanged.connect(lambda: self.allvals('cohort'))
         self.vtimestamp_edit.dateTimeChanged.connect(lambda: self.allvals('relation'))
 
     def add_vtypes(self,vals): self.vtype_box.addItems(vals)
@@ -32,7 +33,7 @@ class ScheduleVisitWindow(QtWidgets.QDialog):
     def setup(self,pid,name,RA,dt):
         print('updating contact with %s and %s'%(pid,name))
         self.model['pid'] = pid
-        self.model['RA']  = RA
+        self.model['ra']  = RA
         qdt = QtCore.QDateTime.fromTime_t(dt.timestamp())
         self.vtimestamp_edit.setDateTime(qdt)
         self.who_label.setText(name)
@@ -43,10 +44,11 @@ class ScheduleVisitWindow(QtWidgets.QDialog):
     """
     def allvals(self,key='all'):
         print('schedule visit: updating %s'%key)
-        if(isOrAll(key,'vtype')  ):    self.model['vtype']  = comboval(self.vtype_box)
-        if(isOrAll(key,'study')  ):    self.model['study']  = comboval(self.study_box)
-        if(isOrAll(key,'visitno')):    self.model['vistno'] = self.visitno_spin.value()
-        if(isOrAll(key,'vtimestamp')): self.model['vtimestamp'] = self.vtimestamp_edit.toString()
+        if(isOrAll(key,'vtype')  ):    self.model['vtype']   = comboval(self.vtype_box)
+        if(isOrAll(key,'study')  ):    self.model['study']   = comboval(self.study_box)
+        if(isOrAll(key,'cohort')):     self.model['cohort']  = self.cohort_edit.text()
+        if(isOrAll(key,'visitno')):    self.model['visitno'] = self.visitno_spin.value()
+        if(isOrAll(key,'vtimestamp')): self.model['vtimestamp'] = self.vtimestamp_edit.dateTime().toString()
         
 
     """

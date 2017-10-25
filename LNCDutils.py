@@ -10,5 +10,5 @@ def caltodate(qdate_widget):
     dt=datetime.datetime.fromordinal(ordinal)
     return(dt)
 
-# used in is_valid
-def isOrAll(k,s): return(s in [k, 'all'])
+# used in is_valid. does key match string or all
+def isOrAll(k,s): return(k in [s, 'all'])

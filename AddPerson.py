@@ -1,4 +1,5 @@
-
+from PyQt5 import uic,QtCore, QtWidgets
+from LNCDutils import  *
 
 """
 This class provides a window for adding a person

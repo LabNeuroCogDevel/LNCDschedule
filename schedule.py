@@ -137,13 +137,22 @@ class ScheduleApp(QtWidgets.QMainWindow):
            self.msg.setIcon(icon)
            self.msg.setText(msg)
            self.msg.show()
-    # used for visit
+    # used for visit, contact, and notes
     def generic_fill_table(self,table,res):
         table.setRowCount(len(res))
         for row_i,row in enumerate(res):
             for col_i,value in enumerate(row):
                 item=QtWidgets.QTableWidgetItem(str(value))
                 table.setItem(row_i,col_i,item)
+
+    # check with isvalid method
+    # used for ScheduleVisit and AddContact
+    def useisvalid(self,obj,msgdesc):
+        check=obj.isvalid()
+        if(not check['valid']):
+            self.mkmsg('%s: %s'%(msgdesc,check['msg']) )
+            return(False)
+        return(True)
         
         
     ###### PEOPLE
@@ -215,8 +224,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.disp_model['fullname'] = fullname
 
         # update visit table
-        self.visit_table_data = self.sql.query.visit_by_pid(pid=pid)
-        self.generic_fill_table(self.visit_table,self.visit_table_data)
+        self.update_visit_table()
         # update contact table
         self.update_contact_table()
         # update schedule text
@@ -226,6 +234,11 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # update notes
         self.note_table_data = self.sql.query.note_by_pid(pid=pid)
         self.generic_fill_table(self.note_table,self.note_table_data)
+
+    def update_visit_table(self):
+        pid=self.disp_model['pid']
+        self.visit_table_data = self.sql.query.visit_by_pid(pid=pid)
+        self.generic_fill_table(self.visit_table,self.visit_table_data)
 
     def update_contact_table(self):
         self.contact_table_data=self.sql.query.contact_by_pid(pid=self.disp_model['pid'])
@@ -268,9 +281,18 @@ class ScheduleApp(QtWidgets.QMainWindow):
         dt=datetime.datetime.combine(d, t)
         self.ScheduleVisit.setup(pid,fullname,self.RA,dt)
         self.ScheduleVisit.show()
+
     def schedule_to_db(self):
-        print("need to actuall add to db")
-        pass
+        # valid?
+        if not self.useisvalid(self.ScheduleVisit, "Cannot schedule visit"): return
+        #todo: add to calendar or msgerr
+        # catch sql error
+        if not self.sqlInsertOrShowErr('visit_summary',self.ScheduleVisit.model):
+            # todo: remove from calendar if sql failed
+            return()
+        
+        # need to refresh visits
+        self.update_visit_table()
 
     ###### Notes
     # see generic_fill_table
@@ -344,10 +366,9 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
     # self.AddContact.accepted.connect(self.add_contact_to_db)
     def add_contact_to_db(self):
-        check=self.AddContact.isvalid()
-        if(not check['valid']):
-            mkmsg('Cannot add contact: %s',check['msg'])
-            return
+        # do we have good input?
+        if not self.useisvalid(self.AddContact, "Cannot add contact"): return
+
         # catch sql error
         self.sqlInsertOrShowErr('contact',self.AddContact.contact_model)
         self.update_contact_table()
@@ -356,9 +377,10 @@ class ScheduleApp(QtWidgets.QMainWindow):
         try:
           #self.sql.query.insert_person(**(self.AddPerson.persondata))
           self.sql.insert(table,d)
+          return(True)
         except Exception as e:
           self.mkmsg(str(e))
-          return
+          return(False)
 
 # actually launch everything
 if __name__ == '__main__':
