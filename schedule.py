@@ -263,7 +263,9 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # put error into dialog box
         try:
           #self.sql.query.insert_person(**(self.AddPerson.persondata))
-          self.sql.insert('person',self.AddPerson.persondata)
+          data=self.AddPerson.persondata
+          data['adddate'] = datetime.datetime.now()
+          self.sql.insert('person',data)
         except Exception as e:
           self.mkmsg(str(e))
           return
@@ -382,7 +384,9 @@ class ScheduleApp(QtWidgets.QMainWindow):
         if not self.useisvalid(self.AddContact, "Cannot add contact"): return
 
         # catch sql error
-        self.sqlInsertOrShowErr('contact',self.AddContact.contact_model)
+        data=self.AddContact.contact_model
+        data['added'] = datetime.datetime.now()
+        self.sqlInsertOrShowErr('contact',data)
         self.update_contact_table()
 
     def sqlInsertOrShowErr(self,table,d):
