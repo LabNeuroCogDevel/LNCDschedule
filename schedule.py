@@ -28,7 +28,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.setWindowTitle('LNCD Scheduler')
 
         # data store
-        self.disp_model = {'pid': None, 'fullname': None}
+        self.disp_model = {'pid': None, 'fullname': None, 'age': None,'sex': None}
 
         # message box for warnings/errors
         self.msg=QtWidgets.QMessageBox()
@@ -88,7 +88,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.note_table.setHorizontalHeaderLabels(note_columns)
 
         ## visit table
-        visit_columns=['day', 'study', 'vtype', 'vscore', 'age', 'note', 'dvisit','dperson','vid']
+        visit_columns=['day', 'study', 'action','vtype', 'vscore', 'age', 'note', 'dvisit','dperson','vid']
         self.visit_table.setColumnCount(len(visit_columns))
         self.visit_table.setHorizontalHeaderLabels(visit_columns)
 
@@ -222,18 +222,19 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # main model
         self.disp_model['pid'] = pid
         self.disp_model['fullname'] = fullname
+        self.disp_model['age'] = d[2]
+        self.disp_model['sex'] = d[4]
 
         # update visit table
         self.update_visit_table()
         # update contact table
         self.update_contact_table()
+        # update notes
+        self.update_note_table()
         # update schedule text
         self.schedule_what_data['pid']=pid
         self.schedule_what_data['fullname']=fullname
         self.update_schedule_what_label()
-        # update notes
-        self.note_table_data = self.sql.query.note_by_pid(pid=pid)
-        self.generic_fill_table(self.note_table,self.note_table_data)
 
     def update_visit_table(self):
         pid=self.disp_model['pid']
@@ -243,6 +244,10 @@ class ScheduleApp(QtWidgets.QMainWindow):
     def update_contact_table(self):
         self.contact_table_data=self.sql.query.contact_by_pid(pid=self.disp_model['pid'])
         self.generic_fill_table(self.contact_table,self.contact_table_data)
+    def update_note_table(self):
+        pid=self.disp_model['pid']
+        self.note_table_data = self.sql.query.note_by_pid(pid=pid)
+        self.generic_fill_table(self.note_table,self.note_table_data)
 
     """
     person to db
@@ -286,13 +291,20 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # valid?
         if not self.useisvalid(self.ScheduleVisit, "Cannot schedule visit"): return
         #todo: add to calendar or msgerr
+        try :
+          self.ScheduleVisit.add_to_calendar(self.cal,self.disp_model)
+        except Exception as e:
+          self.mkmsg('Failed to add to google calendar; not adding. %s'%str(e))
+          return()
         # catch sql error
+        # N.B. action intentionally empty -- will be set to 'sched'
         if not self.sqlInsertOrShowErr('visit_summary',self.ScheduleVisit.model):
             # todo: remove from calendar if sql failed
             return()
         
         # need to refresh visits
         self.update_visit_table()
+        self.update_note_table()
 
     ###### Notes
     # see generic_fill_table

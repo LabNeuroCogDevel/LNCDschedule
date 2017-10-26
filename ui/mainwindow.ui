@@ -454,6 +454,7 @@
     </property>
    </widget>
   </widget>
+  <widget class="QStatusBar" name="statusbar"/>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
@@ -463,8 +464,31 @@
      <height>19</height>
     </rect>
    </property>
+   <widget class="QMenu" name="menuStudy">
+    <property name="title">
+     <string>new</string>
+    </property>
+    <addaction name="actionStudy"/>
+    <addaction name="actionTask"/>
+    <addaction name="actionVisit_type"/>
+   </widget>
+   <addaction name="menuStudy"/>
   </widget>
-  <widget class="QStatusBar" name="statusbar"/>
+  <action name="actionStudy">
+   <property name="text">
+    <string>study</string>
+   </property>
+  </action>
+  <action name="actionTask">
+   <property name="text">
+    <string>task</string>
+   </property>
+  </action>
+  <action name="actionVisit_type">
+   <property name="text">
+    <string>visit type</string>
+   </property>
+  </action>
  </widget>
  <resources/>
  <connections/>

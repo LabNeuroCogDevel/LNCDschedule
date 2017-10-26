@@ -29,7 +29,7 @@ select
 
 -- name: visit_by_pid
 select
- to_char(vtimestamp,'YYYY-MM-DD'), study, vtype, vscore, age, note, dvisit,dperson,vid
+ to_char(vtimestamp,'YYYY-MM-DD'), study, "action", vtype, vscore, age, note, dvisit,dperson,vid
  from visit_summary
   where pid = %(pid)s
   -- and "action" = 'checkedin'
