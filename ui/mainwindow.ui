@@ -112,7 +112,7 @@
      <string>Schedule</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="Checkin_button">
+   <widget class="QPushButton" name="checkin_button">
     <property name="geometry">
      <rect>
       <x>290</x>

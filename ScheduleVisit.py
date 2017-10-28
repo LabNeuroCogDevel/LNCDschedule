@@ -34,7 +34,7 @@ class ScheduleVisitWindow(QtWidgets.QDialog):
     def add_studies(self,vals): self.study_box.addItems(vals)
 
     def setup(self,pid,name,RA,dt):
-        print('updating contact with %s and %s'%(pid,name))
+        print('updating schedule with %s and %s'%(pid,name))
         self.model['pid'] = pid
         self.model['ra']  = RA
         qdt = QtCore.QDateTime.fromTime_t(dt.timestamp())

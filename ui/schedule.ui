@@ -152,28 +152,6 @@
     <string>Control</string>
    </property>
   </widget>
-  <widget class="QSpinBox" name="dur_hr_spin">
-   <property name="geometry">
-    <rect>
-     <x>320</x>
-     <y>100</y>
-     <width>41</width>
-     <height>23</height>
-    </rect>
-   </property>
-   <property name="suffix">
-    <string/>
-   </property>
-   <property name="maximum">
-    <number>10</number>
-   </property>
-   <property name="value">
-    <number>0</number>
-   </property>
-   <property name="displayIntegerBase">
-    <number>10</number>
-   </property>
-  </widget>
   <widget class="QLabel" name="dur_hr_label">
    <property name="geometry">
     <rect>
@@ -208,6 +186,19 @@
      <width>291</width>
      <height>41</height>
     </rect>
+   </property>
+  </widget>
+  <widget class="QDoubleSpinBox" name="dur_hr_spin">
+   <property name="geometry">
+    <rect>
+     <x>310</x>
+     <y>100</y>
+     <width>51</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="decimals">
+    <number>1</number>
    </property>
   </widget>
  </widget>

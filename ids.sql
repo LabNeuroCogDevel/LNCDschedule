@@ -72,3 +72,26 @@ select distinct(ctype) from contact;
 --name: list_relation
 select distinct(relation) from contact;
 
+--name: all_tasks
+-- collapse tasks into task, vtypes (space sep list, all have just one currently) , studies (space sep list)
+with ts as (
+  select 
+   task, string_agg(distinct(study),' ') as studies 
+   from study_task 
+   group by task
+ )
+ select 
+   task.task,
+   studies,
+   string_agg(vtypes,' ') as modes
+  from task 
+  natural join jsonb_array_elements_text(modes) as vtypes
+  natural join ts
+  group by task.task, studies
+ 
+
+--name: list_tasks_of_study_vtype
+select distinct(task) from study_task
+ natural join task
+ where study ilike %(study)s
+ and (  modes ? %(vtype)s or modes ? 'Questionnaire' ) 

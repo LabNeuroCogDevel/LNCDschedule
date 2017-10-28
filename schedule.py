@@ -4,7 +4,7 @@ import sys
 sys.path.append('../pull_from_sheets')
 import gcal_serviceAccount 
 import lncdSql
-import AddContact, ScheduleVisit, AddPerson
+import AddContact, ScheduleVisit, AddPerson, CheckinVisit
 from PyQt5 import uic,QtCore, QtWidgets
 import datetime
 import subprocess,re # for whoami
@@ -122,11 +122,23 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
         ### Visit
         ## schedule
+        # init
         self.ScheduleVisit = ScheduleVisit.ScheduleVisitWindow(self)
         self.ScheduleVisit.add_studies(self.study_list)
         self.ScheduleVisit.add_vtypes([ r[0] for r in self.sql.query.list_vtypes() ])
+        # wire
         self.schedule_button.clicked.connect(self.schedule_button_pushed)
         self.ScheduleVisit.accepted.connect(self.schedule_to_db)
+
+        ## checkin
+        # init
+        self.CheckinVisit = CheckinVisit.CheckinVisitWindow(self)
+        all_tasks = self.sql.query.all_tasks() 
+        self.CheckinVisit.set_all_tasks(all_tasks)
+        # wire
+        self.checkin_button.clicked.connect(self.checkin_button_pushed)
+        #self.CheckinVisit.accepted.connect(self.schedule_to_db)
+
 
 
         self.show()
@@ -137,13 +149,6 @@ class ScheduleApp(QtWidgets.QMainWindow):
            self.msg.setIcon(icon)
            self.msg.setText(msg)
            self.msg.show()
-    # used for visit, contact, and notes
-    def generic_fill_table(self,table,res):
-        table.setRowCount(len(res))
-        for row_i,row in enumerate(res):
-            for col_i,value in enumerate(row):
-                item=QtWidgets.QTableWidgetItem(str(value))
-                table.setItem(row_i,col_i,item)
 
     # check with isvalid method
     # used for ScheduleVisit and AddContact
@@ -239,15 +244,15 @@ class ScheduleApp(QtWidgets.QMainWindow):
     def update_visit_table(self):
         pid=self.disp_model['pid']
         self.visit_table_data = self.sql.query.visit_by_pid(pid=pid)
-        self.generic_fill_table(self.visit_table,self.visit_table_data)
+        generic_fill_table(self.visit_table,self.visit_table_data)
 
     def update_contact_table(self):
         self.contact_table_data=self.sql.query.contact_by_pid(pid=self.disp_model['pid'])
-        self.generic_fill_table(self.contact_table,self.contact_table_data)
+        generic_fill_table(self.contact_table,self.contact_table_data)
     def update_note_table(self):
         pid=self.disp_model['pid']
         self.note_table_data = self.sql.query.note_by_pid(pid=pid)
-        self.generic_fill_table(self.note_table,self.note_table_data)
+        generic_fill_table(self.note_table,self.note_table_data)
 
     """
     person to db
@@ -307,6 +312,23 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # need to refresh visits
         self.update_visit_table()
         self.update_note_table()
+
+    ## checkin
+    def checkin_button_pushed(self):
+        pid=self.disp_model['pid']
+        fullname=self.disp_model['fullname']
+        study='CogR01' #TODO update
+        vtype='Scan'
+        if study==None or vtype==None:
+            self.mkmsg('pick a visit with a study and visit type')
+            return()
+        if pid == None or fullname == None:
+            self.mkmsg('select a person before trying to checkin (howd you get here?)')
+            return()
+        #(self,pid,name,RA,study,study_tasks)
+        study_tasks = [ x[0] for x in self.sql.query.list_tasks_of_study_vtype(study=study,vtype=vtype) ]
+        self.CheckinVisit.setup(pid,fullname,self.RA,study,study_tasks)
+        self.CheckinVisit.show()
 
     ###### Notes
     # see generic_fill_table
