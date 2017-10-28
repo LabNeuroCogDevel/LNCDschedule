@@ -30,15 +30,13 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # data store
         self.disp_model = {'pid': None, 'fullname': None, 'age': None,'sex': None}
 
-        # message box for warnings/errors
-        self.msg=QtWidgets.QMessageBox()
 
         # get other modules for querying db and calendar
         try:
           self.cal = gcal_serviceAccount.LNCDcal()
           self.sql = lncdSql.lncdSql() # need ~/.pgpass
         except Exception as e:
-          self.mkmsg("ERROR: app will not work!\n%s"%str(e))
+          mkmsg("ERROR: app will not work!\n%s"%str(e))
           return
 
         ## who is using the app?
@@ -144,18 +142,13 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.show()
 
     ###### Generic
-    # message to warn about issues
-    def mkmsg(self,msg,icon=QtWidgets.QMessageBox.Critical):
-           self.msg.setIcon(icon)
-           self.msg.setText(msg)
-           self.msg.show()
 
     # check with isvalid method
     # used for ScheduleVisit and AddContact
     def useisvalid(self,obj,msgdesc):
         check=obj.isvalid()
         if(not check['valid']):
-            self.mkmsg('%s: %s'%(msgdesc,check['msg']) )
+            mkmsg('%s: %s'%(msgdesc,check['msg']) )
             return(False)
         return(True)
         
@@ -188,7 +181,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         try:
           lunaid=int(lunaid)
         except:
-            self.mkmsg("LunaID should only be numbers")
+            mkmsg("LunaID should only be numbers")
             return
         res = self.sql.query.lunaid_search(lunaid=lunaid)
         self.fill_search_table(res)
@@ -261,7 +254,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         print(self.AddPerson.persondata)
         # pop up window and return if not valid
         if(not self.AddPerson.isvalid() ):
-           self.mkmsg("Missing data must be provided before we can continue adding the person")
+           mkmsg("Missing data must be provided before we can continue adding the person")
            return 
 
         self.fullname.setText( '%(fname)s %(lname)s'%self.AddPerson.persondata)
@@ -272,7 +265,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
           data['adddate'] = datetime.datetime.now()
           self.sql.insert('person',data)
         except Exception as e:
-          self.mkmsg(str(e))
+          mkmsg(str(e))
           return
 
         self.search_people_by_name(self.fullname.text())
@@ -285,10 +278,10 @@ class ScheduleApp(QtWidgets.QMainWindow):
         pid=self.disp_model['pid']
         fullname=self.disp_model['fullname']
         if d==None or t==None:
-            self.mkmsg('set a date and time before scheduling')
+            mkmsg('set a date and time before scheduling')
             return()
         if pid == None or fullname == None:
-            self.mkmsg('select a person before trying to schedule')
+            mkmsg('select a person before trying to schedule')
             return()
         dt=datetime.datetime.combine(d, t)
         self.ScheduleVisit.setup(pid,fullname,self.RA,dt)
@@ -301,7 +294,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         try :
           self.ScheduleVisit.add_to_calendar(self.cal,self.disp_model)
         except Exception as e:
-          self.mkmsg('Failed to add to google calendar; not adding. %s'%str(e))
+          mkmsg('Failed to add to google calendar; not adding. %s'%str(e))
           return()
         # catch sql error
         # N.B. action intentionally empty -- will be set to 'sched'
@@ -320,14 +313,14 @@ class ScheduleApp(QtWidgets.QMainWindow):
         study='CogR01' #TODO update
         vtype='Scan'
         if study==None or vtype==None:
-            self.mkmsg('pick a visit with a study and visit type')
+            mkmsg('pick a visit with a study and visit type')
             return()
         if pid == None or fullname == None:
-            self.mkmsg('select a person before trying to checkin (howd you get here?)')
+            mkmsg('select a person before trying to checkin (howd you get here?)')
             return()
         #(self,pid,name,RA,study,study_tasks)
         study_tasks = [ x[0] for x in self.sql.query.list_tasks_of_study_vtype(study=study,vtype=vtype) ]
-        self.CheckinVisit.setup(pid,fullname,self.RA,study,study_tasks)
+        self.CheckinVisit.setup(pid,fullname,self.RA,study,vtype,study_tasks)
         self.CheckinVisit.show()
 
     ###### Notes
@@ -417,7 +410,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
           self.sql.insert(table,d)
           return(True)
         except Exception as e:
-          self.mkmsg(str(e))
+          mkmsg(str(e))
           return(False)
 
 # actually launch everything
