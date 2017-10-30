@@ -1,5 +1,7 @@
 from PyQt5 import uic,QtCore, QtWidgets,QtGui
 from LNCDutils import  *
+import json
+import pprint
 
 """
 This class provides a window for scheduling visit information
@@ -14,8 +16,9 @@ class CheckinVisitWindow(QtWidgets.QDialog):
 
         # what data do we need
         # action intentionally empty -- will be set to 'sched'
-        data_columns=['vscore','note','lunaid','ra','pid','tasks']
+        data_columns=['vscore','note','lunaid','ra','vid','tasks']
         self.model = { k: None for k in data_columns }
+        self.hasLuna = False
 
         # change this to true when validation works
         self._want_to_close = False
@@ -35,9 +38,17 @@ class CheckinVisitWindow(QtWidgets.QDialog):
         self.all_tasks_table.itemClicked.connect(self.move_from_all)
         self.tasks_list.itemClicked.connect(self.remove_task)
 
+        self.test_button.clicked.connect(self.checkormsg )
+
         ## stop from closing if things are not okay
         #self.buttonBox.clicked.connect(self.isvalid)
 
+    def checkormsg(self):
+        check = self.isvalid()
+        if not check['valid']:
+          mkmsg('not all checkin data is valid:\n%s'%check['msg'])
+        return(check['valid'])
+        
     # NOTE: okay button can only be pressed once, enter still works
     @QtCore.pyqtSlot()
     def accept(self):
@@ -45,9 +56,10 @@ class CheckinVisitWindow(QtWidgets.QDialog):
         check = self.isvalid()
         if check['valid']:
           self.done(QtWidgets.QDialog.Accepted)
+          return(QtWidgets.QDialog.Accepted)
         else:
           mkmsg('not all checkin data is valid:\n%s'%check['msg'])
-        return(QtWidgets.QDialog.Accepted)
+          return(False)
 
     def move_from_all(self,item):
         rowi=self.all_tasks_table.row(item)
@@ -77,15 +89,26 @@ class CheckinVisitWindow(QtWidgets.QDialog):
         self.all_tasks_data = all_tasks
         generic_fill_table(self.all_tasks_table,self.all_tasks_data)
 
-    def setup(self,pid,name,RA,study,vtype,study_tasks):
-        print('updating checkin with %s and %s'%(pid,name))
-        self.model['pid'] = pid
+        # checkin_what_data sends: pid,vid,fullname,study,vtype
+        #self.CheckinVisit.setup(checkin_what_data,self.RA,study_tasks)
+    def setup(self,d,RA,study_tasks):
+        # d has keys: pid,vid,fullname,study,vtype
+        print('updating checkin with %(pid)s(%(fullname)s) for %(study)s/%(vtype)s'%d)
+        self.pid = d['pid']
         self.model['ra']  = RA
-        self.who_label.setText(name)
+        self.model['vid'] = d['vid']
+        self.who_label.setText("%s/%s: %s"%(d['study'],d['vtype'],d['fullname']))
         self.tasks_list.insertItems(0,study_tasks)
-        self.study = study
-        self.vtype = vtype
+        self.study = d['study']
+        self.vtype = d['vtype']
         self.all_task_disp()
+        # dont set lunaid if we have one
+        self.hasLuna = d.get('lunaid') != None
+        if self.hasLuna:
+            self.lunaid_edit.setText(str(d['lunaid']))
+            self.lunaid_edit.setDisabled(True)
+        elif d.get('nextluna') != None:
+            self.lunaid_edit.setText(str(d['nextluna']))
 
     def all_task_disp(self):
         # subset data on search
@@ -97,10 +120,10 @@ class CheckinVisitWindow(QtWidgets.QDialog):
 
         # sort all task data relative to study and visit type
         data = sorted(data, key=lambda x: 
-          (self.study in x[1].split(' '),
-           self.vtype in x[2].split(' '),
+          (self.study not in x[1].split(' '),
+           self.vtype not in x[2].replace('Questionnaire','Behavioral').split(' '),
            x[0]
-        ),reverse=True)
+          ),reverse=False)
 
         # re-populate
         generic_fill_table(self.all_tasks_table,data)
@@ -124,12 +147,18 @@ class CheckinVisitWindow(QtWidgets.QDialog):
     optionally be specific
     """
     def allvals(self,key='all'):
-        print('checkin visit: updating %s'%key)
-        if(isOrAll(key,'lunaid')):     self.model['lunaid'] = self.lunaid_edit.text()
-        if(isOrAll(key,'vscore')):    self.model['vscore']  = self.vscore_spin.value()
-        if(isOrAll(key,'note')):       self.model['note']   = self.note_edit.toPlainText()
-        if(isOrAll(key,'tasks')):       self.model['tasks']   = [ self.tasks_list.item(i).text() for i in range(self.tasks_list.count() ) ]
-        # todo collected
+        #print('checkin visit: updating %s'%key)
+        if(isOrAll(key,'lunaid')): self.model['lunaid'] = self.lunaid_edit.text() 
+        if(isOrAll(key,'vscore')): self.model['vscore'] = self.vscore_spin.value()
+        if(isOrAll(key,'note')):   self.model['note']   = self.note_edit.toPlainText()
+        if(isOrAll(key,'tasks')):  self.model['tasks']  = [ self.tasks_list.item(i).text() for i in range(self.tasks_list.count() ) ]
+
+        # set note to none if empty string
+        if self.model['note'] == '': self.model['note']  = None
+
+        # if we already have a lunaid, set model to none
+        # because we dont want to re-insert an ID in the db via visit_checkin_view triggers
+        if self.hasLuna            : self.model['lunaid']= None
 
         
     """
@@ -138,30 +167,72 @@ class CheckinVisitWindow(QtWidgets.QDialog):
     """
     def isvalid(self):
         self.allvals('all')
-        print("checkin visit is valid?\n%s"%str(self.model))
+        print("\ncheckin visit is valid?")
+        pp=pprint.PrettyPrinter(indent=2)
+        pp.pprint(self.model)
         for k in self.model.keys():
             if k == 'note': continue # allow note to be null
+            if k == 'lunaid' and self.hasLuna: continue # allow note to be null
             if self.model[k] == None or self.model[k] == '' or self.model[k] == []:
                 return({'valid':False,'msg':'bad %s'%k})
         return({'valid':True,'msg':'OK'})
     
         
+    def checkin_to_db(self,sql):
+       # use visit_checkin_view insert trigger to update the db:
+       #   insert into visit_checkin_view (vid,ra,vscore,note,ids,tasks) values
+       #   (3893,'testRA',4,'TEST CHECKINNOTE', 
+       #    '[{"etype": "TestID", "id": "9"}, {"etype": "LunaID", "id": "9"}]'::jsonb,
+       #    '["fMRIRestingState","SpatialWorkingMem","ScanSpit"]'::jsonb);
+       #we have self.model:
+       # {'vscore': 4.5, 'ra': 'fakeRA', 'note': 'test', 'lunaid': '99901', 'pid': 1182, 'tasks': ['Ant}
+       # format data for insert
+       d=self.model.copy()
+       del d['lunaid']
+       d['ids'] = json.dumps([{"etype":"LunaID", "id": "%s"%self.model['lunaid'] }])
+       d['tasks'] = json.dumps(self.model['tasks'] )
+
+       # lets see it
+       print("\ninserting into visit_checkin_view:")
+       pp=pprint.PrettyPrinter(indent=2)
+       pp.pprint(d)
+
+       # actually do it
+       sql.insert('visit_checkin_view',d)
+       
+
 
 if __name__ == "__main__":
+# usage:  python3 CheckinVisit.py 3952
     import lncdSql, sys
 
     # fake settings
     pid=0
+    vid=0
+    try: vid = int(sys.argv[1])
+    except: pass
     fullname="FAKE FAKE"
     study='CogR01' #TODO update
     vtype='Scan'
     RA="fakeRA"
+    lunaid=None
 
     # db data
     try:
         sql = lncdSql.lncdSql() # need ~/.pgpass
+        v=sql.query.visit_by_vid(vid=vid)
+        if(vid != 0 and len(v)>0):
+            v=v[0]
+            #pid,study,vtype, "action", vscore, age, note, to_char(vtimestamp,'YYYY-MM-DD') 
+            pid=v[0]; study=v[1];vtype=v[2];
+            fullname="%d-name"%vid
+            p=sql.query.person_by_pid(pid=pid)
+            p=p[0]
+            lunaid=p[1]
+            
         all_tasks = sql.query.all_tasks() 
         study_tasks = [ x[0] for x in sql.query.list_tasks_of_study_vtype(study=study,vtype=vtype) ]
+    # we are just playing around
     except Exception as e:
         print(e) 
         print('no db, using fake data')
@@ -178,9 +249,11 @@ if __name__ == "__main__":
     app= QtWidgets.QApplication(sys.argv)
     window = CheckinVisitWindow()
 
+    window.accepted.connect(lambda : window.checkin_to_db(sql))
     # setup and show
     window.set_all_tasks(all_tasks)
-    window.setup(pid,fullname,RA,study,vtype,study_tasks)
+    d={'pid': pid, 'vid': vid, 'fullname': fullname, 'study': study,'vtype':vtype,'lunaid':lunaid}
+    window.setup(d,RA,study_tasks)
     window.show()
 
     sys.exit(app.exec_())

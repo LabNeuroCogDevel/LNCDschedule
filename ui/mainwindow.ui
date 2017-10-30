@@ -152,7 +152,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>TextLabel</string>
+     <string>Nothing to checkin</string>
     </property>
    </widget>
    <widget class="QLabel" name="schedule_what_label">
@@ -165,7 +165,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>TextLabel</string>
+     <string>Nothing to schedule</string>
     </property>
    </widget>
    <widget class="QTableWidget" name="contact_table">

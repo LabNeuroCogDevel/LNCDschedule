@@ -17,9 +17,9 @@
    <property name="geometry">
     <rect>
      <x>220</x>
-     <y>10</y>
+     <y>40</y>
      <width>81</width>
-     <height>101</height>
+     <height>51</height>
     </rect>
    </property>
    <property name="orientation">
@@ -51,13 +51,16 @@
    <property name="decimals">
     <number>1</number>
    </property>
+   <property name="maximum">
+    <double>5.000000000000000</double>
+   </property>
   </widget>
   <widget class="QLabel" name="who_label">
    <property name="geometry">
     <rect>
      <x>20</x>
      <y>10</y>
-     <width>251</width>
+     <width>281</width>
      <height>20</height>
     </rect>
    </property>
@@ -201,6 +204,35 @@
     <string>search all</string>
    </property>
   </widget>
+  <widget class="QPushButton" name="test_button">
+   <property name="geometry">
+    <rect>
+     <x>440</x>
+     <y>450</y>
+     <width>51</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>test</string>
+   </property>
+  </widget>
+  <zorder>buttonBox</zorder>
+  <zorder>lunaid_edit</zorder>
+  <zorder>who_label</zorder>
+  <zorder>vscore_label</zorder>
+  <zorder>lunaid_label</zorder>
+  <zorder>note_edit</zorder>
+  <zorder>note_label</zorder>
+  <zorder>note_label_2</zorder>
+  <zorder>collected_label</zorder>
+  <zorder>tasks_list</zorder>
+  <zorder>all_tasks_table</zorder>
+  <zorder>line</zorder>
+  <zorder>search_edit</zorder>
+  <zorder>search_all_label</zorder>
+  <zorder>test_button</zorder>
+  <zorder>vscore_spin</zorder>
  </widget>
  <resources/>
  <connections>

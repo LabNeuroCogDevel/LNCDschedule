@@ -27,6 +27,13 @@ select
  limit 100
 -- studies ? %(study)s
 
+--name: person_by_pid
+select * from person_search_view where pid = %(pid)s 
+
+--name: next_luna
+select max(lunaid) from person_search_view where lunaid < 20000
+
+
 -- name: visit_by_pid
 select
  to_char(vtimestamp,'YYYY-MM-DD'), study, "action", vtype, vscore, age, note, dvisit,dperson,vid
@@ -34,6 +41,13 @@ select
   where pid = %(pid)s
   -- and "action" = 'checkedin'
   order by vtimestamp desc
+
+-- name: visit_by_vid
+select
+ pid,study,vtype, "action", vscore, age, note, to_char(vtimestamp,'YYYY-MM-DD') 
+ from visit_summary
+  where vid = %(vid)s
+  -- and "action" = 'checkedin'
 
 -- name: note_by_pid
 select note,dropcode, ndate, vtimestamp, note.ra, vid from note 

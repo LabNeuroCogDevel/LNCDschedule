@@ -20,7 +20,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
         # schedule and checkin data
         self.schedule_what_data = {'fullname': '', 'pid': None, 'date': None, 'time': None}
-        self.checkin_what_data =  {'fullname': '', 'vid': None, 'datetime': None}
+        self.checkin_what_data =  {'fullname': '', 'vid': None, 'datetime': None, 'pid': None,'vtype':None}
         
 
         # load gui (created with qtcreator)
@@ -86,9 +86,10 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.note_table.setHorizontalHeaderLabels(note_columns)
 
         ## visit table
-        visit_columns=['day', 'study', 'action','vtype', 'vscore', 'age', 'note', 'dvisit','dperson','vid']
-        self.visit_table.setColumnCount(len(visit_columns))
-        self.visit_table.setHorizontalHeaderLabels(visit_columns)
+        self.visit_columns=['day', 'study', 'vstatus','vtype', 'vscore', 'age', 'note', 'dvisit','dperson','vid']
+        self.visit_table.setColumnCount(len(self.visit_columns))
+        self.visit_table.setHorizontalHeaderLabels(self.visit_columns)
+        self.visit_table.itemClicked.connect(self.visit_item_select)
 
         # contact table
         contact_columns=['who','cvalue', 'relation', 'nogood', 'added', 'cid']
@@ -135,7 +136,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.CheckinVisit.set_all_tasks(all_tasks)
         # wire
         self.checkin_button.clicked.connect(self.checkin_button_pushed)
-        #self.CheckinVisit.accepted.connect(self.schedule_to_db)
+        self.CheckinVisit.accepted.connect(self.checkin_to_db)
 
 
 
@@ -234,6 +235,24 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.schedule_what_data['fullname']=fullname
         self.update_schedule_what_label()
 
+    def visit_item_select(self,thing):
+        row_i = self.visit_table.currentRow()
+        d     = self.visit_table_data[row_i]
+        vid   = d[self.visit_columns.index('vid')]
+        study = d[self.visit_columns.index('study')]
+        pid     = self.disp_model['pid']
+        fullname= self.disp_model['fullname']
+
+        self.checkin_what_data['vid'] = vid
+        self.checkin_what_data['study'] = study
+        self.checkin_what_data['pid'] = pid
+        self.checkin_what_data['fullname'] = fullname
+        self.checkin_what_data['vtype'] = d[self.visit_columns.index('vtype')]
+        self.checkin_what_data['datetime'] = d[self.visit_columns.index('day')]
+        self.update_checkin_what_label()
+
+
+
     def update_visit_table(self):
         pid=self.disp_model['pid']
         self.visit_table_data = self.sql.query.visit_by_pid(pid=pid)
@@ -297,7 +316,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
           mkmsg('Failed to add to google calendar; not adding. %s'%str(e))
           return()
         # catch sql error
-        # N.B. action intentionally empty -- will be set to 'sched'
+        # N.B. action(vstatus) intentionally empty -- will be set to 'sched'
         if not self.sqlInsertOrShowErr('visit_summary',self.ScheduleVisit.model):
             # todo: remove from calendar if sql failed
             return()
@@ -308,20 +327,41 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
     ## checkin
     def checkin_button_pushed(self):
-        pid=self.disp_model['pid']
-        fullname=self.disp_model['fullname']
-        study='CogR01' #TODO update
-        vtype='Scan'
+        pid=self.checkin_what_data['pid']
+        vid=self.checkin_what_data['vid']
+        fullname=self.checkin_what_data['fullname']
+        study = self.checkin_what_data['study']
+        vtype = self.checkin_what_data['vtype']
         if study==None or vtype==None:
             mkmsg('pick a visit with a study and visit type')
             return()
         if pid == None or fullname == None:
             mkmsg('select a person before trying to checkin (howd you get here?)')
             return()
+
+        # que up a new lunaid
+        # N.B. we never undo this, but check is always for lunaid first
+        if self.checkin_what_data.get('lunaid') == None:
+           self.checkin_what_data['nextluna'] = (self.sql.query.next_luna())[0][0] + 1
+
         #(self,pid,name,RA,study,study_tasks)
         study_tasks = [ x[0] for x in self.sql.query.list_tasks_of_study_vtype(study=study,vtype=vtype) ]
-        self.CheckinVisit.setup(pid,fullname,self.RA,study,vtype,study_tasks)
+        print("launching %(fullname)s for %(study)s/%(vtype)s"%self.checkin_what_data)
+        # checkin_what_data sends: pid,vid,fullname,study,vtype
+        self.CheckinVisit.setup(self.checkin_what_data,self.RA,study_tasks)
         self.CheckinVisit.show()
+
+    """
+    wrap CheckinVisit's own checkin_to_db to add error msg and refresh visits
+    """
+    def checkin_to_db(self):
+        try:
+          self.update_visit_table()
+        except Exception as e:
+          print(e)
+          mkmsg('checkin failed!\n%s'%e)
+        self.CheckinVisit.checkin_to_db(self.sql)
+        # todo: update person search to get lunaid if updated
 
     ###### Notes
     # see generic_fill_table
@@ -332,7 +372,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.schedule_what_label.setText(text)
     def update_checkin_what_label(self):
         text = "%(fullname)s - %(datetime)s"%(self.checkin_what_data)
-        self.schedule_checkin_label.setText(text)
+        self.checkin_what_label.setText(text)
 
     def update_checkin_time(self):
         time = self.timeEdit.dateTime().time().toPyTime()
