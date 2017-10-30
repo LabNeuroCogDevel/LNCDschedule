@@ -1,13 +1,23 @@
 import psycopg2, psycopg2.sql
 import pyesql
+import configparser
 
 class lncdSql():
-    def __init__(self):
+    def __init__(self,config):
+        # read config.ini file like
+        # [SQL]
+        #  host=...
+        #  dbname=...
+        #  ..
+        cfg = configparser.ConfigParser()
+        cfg.read(config)
+        constr = 'dbname=%(dbname)s user=%(user)s host=%(host)s password=%(password)s'%cfg._sections['SQL']
+        #print('connecting with %s'%constr)
         #self.conn = psycopg2.connect('dbname=lncddb user=lncd host=arnold.wpic.upmc.edu')
-        self.conn = psycopg2.connect('dbname=lncddb user=lncd host=localhost')
+        self.conn = psycopg2.connect(constr)
         self.conn.set_session(autocommit=True)
 
-        sqls = pyesql.parse_file('./ids.sql')
+        sqls = pyesql.parse_file('./queries.sql')
         self.query = sqls(self.conn)
         #a=self.query.name_search(fullname='%Foran%')
 

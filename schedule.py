@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 
 import sys
-sys.path.append('../pull_from_sheets')
-import gcal_serviceAccount 
+import LNCDcal
 import lncdSql
 import AddContact, ScheduleVisit, AddPerson, CheckinVisit
 from PyQt5 import uic,QtCore, QtWidgets
@@ -13,6 +12,7 @@ from LNCDutils import  *
 # google reports UTC, we are EST or EDT. get the diff between google and us
 launchtime=int(datetime.datetime.now().strftime('%s'))
 tzfromutc = datetime.datetime.fromtimestamp(launchtime) - datetime.datetime.utcfromtimestamp(launchtime)
+
 
 class ScheduleApp(QtWidgets.QMainWindow):
     def __init__(self):
@@ -33,8 +33,8 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
         # get other modules for querying db and calendar
         try:
-          self.cal = gcal_serviceAccount.LNCDcal()
-          self.sql = lncdSql.lncdSql() # need ~/.pgpass
+          self.cal = LNCDcal.LNCDcal('config.ini')
+          self.sql = lncdSql.lncdSql('config.ini') # need ~/.pgpass
         except Exception as e:
           mkmsg("ERROR: app will not work!\n%s"%str(e))
           return
@@ -455,6 +455,10 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
 # actually launch everything
 if __name__ == '__main__':
+    # paths relative to where files are
+    import os
+    os.chdir(os.path.dirname(os.path.realpath(__file__)))
+
     app= QtWidgets.QApplication(sys.argv)
     window = ScheduleApp()
     sys.exit(app.exec_())
