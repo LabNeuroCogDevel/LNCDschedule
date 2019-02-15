@@ -14,7 +14,7 @@ launchtime=int(datetime.datetime.now().strftime('%s'))
 tzfromutc = datetime.datetime.fromtimestamp(launchtime) - datetime.datetime.utcfromtimestamp(launchtime)
 
 
-class ScheduleApp(QtWidgets.QMainWindow,):
+class ScheduleApp(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
 
