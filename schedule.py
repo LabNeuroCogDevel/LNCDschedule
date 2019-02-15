@@ -4,7 +4,7 @@ import sys
 import LNCDcal
 import lncdSql
 import AddContact, ScheduleVisit, AddPerson, CheckinVisit
-from PyQt5 import uic,QtCore, QtWidgets
+from PyQt5 import uic, QtCore, QtGui, QtWidgets
 import datetime
 import subprocess,re # for whoami
 from LNCDutils import  *
@@ -14,7 +14,7 @@ launchtime=int(datetime.datetime.now().strftime('%s'))
 tzfromutc = datetime.datetime.fromtimestamp(launchtime) - datetime.datetime.utcfromtimestamp(launchtime)
 
 
-class ScheduleApp(QtWidgets.QMainWindow):
+class ScheduleApp(QtWidgets.QMainWindow,):
     def __init__(self):
         super().__init__()
 
@@ -29,7 +29,6 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
         # data store
         self.disp_model = {'pid': None, 'fullname': None, 'age': None,'sex': None}
-
 
         # get other modules for querying db and calendar
         try:
@@ -202,7 +201,10 @@ class ScheduleApp(QtWidgets.QMainWindow):
     expected columns are from pep_columns (8)
     res is a list of vectors(8) from sql query
     """ 
+
+
     def fill_search_table(self,res):
+        count = 0
         self.people_table_data = res
         self.people_table.setRowCount(len(res))
         # seems like we need to fill each item individually
@@ -212,6 +214,19 @@ class ScheduleApp(QtWidgets.QMainWindow):
                 item=QtWidgets.QTableWidgetItem(str(value))
                 self.people_table.setItem(row_i,col_i,item)
 
+        #Change the color after the textes have been successfully inserted.
+        for row_i,row in enumerate(res):
+            if (row[6] == "subject"):
+                for j in range(self.people_table.columnCount()):
+                    self.people_table.item(count, j).setBackground(QtGui.QColor(240, 128, 128))
+                     #Subject titled red
+
+            if(row[6] == "visit"):
+                for j in range(self.people_table.columnCount()):
+                    self.people_table.item(count, j).setBackground(QtGui.QColor(240, 230, 140)) 
+                    #visit titled yellow
+
+            count = count + 1
 
     def people_item_select(self,thing):
         row_i =self.people_table.currentRow()
