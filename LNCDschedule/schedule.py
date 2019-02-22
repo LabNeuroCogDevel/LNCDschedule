@@ -3,7 +3,7 @@
 import sys
 import LNCDcal
 import lncdSql
-import AddContact, ScheduleVisit, AddPerson, CheckinVisit
+import AddNotes, AddContact, ScheduleVisit, AddPerson, CheckinVisit
 from PyQt5 import uic, QtCore, QtGui, QtWidgets
 import datetime
 import subprocess,re # for whoami
@@ -14,7 +14,7 @@ launchtime=int(datetime.datetime.now().strftime('%s'))
 tzfromutc = datetime.datetime.fromtimestamp(launchtime) - datetime.datetime.utcfromtimestamp(launchtime)
 
 
-class ScheduleApp(QtWidgets.QMainWindow,):
+class ScheduleApp(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
 
@@ -117,6 +117,19 @@ class ScheduleApp(QtWidgets.QMainWindow,):
         # connect it up
         self.add_contact_button.clicked.connect(self.add_contact_pushed)
         self.AddContact.accepted.connect(self.add_contact_to_db)
+
+        ## add notes
+        self.AddNotes = AddNotes.AddNoteWindow(self)
+        #Do the autocomplete later
+        self.add_notes_button.clicked.connect(self.add_notes_pushed)
+        self.AddNotes.accepted.connect(self.add_notes_to_db)
+
+        #connect it up
+
+        self.add_notes_button.clicked.connect(self.add_notes_pushed)
+        #self.AddNotes.accepted.connect(self.add_no_to_db)
+
+
 
         ### Visit
         ## schedule
@@ -276,9 +289,11 @@ class ScheduleApp(QtWidgets.QMainWindow,):
     def update_contact_table(self):
         self.contact_table_data=self.sql.query.contact_by_pid(pid=self.disp_model['pid'])
         generic_fill_table(self.contact_table,self.contact_table_data)
+
+
     def update_note_table(self):
-        pid=self.disp_model['pid']
-        self.note_table_data = self.sql.query.note_by_pid(pid=pid)
+        #pid=self.disp_model['pid']
+        self.note_table_data = self.sql.query.note_by_pid(pid=self.disp_model['pid'])
         generic_fill_table(self.note_table,self.note_table_data)
 
     """
@@ -448,6 +463,11 @@ class ScheduleApp(QtWidgets.QMainWindow,):
         self.AddContact.set_contact(self.disp_model['pid'],self.disp_model['fullname'])
         self.AddContact.show()
 
+    def add_notes_pushed(self):
+        #self.Addnotes.setpersondata(d)
+        self.AddNotes.set_note(self.disp_model['pid'],self.disp_model['fullname'])
+        self.AddNotes.show()
+
     # self.AddContact.accepted.connect(self.add_contact_to_db)
     def add_contact_to_db(self):
         # do we have good input?
@@ -456,8 +476,20 @@ class ScheduleApp(QtWidgets.QMainWindow,):
         # catch sql error
         data=self.AddContact.contact_model
         data['added'] = datetime.datetime.now()
+        #The contact is referring to the table in debeaver.
         self.sqlInsertOrShowErr('contact',data)
         self.update_contact_table()
+
+    def add_notes_to_db(self):
+        #Error check
+         if not self.useisvalid(self.AddNotes, "Cannot add note"): return
+
+
+         data = self.AddNotes.notes_model
+        #print(111111)
+         self.sqlInsertOrShowErr('note', data)
+         #print(222222)
+         self.update_note_table()
 
     def sqlInsertOrShowErr(self,table,d):
         try:
