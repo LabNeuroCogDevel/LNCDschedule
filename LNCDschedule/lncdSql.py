@@ -11,7 +11,7 @@ class lncdSql():
         #  ..
         cfg = configparser.ConfigParser()
         cfg.read(config)
-        constr = 'dbname=%(dbname)s user=%(user)s host=%(host)s password=%(password)s'%cfg._sections['SQL']
+        constr = 'dbname=%(dbname)s user=%(user)s host=%(host)s port=%(port)s'%cfg._sections['SQL']
         #print('connecting with %s'%constr)
         #self.conn = psycopg2.connect('dbname=lncddb user=lncd host=arnold.wpic.upmc.edu')
         self.conn = psycopg2.connect(constr)

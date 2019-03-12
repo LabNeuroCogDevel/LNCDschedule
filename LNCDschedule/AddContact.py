@@ -39,6 +39,7 @@ class AddContactWindow(QtWidgets.QDialog):
     set data from gui edit value
     optionally be specific
     """
+    # all shows all the values in the column specified.
     def allvals(self,key='all'):
         print('contact: updating %s'%key)
         if(key in ['ctype'   ,'all']): self.contact_model['ctype']    = comboval(self.ctype_box)
@@ -61,5 +62,3 @@ class AddContactWindow(QtWidgets.QDialog):
         # TODO: check dob is not today
         self._want_to_close = True
         return({'valid':True,'msg':'OK'})
-    
-        
