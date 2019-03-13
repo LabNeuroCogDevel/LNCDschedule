@@ -6,7 +6,7 @@ import lncdSql
 import AddNotes, AddContact, ScheduleVisit, AddPerson, CheckinVisit
 from PyQt5 import uic, QtCore, QtGui, QtWidgets
 import datetime
-import subprocess,re # for whoami
+import subprocess, re  # for whoami
 from LNCDutils import  *
 
 # google reports UTC, we are EST or EDT. get the diff between google and us
@@ -128,8 +128,6 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.AddNotes.accepted.connect(self.add_nid_vid_to_db)
         #connect it up
 
-
-
         ### Visit
         ## schedule
         # init
@@ -211,8 +209,6 @@ class ScheduleApp(QtWidgets.QMainWindow):
     expected columns are from pep_columns (8)
     res is a list of vectors(8) from sql query
     """ 
-
-
     def fill_search_table(self,res):
         count = 0
         self.people_table_data = res
@@ -286,7 +282,6 @@ class ScheduleApp(QtWidgets.QMainWindow):
     def update_contact_table(self):
         self.contact_table_data=self.sql.query.contact_by_pid(pid=self.disp_model['pid'])
         generic_fill_table(self.contact_table,self.contact_table_data)
-
 
     def update_note_table(self):
         #pid=self.disp_model['pid']
@@ -428,35 +423,35 @@ class ScheduleApp(QtWidgets.QMainWindow):
     fill the calendar table with goolge calendar items from search result
     calres is list of dict with keys ['summary', 'note', 'calid', 'starttime', 'creator', 'dur_hr', 'start']
     """
-    def fill_calendar_table(self,calres):
+    def fill_calendar_table(self, calres):
         self.cal_table_data = calres
         self.cal_table.setRowCount(len(calres))
-        for row_i,calevent in enumerate(calres):
-           # google uses UTC, but we are in EST or EDT
-           #st   = str(calevent['starttime'] + tzfromutc)
-           #st=str(calevent['starttime'])
-           m_d=calevent['starttime'].strftime('%m-%d')
-           tm=calevent['starttime'].strftime('%H:%M')
-           self.cal_table.setItem(row_i, 0, QtWidgets.QTableWidgetItem(m_d) )
-           self.cal_table.setItem(row_i, 1, QtWidgets.QTableWidgetItem(tm) )
-           eventname = calevent['summary']
-           self.cal_table.setItem(row_i, 2, QtWidgets.QTableWidgetItem(eventname) )
+        for row_i, calevent in enumerate(calres):
+            # google uses UTC, but we are in EST or EDT
+            #st   = str(calevent['starttime'] + tzfromutc)
+            #st=str(calevent['starttime'])
+            m_d=calevent['starttime'].strftime('%m-%d')
+            tm=calevent['starttime'].strftime('%H:%M')
+            self.cal_table.setItem(row_i, 0, QtWidgets.QTableWidgetItem(m_d) )
+            self.cal_table.setItem(row_i, 1, QtWidgets.QTableWidgetItem(tm) )
+            eventname = calevent['summary']
+            self.cal_table.setItem(row_i, 2, QtWidgets.QTableWidgetItem(eventname) )
 
     """
     when we hit an item in the calendar table, update
      * potential checkin data and label
-     * potental schedual data and srings 
+     * potental schedual data and srings
     """
     def cal_item_select(self):
         pass
         row_i =self.cal_table.currentRow()
         d = self.cal_table_data[row_i]
 
+
     ### CONTACTS
-    
     # self.add_contact_button.clicked.connect(self.add_contact_pushed)
     def add_contact_pushed(self):
-        #self.AddContact.setpersondata(d)
+        # self.AddContact.setpersondata(d)
         self.AddContact.set_contact(self.disp_model['pid'],self.disp_model['fullname'])
         self.AddContact.show()
 
@@ -468,10 +463,11 @@ class ScheduleApp(QtWidgets.QMainWindow):
     # self.AddContact.accepted.connect(self.add_contact_to_db)
     def add_contact_to_db(self):
         # do we have good input?
-        if not self.useisvalid(self.AddContact, "Cannot add contact"): return
+        if not self.useisvalid(self.AddContact, "Cannot add contact"):
+            return
 
         # catch sql error
-        data=self.AddContact.contact_model
+        data = self.AddContact.contact_model
         data['added'] = datetime.datetime.now()
         #The contact is referring to the table in debeaver.
         self.sqlInsertOrShowErr('contact',data)
@@ -513,12 +509,13 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
     def sqlInsertOrShowErr(self,table,d):
         try:
-          #self.sql.query.insert_person(**(self.AddPerson.persondata))
-          self.sql.insert(table,d)
-          return(True)
+            # self.sql.query.insert_person(**(self.AddPerson.persondata))
+            self.sql.insert(table, d)
+            return(True)
         except Exception as e:
-          mkmsg(str(e))
-          return(False)
+            mkmsg(str(e))
+            return(False)
+
 
     def construct_drop_down_box(self):
 
@@ -541,6 +538,6 @@ if __name__ == '__main__':
     import os
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
-    app= QtWidgets.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
     window = ScheduleApp()
     sys.exit(app.exec_())

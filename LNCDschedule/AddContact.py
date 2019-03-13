@@ -64,5 +64,3 @@ class AddContactWindow(QtWidgets.QDialog):
         # TODO: check dob is not today
         self._want_to_close = True
         return({'valid':True,'msg':'OK'})
-    
-        
