@@ -1,9 +1,0 @@
-*~
-.*.swp
-__pycache__/
-*\#
-.\#*
-*.autosave
-.DS_Store
-*.ini
-*.p12
