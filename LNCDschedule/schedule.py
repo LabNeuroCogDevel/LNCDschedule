@@ -33,7 +33,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # get other modules for querying db and calendar
         try:
           self.cal = LNCDcal.LNCDcal('config.ini')
-          self.sql = lncdSql.lncdSql('config.ini') # need ~/.pgpass
+          self.sql = lncdSql.lncdSql('config.ini')
         except Exception as e:
           mkmsg("ERROR: app will not work!\n%s"%str(e))
           return
@@ -423,7 +423,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         delta =datetime.timedelta(days=5)
         dmin=dt - delta
         dmax=dt + delta
-        res = self.cal.find_in_range(dmin,dmax)
+        res = self.cal.find_in_range(dmin, dmax)
         self.fill_calendar_table(res)
     """
     fill the calendar table with goolge calendar items from search result
