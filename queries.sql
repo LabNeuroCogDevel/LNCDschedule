@@ -64,6 +64,21 @@ select
   where pid = %(pid)s
   order by relation = 'Subject' desc, relation, who
 
+-- name: get_vid
+select
+  pid
+  from visit_summary
+  where pid = %(pid)s
+
+-- name: get_nid
+select 
+  nid
+  from note
+  where pid = %(pid)s
+    and note = %(note)s
+    and ndate = %(ndate)s
+
+
 --name: list_studies
 -- we want to sort studies by the last checkin
 -- but we need to left join incase we have a (new) study with no visits

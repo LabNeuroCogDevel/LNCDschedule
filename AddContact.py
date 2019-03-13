@@ -8,6 +8,7 @@ data in conact_model
 class AddContactWindow(QtWidgets.QDialog):
 
     def __init__(self,parent=None):
+
         columns=['ctype','cvalue','relation','who','pid']
         self.contact_model = { k: None for k in columns }
         super(AddContactWindow,self).__init__(parent)
@@ -39,6 +40,8 @@ class AddContactWindow(QtWidgets.QDialog):
     set data from gui edit value
     optionally be specific
     """
+
+    #all shows all the values in the column specified.
     def allvals(self,key='all'):
         print('contact: updating %s'%key)
         if(key in ['ctype'   ,'all']): self.contact_model['ctype']    = comboval(self.ctype_box)
