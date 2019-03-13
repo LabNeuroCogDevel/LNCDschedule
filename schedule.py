@@ -28,7 +28,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.setWindowTitle('LNCD Scheduler')
 
         # data store
-        self.disp_model = {'pid': None, 'fullname': None, 'age': None,'sex': None}
+        self.disp_model = {'pid': None, 'fullname': None, 'ndate': None, 'age': None,'sex': None}
 
         # get other modules for querying db and calendar
         try:
@@ -118,18 +118,15 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.add_contact_button.clicked.connect(self.add_contact_pushed)
         self.AddContact.accepted.connect(self.add_contact_to_db)
 
-        ## add notes
+        ## add notes and query for pid from visit_summary
         self.AddNotes = AddNotes.AddNoteWindow(self)
+        self.add_notes_button.clicked.connect(self.construct_drop_down_box)
+        self.add_notes_button.clicked.connect(self.query_for_pid)
         #Do the autocomplete later
         self.add_notes_button.clicked.connect(self.add_notes_pushed)
         self.AddNotes.accepted.connect(self.add_notes_to_db)
-
+        self.AddNotes.accepted.connect(self.add_nid_vid_to_db)
         #connect it up
-
-        self.add_notes_button.clicked.connect(self.add_notes_pushed)
-        #self.AddNotes.accepted.connect(self.add_no_to_db)
-
-
 
         ### Visit
         ## schedule
@@ -149,8 +146,6 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # wire
         self.checkin_button.clicked.connect(self.checkin_button_pushed)
         self.CheckinVisit.accepted.connect(self.checkin_to_db)
-
-
 
         self.show()
 
@@ -214,7 +209,6 @@ class ScheduleApp(QtWidgets.QMainWindow):
     expected columns are from pep_columns (8)
     res is a list of vectors(8) from sql query
     """ 
-
     def fill_search_table(self,res):
         count = 0
         self.people_table_data = res
@@ -462,8 +456,8 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.AddContact.show()
 
     def add_notes_pushed(self):
-        # self.Addnotes.setpersondata(d)
-        self.AddNotes.set_note(self.disp_model['pid'],self.disp_model['fullname'])
+        #self.Addnotes.setpersondata(d)
+        self.AddNotes.set_note(self.disp_model['pid'],self.disp_model['fullname'], self.disp_model['ndate'])
         self.AddNotes.show()
 
     # self.AddContact.accepted.connect(self.add_contact_to_db)
@@ -475,22 +469,45 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # catch sql error
         data = self.AddContact.contact_model
         data['added'] = datetime.datetime.now()
-        # The contact is referring to the table in debeaver.
-        self.sqlInsertOrShowErr('contact', data)
+        #The contact is referring to the table in debeaver.
+        self.sqlInsertOrShowErr('contact',data)
         self.update_contact_table()
 
     def add_notes_to_db(self):
-        # Error check
-        if not self.useisvalid(self.AddNotes, "Cannot add note"):
-            return
+        #Error check
+         if not self.useisvalid(self.AddNotes, "Cannot add note"): return
 
-        data = self.AddNotes.notes_model
-        # print(111111)
-        self.sqlInsertOrShowErr('note', data)
-        # print(222222)
+         data = self.AddNotes.notes_model
+          #Store the chosen value from the drop down box
+         drop_down_option = self.AddNotes.visit 
+         #Check if something other than None is selected.
+         #if drop_down_option != 'None': 
+         self.AddNotes.get_vid()
+         if(self.AddNotes.ctype_box_2.currentText() == 'NULL'):
+            return
+         self.AddNotes.add_ndate()
+         self.sqlInsertOrShowErr('note', data)
+         self.update_note_table()
+         self.query_for_nid()
+
+    def add_nid_vid_to_db(self):
+        nid_vid_data = self.AddNotes.nid_vid
+        self.sqlInsertOrShowErr('visit_note', nid_vid_data)
         self.update_note_table()
 
-    def sqlInsertOrShowErr(self, table, d):
+    def query_for_pid(self):
+        res = self.sql.query.get_vid(pid = self.disp_model['pid'])
+        #vid should be an array that stores the same vid value of a person due to multiple visits.
+        self.vid = res
+        #print(vid[0]);
+
+    def query_for_nid(self):
+        data = self.AddNotes.notes_model
+        nid = self.sql.query.get_nid(pid = data['pid'], note = data['note'], ndate = data['ndate'])
+        self.AddNotes.nid_vid['nid'] = nid[0][0]
+
+
+    def sqlInsertOrShowErr(self,table,d):
         try:
             # self.sql.query.insert_person(**(self.AddPerson.persondata))
             self.sql.insert(table, d)
@@ -499,6 +516,21 @@ class ScheduleApp(QtWidgets.QMainWindow):
             mkmsg(str(e))
             return(False)
 
+
+    def construct_drop_down_box(self):
+
+        myList = list()
+        for j in range(self.visit_table.rowCount()):
+            #Append the vid onto the list
+            myList.append(self.visit_table.item(j,9).text())
+            for i in range(4):
+                #Construct the list by using the value in the table
+                myList.append(self.visit_table.item(j,i).text())
+            #Pass the value to the array(drop_down_value) in the ArrayNotes file
+            self.AddNotes.drop_down_value.append(str(myList).strip('[]'))
+            myList.clear()
+
+            #Get the vid from the table
 
 # actually launch everything
 if __name__ == '__main__':
