@@ -482,9 +482,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
          drop_down_option = self.AddNotes.visit 
          #Check if something other than None is selected.
          #if drop_down_option != 'None': 
-         self.AddNotes.get_vid()
-         if(self.AddNotes.ctype_box_2.currentText() == 'NULL'):
-            return
+         self.AddNotes.get_vid()    
          self.AddNotes.add_ndate()
          self.sqlInsertOrShowErr('note', data)
          self.update_note_table()
@@ -492,8 +490,13 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
     def add_nid_vid_to_db(self):
         nid_vid_data = self.AddNotes.nid_vid
-        self.sqlInsertOrShowErr('visit_note', nid_vid_data)
-        self.update_note_table()
+        if(self.AddNotes.ctype_box_2.currentText() == 'NULL'):
+            nid_vid_data[1] = None
+            nid_vid_data[2] = None
+            self.update_note_table()
+        else:
+            self.sqlInsertOrShowErr('visit_note', nid_vid_data)
+            self.update_note_table()
 
     def query_for_pid(self):
         res = self.sql.query.get_vid(pid = self.disp_model['pid'])

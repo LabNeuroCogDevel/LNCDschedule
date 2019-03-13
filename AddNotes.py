@@ -52,7 +52,7 @@ class AddNoteWindow(QtWidgets.QDialog):
     def get_vid(self):
         #Get the vid value when the ok button is clicked on the set node page.
         if(self.ctype_box_2.currentText() == 'NULL'):
-            return
+            vid = None
         else: 
             vid = (self.ctype_box_2.currentText()).split(',')[0]
             #vid is shown as a string, so we need to remove "'" before converting it to an int
