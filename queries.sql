@@ -63,12 +63,24 @@ select
   from contact
   where pid = %(pid)s
   order by relation = 'Subject' desc, relation, who
-
+-- name: get_person
+select
+  fullname
+  from person_search_view
+  where pid = %(pid)s
 -- name: get_vid
 select
   pid
   from visit_summary
   where pid = %(pid)s
+
+-- name: get_pid
+select
+  pid
+  from visit_summary
+  where vtimestamp = %(vtimestamp)s
+    and study like %(study)s
+    and floor(age)::int = %(age)s
 
 -- name: get_nid
 select 
@@ -77,6 +89,8 @@ select
   where pid = %(pid)s
     and note = %(note)s
     and ndate = %(ndate)s
+
+
 
 
 --name: list_studies

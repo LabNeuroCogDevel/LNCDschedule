@@ -136,9 +136,9 @@ class CheckinVisitWindow(QtWidgets.QDialog):
             tbltype   = self.all_tasks_table.item(rowi,2).text()
             # blue if expected, red if not in selected tasks, but is in study
             if tblitem in self.model['tasks']:
-              self.all_tasks_table.item(rowi,0).setBackground(QtGui.QColor('blue'))
+              self.all_tasks_table.item(rowi,0).setBackground(QtGui.QColor('#87CEEB'))
             elif tblstudy == self.study:
-              self.all_tasks_table.item(rowi,0).setBackground(QtGui.QColor('orange'))
+              self.all_tasks_table.item(rowi,0).setBackground(QtGui.QColor('#FFE4B5'))
 
              
             #if self.all_tasks_table.

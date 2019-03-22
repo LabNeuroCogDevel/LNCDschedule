@@ -316,6 +316,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
     def schedule_button_pushed(self):
         d=self.schedule_what_data['date'] 
         t=self.schedule_what_data['time']
+        #Got the pid ID for the person who scheduled.
         pid=self.disp_model['pid']
         fullname=self.disp_model['fullname']
         if d==None or t==None:
@@ -446,6 +447,31 @@ class ScheduleApp(QtWidgets.QMainWindow):
         pass
         row_i =self.cal_table.currentRow()
         d = self.cal_table_data[row_i]
+        #fix the current date to retrieve the year from the calendar
+        cal_desc =  self.cal_table.item(row_i,2).text()
+        print(cal_desc)
+        current_date = '2019-' + self.cal_table.item(row_i,0).text()
+        current_time = self.cal_table.item(row_i,1).text()
+        current_date_time = current_date + ' '+ current_time+':00'
+        current_study = self.cal_table.item(row_i,2).text().split('/')[0]
+        current_age = re.match('(\w+)/(\w+) x(\d+) (\d+)yo(\w)',cal_desc)
+        if current_age:
+            current_age=current_age.group(4)
+        current_gendar = self.cal_table.item(row_i,2).text().split(' ')[2][-1:]
+
+        res = self.sql.query.get_pid (vtimestamp = current_date_time, study = current_study, age = int(current_age))
+
+        print(res)
+
+        if(len(res) == 0 ):
+            return
+        self.disp_model['pid'] = res[0][0]
+        self.schedule_what_data['pid'] = res[0][0]
+
+        self.update_visit_table()
+        self.update_contact_table()
+        self.update_note_table()
+        self.schedule_what_label.setText(self.sql.query.get_person(pid = res[0][0])[0][0])
 
 
     ### CONTACTS
@@ -502,7 +528,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         res = self.sql.query.get_vid(pid = self.disp_model['pid'])
         #vid should be an array that stores the same vid value of a person due to multiple visits.
         self.vid = res
-        #print(vid[0]);
+        #print(vid);
 
     def query_for_nid(self):
         data = self.AddNotes.notes_model
