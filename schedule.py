@@ -20,7 +20,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
         # schedule and checkin data
         self.schedule_what_data = {'fullname': '', 'pid': None, 'date': None, 'time': None}
-        self.checkin_what_data =  {'fullname': '', 'vid': None, 'datetime': None, 'pid': None,'vtype':None}
+        self.checkin_what_data =  {'fullname': '', 'vid': None, 'datetime': None, 'pid': None,'vtype':None, 'study':None}
         
 
         # load gui (created with qtcreator)
@@ -83,17 +83,23 @@ class ScheduleApp(QtWidgets.QMainWindow):
         note_columns=['note','dropcode','ndate','vtimestamp','ra','vid']
         self.note_table.setColumnCount(len(note_columns))
         self.note_table.setHorizontalHeaderLabels(note_columns)
+        #Make the note_table uneditable
+        self.note_table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
 
         ## visit table
         self.visit_columns=['day', 'study', 'vstatus','vtype', 'vscore', 'age', 'note', 'dvisit','dperson','vid']
         self.visit_table.setColumnCount(len(self.visit_columns))
         self.visit_table.setHorizontalHeaderLabels(self.visit_columns)
+        #Make the visit table uneditable
+        self.visit_table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
         self.visit_table.itemClicked.connect(self.visit_item_select)
 
         # contact table
         contact_columns=['who','cvalue', 'relation', 'nogood', 'added', 'cid']
         self.contact_table.setColumnCount(len(contact_columns))
         self.contact_table.setHorizontalHeaderLabels(contact_columns)
+        #Make the contact_table uneditable
+        self.contact_table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
 
         # schedule time widget
         self.timeEdit.timeChanged.connect(self.update_checkin_time)
@@ -117,6 +123,9 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # connect it up
         self.add_contact_button.clicked.connect(self.add_contact_pushed)
         self.AddContact.accepted.connect(self.add_contact_to_db)
+
+        #Change the wrong cvalue if needed.
+        #self.edit_contact_button.clicked.connect()
 
         ## add notes and query for pid from visit_summary
         self.AddNotes = AddNotes.AddNoteWindow(self)
@@ -449,30 +458,43 @@ class ScheduleApp(QtWidgets.QMainWindow):
         d = self.cal_table_data[row_i]
         #fix the current date to retrieve the year from the calendar
         cal_desc =  self.cal_table.item(row_i,2).text()
-        print(cal_desc)
         current_date = '2019-' + self.cal_table.item(row_i,0).text()
         current_time = self.cal_table.item(row_i,1).text()
         current_date_time = current_date + ' '+ current_time+':00'
         current_study = self.cal_table.item(row_i,2).text().split('/')[0]
+        current_vtype = (self.cal_table.item(row_i,2).text().split('/')[1].split(' '))[0]
         current_age = re.match('(\w+)/(\w+) x(\d+) (\d+)yo(\w)',cal_desc)
         if current_age:
             current_age=current_age.group(4)
         current_gendar = self.cal_table.item(row_i,2).text().split(' ')[2][-1:]
 
         res = self.sql.query.get_pid (vtimestamp = current_date_time, study = current_study, age = int(current_age))
-
-        print(res)
-
         if(len(res) == 0 ):
             return
-        self.disp_model['pid'] = res[0][0]
         self.schedule_what_data['pid'] = res[0][0]
 
         self.update_visit_table()
         self.update_contact_table()
         self.update_note_table()
-        self.schedule_what_label.setText(self.sql.query.get_person(pid = res[0][0])[0][0])
 
+        self.schedule_what_data['pid'] = res[0][0]
+        self.schedule_what_data['fullname'] = self.sql.query.get_person(pid = res[0][0])[0][0]
+
+        #Update date for schedule.
+        self.disp_model['pid'] = res[0][0]
+        self.disp_model['fullname'] = self.sql.query.get_person(pid = res[0][0])[0][0]
+        self.disp_model['age'] = int(current_age)
+        self.disp_model['gender'] = current_gendar
+
+        self.update_schedule_what_label()
+
+        #Update the checkin button information
+        self.checkin_what_data['study'] = current_study
+        self.checkin_what_data['vtype'] = current_vtype
+        self.checkin_what_data['fullname'] = self.sql.query.get_person(pid = res[0][0])[0][0]
+        self.checkin_what_data['pid'] = res[0][0]
+        self.checkin_what_data['vid'] = res[0][1]
+ 
 
     ### CONTACTS
     # self.add_contact_button.clicked.connect(self.add_contact_pushed)
