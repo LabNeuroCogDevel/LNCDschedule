@@ -7,7 +7,8 @@ import AddNotes, AddContact, ScheduleVisit, AddPerson, CheckinVisit
 from PyQt5 import uic, QtCore, QtGui, QtWidgets
 import datetime
 import subprocess, re  # for whoami
-from LNCDutils import  *
+from LNCDutils import mkmsg
+from LNCDutils import *
 
 # google reports UTC, we are EST or EDT. get the diff between google and us
 launchtime=int(datetime.datetime.now().strftime('%s'))
@@ -234,17 +235,20 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
             count = count + 1
 
-    def people_item_select(self,thing):
-        row_i =self.people_table.currentRow()
+    def people_item_select(self, thing):
+        row_i = self.people_table.currentRow()
         d = self.people_table_data[row_i]
-        pid=d[8]
-        fullname=d[0]
         # main model
+        self.render_person(pid=d[8], fullname=d[0], age=d[2], sex=d[4])
+
+    def render_person(self, pid, fullname, age, sex):
+        """
+        how to populate all the subject info
+        """
         self.disp_model['pid'] = pid
         self.disp_model['fullname'] = fullname
-        self.disp_model['age'] = d[2]
-        self.disp_model['sex'] = d[4]
-
+        self.disp_model['age'] = age
+        self.disp_model['sex'] = sex
         # update visit table
         self.update_visit_table()
         # update contact table
@@ -252,8 +256,8 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # update notes
         self.update_note_table()
         # update schedule text
-        self.schedule_what_data['pid']=pid
-        self.schedule_what_data['fullname']=fullname
+        self.schedule_what_data['pid'] = pid
+        self.schedule_what_data['fullname'] = fullname
         self.update_schedule_what_label()
 
     def visit_item_select(self,thing):
@@ -333,11 +337,11 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # valid?
         if not self.useisvalid(self.ScheduleVisit, "Cannot schedule visit"): return
         #todo: add to calendar or msgerr
-        try :
-          self.ScheduleVisit.add_to_calendar(self.cal,self.disp_model)
+        try:
+            self.ScheduleVisit.add_to_calendar(self.cal,self.disp_model)
         except Exception as e:
-          mkmsg('Failed to add to google calendar; not adding. %s'%str(e))
-          return()
+            mkmsg('Failed to add to google calendar; not adding. %s'%str(e))
+            return()
         # catch sql error
         # N.B. action(vstatus) intentionally empty -- will be set to 'sched'
         if not self.sqlInsertOrShowErr('visit_summary',self.ScheduleVisit.model):
@@ -431,7 +435,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
             # google uses UTC, but we are in EST or EDT
             #st   = str(calevent['starttime'] + tzfromutc)
             #st=str(calevent['starttime'])
-            m_d=calevent['starttime'].strftime('%m-%d')
+            m_d=calevent['starttime'].strftime('%Y-%m-%d')
             tm=calevent['starttime'].strftime('%H:%M')
             self.cal_table.setItem(row_i, 0, QtWidgets.QTableWidgetItem(m_d) )
             self.cal_table.setItem(row_i, 1, QtWidgets.QTableWidgetItem(tm) )
@@ -444,37 +448,42 @@ class ScheduleApp(QtWidgets.QMainWindow):
      * potental schedual data and srings
     """
     def cal_item_select(self):
-        pass
-        row_i =self.cal_table.currentRow()
-        d = self.cal_table_data[row_i]
-        #fix the current date to retrieve the year from the calendar
-        cal_desc =  self.cal_table.item(row_i,2).text()
+        row_i = self.cal_table.currentRow()
+        cal_desc = self.cal_table.item(row_i, 2).text()
         print(cal_desc)
-        current_date = '2019-' + self.cal_table.item(row_i,0).text()
-        current_time = self.cal_table.item(row_i,1).text()
-        current_date_time = current_date + ' '+ current_time+':00'
-        current_study = self.cal_table.item(row_i,2).text().split('/')[0]
-        current_age = re.match('(\w+)/(\w+) x(\d+) (\d+)yo(\w)',cal_desc)
-        if current_age:
-            current_age=current_age.group(4)
-        current_gendar = self.cal_table.item(row_i,2).text().split(' ')[2][-1:]
+        current_date = self.cal_table.item(row_i, 0).text()
+        current_time = self.cal_table.item(row_i, 1).text()
+        current_date_time = current_date + ' ' + current_time+':00'
+        current_study = self.cal_table.item(row_i, 2).text().split('/')[0]
+        # 7T x1 EEG-23yof (EG) - MB, LT
+        title_regex = re.match('(\w+)/(\w+) x(\d+) (\d+)yo(\w)', cal_desc)
+        if not title_regex:
+            mkmsg("cannot parse calendar event title!\n" +
+                  "expect 'study/type xX YYyo[m/f]' but have\n" + cal_desc)
+            return
 
-        res = self.sql.query.get_pid (vtimestamp = current_date_time, study = current_study, age = int(current_age))
+        current_age = title_regex.group(4)
+        current_gender = title_regex.group(5)
 
+        if current_age is None:
+            print("No current age in google cal event title!")
+            return
+
+        res = self.sql.query.get_pid(vtimestamp=current_date_time,
+                                     study=current_study,
+                                     age=int(current_age))
+
+        # Debuging, see results
         print(res)
 
-        if(len(res) == 0 ):
+        if len(res) == 0:
             return
-        self.disp_model['pid'] = res[0][0]
-        self.schedule_what_data['pid'] = res[0][0]
+        pid = res[0][0]
+        full_name = self.sql.query.get_person(pid=pid)[0][0]
+        # update to this person
+        self.render_person(pid, full_name, current_age, current_gender)
 
-        self.update_visit_table()
-        self.update_contact_table()
-        self.update_note_table()
-        self.schedule_what_label.setText(self.sql.query.get_person(pid = res[0][0])[0][0])
-
-
-    ### CONTACTS
+    # ## CONTACTS
     # self.add_contact_button.clicked.connect(self.add_contact_pushed)
     def add_contact_pushed(self):
         # self.AddContact.setpersondata(d)
