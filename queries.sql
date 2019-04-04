@@ -76,7 +76,7 @@ select
 
 -- name: get_pid
 select
-  pid
+  pid,vid
   from visit_summary
   where vtimestamp = %(vtimestamp)s
     and study like %(study)s

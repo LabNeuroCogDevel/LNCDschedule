@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>957</width>
-    <height>808</height>
+    <width>954</width>
+    <height>866</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -466,6 +466,19 @@
      <string>Add_notes</string>
     </property>
    </widget>
+   <widget class="QPushButton" name="edit_contact_button">
+    <property name="geometry">
+     <rect>
+      <x>600</x>
+      <y>740</y>
+      <width>111</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Edit Contact</string>
+    </property>
+   </widget>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <widget class="QMenuBar" name="menubar">
@@ -473,7 +486,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>957</width>
+     <width>954</width>
      <height>22</height>
     </rect>
    </property>

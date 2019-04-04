@@ -21,7 +21,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
         # schedule and checkin data
         self.schedule_what_data = {'fullname': '', 'pid': None, 'date': None, 'time': None}
-        self.checkin_what_data =  {'fullname': '', 'vid': None, 'datetime': None, 'pid': None,'vtype':None}
+        self.checkin_what_data =  {'fullname': '', 'vid': None, 'datetime': None, 'pid': None,'vtype':None, 'study':None}
         
 
         # load gui (created with qtcreator)
@@ -84,17 +84,23 @@ class ScheduleApp(QtWidgets.QMainWindow):
         note_columns=['note','dropcode','ndate','vtimestamp','ra','vid']
         self.note_table.setColumnCount(len(note_columns))
         self.note_table.setHorizontalHeaderLabels(note_columns)
+        #Make the note_table uneditable
+        self.note_table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
 
         ## visit table
         self.visit_columns=['day', 'study', 'vstatus','vtype', 'vscore', 'age', 'note', 'dvisit','dperson','vid']
         self.visit_table.setColumnCount(len(self.visit_columns))
         self.visit_table.setHorizontalHeaderLabels(self.visit_columns)
+        #Make the visit table uneditable
+        self.visit_table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
         self.visit_table.itemClicked.connect(self.visit_item_select)
 
         # contact table
         contact_columns=['who','cvalue', 'relation', 'nogood', 'added', 'cid']
         self.contact_table.setColumnCount(len(contact_columns))
         self.contact_table.setHorizontalHeaderLabels(contact_columns)
+        #Make the contact_table uneditable
+        self.contact_table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
 
         # schedule time widget
         self.timeEdit.timeChanged.connect(self.update_checkin_time)
@@ -118,6 +124,9 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # connect it up
         self.add_contact_button.clicked.connect(self.add_contact_pushed)
         self.AddContact.accepted.connect(self.add_contact_to_db)
+
+        #Change the wrong cvalue if needed.
+        #self.edit_contact_button.clicked.connect()
 
         ## add notes and query for pid from visit_summary
         self.AddNotes = AddNotes.AddNoteWindow(self)
