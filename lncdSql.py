@@ -37,9 +37,35 @@ class lncdSql():
         insertsql=psycopg2.sql.SQL("insert into {} ({}) values ({})").format(table, col,valkey)
         return(insertsql)
 
+    def mkupdate(self,table,colnames, id_column, new_value, old_value):
+        table = psycopg2.sql.Identidier(table)
+        #Check if the values if always stable
+        cols=map(psycopg2.sql.Identifier,colnames);
+        vals=map(psycopg2.sql.Placeholder,colnames)
+
+        col=psycopg2.sql.SQL(",").join(cols)
+        valkey=psycopg2.sql.SQL(",").join(vals)
+
+        updatesql = psycopg2.sql.SQL("UPDATE {} ({}) SET {} = {} where cid = {}").format(table, colnames, old_value, new_value, id_column)
+        return updatesql
+
     def insert(self,table,d):
         sql=self.mkinsert(table,d.keys())
         print(sql.as_string(self.conn)%d)
         cur=self.conn.cursor()
         cur.execute(sql,d)
         cur.close()
+
+    def update(table_name, column_change, id_column, value, id):
+        sql = self.mkupdate(table_name, column_change, id_column. value, id)
+        print(sql.as_string(self.conn)%d)
+        cur=self.conn.cursor()
+        cur.execute(sql,d)
+        cur.close()
+        """
+        table eg contact
+        column_change like cvalue
+        id_column like cid
+        value is like new phone number en\tered at gui
+        id is whatever cid to change for value
+        """

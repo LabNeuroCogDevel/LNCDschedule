@@ -15,7 +15,23 @@ select
  where lunaid = %(lunaid)s
  limit 10
 
--- name: att_search
+-- name: subject_search
+select 
+  fullname,lunaid,curagefloor,dob,sex,lastvisit,maxdrop,studies,pid
+from person_search_view 
+where maxdrop is null;
+
+-- name: get_everything
+select 
+  fullname,lunaid,curagefloor,dob,sex,lastvisit,maxdrop,studies,pid
+from person_search_view 
+
+-- name: lunaid_search
+select 
+  fullname,lunaid,curagefloor,dob,sex,lastvisit,maxdrop,studies,pid
+from person_search_view 
+where lunaid is not null;
+-- name: att_searchs
 -- N.B. ~ '' == like '%'
 select
  fullname,lunaid,curagefloor,dob,sex,lastvisit,maxdrop,studies,pid
@@ -63,6 +79,7 @@ select
   from contact
   where pid = %(pid)s
   order by relation = 'Subject' desc, relation, who
+
 -- name: get_person
 select
   fullname

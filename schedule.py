@@ -3,7 +3,7 @@
 import sys
 import LNCDcal
 import lncdSql
-import AddNotes, AddContact, ScheduleVisit, AddPerson, CheckinVisit
+import AddNotes, AddContact,EditContact, ScheduleVisit, AddPerson, CheckinVisit
 from PyQt5 import uic, QtCore, QtGui, QtWidgets
 import datetime
 import subprocess, re  # for whoami
@@ -13,11 +13,14 @@ from LNCDutils import  *
 launchtime=int(datetime.datetime.now().strftime('%s'))
 tzfromutc = datetime.datetime.fromtimestamp(launchtime) - datetime.datetime.utcfromtimestamp(launchtime)
 
+people_data = None
 
 class ScheduleApp(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
 
+        #Defined for editing the contact_table
+        self.contact_cid = 0
         # schedule and checkin data
         self.schedule_what_data = {'fullname': '', 'pid': None, 'date': None, 'time': None}
         self.checkin_what_data =  {'fullname': '', 'vid': None, 'datetime': None, 'pid': None,'vtype':None, 'study':None}
@@ -47,8 +50,8 @@ class ScheduleApp(QtWidgets.QMainWindow):
         ## setup person search field
         # by name
         self.fullname.textChanged.connect(self.search_people_by_name)
-        self.fullname.setText('%')
-        self.search_people_by_name(self.fullname.text()) # doesnt already happens, why?
+        self.fullname.setText('')
+        self.search_people_by_name(self.fullname.text()+'%') # doesnt already happens, why?
 
         # by lunaid
         self.subjid_search.textChanged.connect(self.search_people_by_id)
@@ -67,6 +70,11 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.people_table.itemClicked.connect(self.people_item_select)
         #people_table_menu = QtWidgets.QMenu(self)
         #self.people_table.contextMenuEvent(people_table_menu)
+
+        #The eliminate drop class box is checked
+        self.checkBox.stateChanged.connect(self.subject_drop)
+        #The eliminate non Lunaid box is checked
+        self.checkBox_2.stateChanged.connect(self.Lunaid_drop)
 
         ## cal_table: setup search calendar "cal_table"
         cal_columns=['date','time','what']
@@ -124,8 +132,13 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.add_contact_button.clicked.connect(self.add_contact_pushed)
         self.AddContact.accepted.connect(self.add_contact_to_db)
 
+        #Call to edit the contact table whenver the item is clicked
+        self.contact_table.itemClicked.connect(self.edit_contact_table)
+
+        #Edit contact
+        self.EditContact = EditContact.EditContactWindow(self)
         #Change the wrong cvalue if needed.
-        #self.edit_contact_button.clicked.connect()
+        self.edit_contact_button.clicked.connect(self.edit_contact_pushed)
 
         ## add notes and query for pid from visit_summary
         self.AddNotes = AddNotes.AddNoteWindow(self)
@@ -201,6 +214,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
             mkmsg("LunaID should only be numbers")
             return
         res = self.sql.query.lunaid_search(lunaid=lunaid)
+        people_data = res
         self.fill_search_table(res)
 
     # by attributes
@@ -218,6 +232,27 @@ class ScheduleApp(QtWidgets.QMainWindow):
     expected columns are from pep_columns (8)
     res is a list of vectors(8) from sql query
     """ 
+    def subject_drop(self):
+    
+        if(self.checkBox.isChecked()):
+            #Only get things when the maxdrop is null
+            res = self.sql.query.subject_search()
+            self.fill_search_table(res)
+        else:
+            #New Query that simply gets everthing from the database
+            res = self.sql.query.get_everything()
+            self.fill_search_table(res)
+
+    def Lunaid_drop(self):
+        if(self.checkBox_2.isChecked()):
+            #Only get things when the lunaid is null
+            res = self.sql.query.lunaid_search()
+            self.fill_search_table(res)
+        else:
+            #New Query that simply gets everthing from the database
+            res = self.sql.query.get_everything()
+            self.fill_search_table(res)
+
     def fill_search_table(self,res):
         count = 0
         self.people_table_data = res
@@ -242,6 +277,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
                     #visit titled yellow
 
             count = count + 1
+            
 
     def people_item_select(self,thing):
         row_i =self.people_table.currentRow()
@@ -249,6 +285,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         pid=d[8]
         fullname=d[0]
         # main model
+        # Update disp_model so that other table will also update
         self.disp_model['pid'] = pid
         self.disp_model['fullname'] = fullname
         self.disp_model['age'] = d[2]
@@ -508,6 +545,17 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.AddNotes.set_note(self.disp_model['pid'],self.disp_model['fullname'], self.disp_model['ndate'])
         self.AddNotes.show()
 
+    def edit_contact_pushed(self):
+
+        self.EditContact.edit_contact(self.contact_cid)
+        self.EditContact.show()
+
+    def update_contact_to_db(self):
+
+        data = self.EditContact.edit_model
+
+
+
     # self.AddContact.accepted.connect(self.add_contact_to_db)
     def add_contact_to_db(self):
         # do we have good input?
@@ -520,6 +568,12 @@ class ScheduleApp(QtWidgets.QMainWindow):
         #The contact is referring to the table in debeaver.
         self.sqlInsertOrShowErr('contact',data)
         self.update_contact_table()
+
+    def edit_contact_table(self):
+
+        row_i =self.contact_table.currentRow()
+        self.contact_cid = self.contact_table.item(row_i, 5).text()
+        #print(contact_cid)
 
     def add_notes_to_db(self):
         #Error check
@@ -566,6 +620,8 @@ class ScheduleApp(QtWidgets.QMainWindow):
         except Exception as e:
             mkmsg(str(e))
             return(False)
+
+    #def sqlUpdateOrShowErr(self, table):
 
 
     def construct_drop_down_box(self):
