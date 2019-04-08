@@ -63,20 +63,22 @@ select
   from contact
   where pid = %(pid)s
   order by relation = 'Subject' desc, relation, who
+
 -- name: get_person
 select
   fullname
   from person_search_view
   where pid = %(pid)s
+
 -- name: get_vid
 select
   pid
   from visit_summary
   where pid = %(pid)s
 
--- name: get_pid
+-- name: get_pid_of_visit
 select
-  pid,vid
+  pid, vid
   from visit_summary
   where vtimestamp = %(vtimestamp)s
     and study like %(study)s

@@ -66,6 +66,12 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.people_table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
         # wire up clicks
         self.people_table.itemClicked.connect(self.people_item_select)
+        self.people_table.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)
+        # context menu
+        a = QtWidgets.QAction("Add Note/Drop", self.people_table)
+        a.triggered.connect(self.add_notes_pushed)
+        # TODO: set to correct pid
+        self.people_table.addAction(a)
         #people_table_menu = QtWidgets.QMenu(self)
         #self.people_table.contextMenuEvent(people_table_menu)
 
@@ -131,11 +137,9 @@ class ScheduleApp(QtWidgets.QMainWindow):
         ## add notes and query for pid from visit_summary
         self.AddNotes = AddNotes.AddNoteWindow(self)
         self.add_notes_button.clicked.connect(self.construct_drop_down_box)
-        self.add_notes_button.clicked.connect(self.query_for_pid)
         #Do the autocomplete later
         self.add_notes_button.clicked.connect(self.add_notes_pushed)
         self.AddNotes.accepted.connect(self.add_notes_to_db)
-        self.AddNotes.accepted.connect(self.add_nid_vid_to_db)
         #connect it up
 
         ### Visit
@@ -478,9 +482,10 @@ class ScheduleApp(QtWidgets.QMainWindow):
             print("No current age in google cal event title!")
             return
 
-        res = self.sql.query.get_pid(vtimestamp=current_date_time,
-                                     study=current_study,
-                                     age=int(current_age))
+        res = self.sql.query.\
+            get_pid_of_visit(vtimestamp=current_date_time,
+                             study=current_study,
+                             age=int(current_age))
 
         # Debuging, see results
         print(res)
@@ -496,13 +501,8 @@ class ScheduleApp(QtWidgets.QMainWindow):
     # self.add_contact_button.clicked.connect(self.add_contact_pushed)
     def add_contact_pushed(self):
         # self.AddContact.setpersondata(d)
-        self.AddContact.set_contact(self.disp_model['pid'],self.disp_model['fullname'])
+        self.AddContact.set_contact(self.disp_model['pid'], self.disp_model['fullname'])
         self.AddContact.show()
-
-    def add_notes_pushed(self):
-        #self.Addnotes.setpersondata(d)
-        self.AddNotes.set_note(self.disp_model['pid'],self.disp_model['fullname'], self.disp_model['ndate'])
-        self.AddNotes.show()
 
     # self.AddContact.accepted.connect(self.add_contact_to_db)
     def add_contact_to_db(self):
@@ -517,36 +517,37 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.sqlInsertOrShowErr('contact',data)
         self.update_contact_table()
 
+    # ## Notes
+    def add_notes_pushed(self):
+        # self.Addnotes.setpersondata(d)
+        self.AddNotes.set_note(self.disp_model['pid'],
+                               self.disp_model['fullname'],
+                               self.disp_model['ndate'])
+        self.AddNotes.show()
+
     def add_notes_to_db(self):
-        #Error check
-         if not self.useisvalid(self.AddNotes, "Cannot add note"): return
+        # Error check
+        if not self.useisvalid(self.AddNotes, "Cannot add note"):
+            return
+        data = self.AddNotes.notes_model
 
-         data = self.AddNotes.notes_model
-          #Store the chosen value from the drop down box
-         drop_down_option = self.AddNotes.visit 
-         #Check if something other than None is selected.
-         #if drop_down_option != 'None': 
-         self.AddNotes.get_vid()    
-         self.AddNotes.add_ndate()
-         self.sqlInsertOrShowErr('note', data)
-         self.update_note_table()
-         self.query_for_nid()
+        # Store the chosen value from the drop down box
+        self.AddNotes.get_vid()
+        self.AddNotes.add_ndate()
+        self.sqlInsertOrShowErr('note', data)
+        self.update_note_table()
+        self.query_for_nid()
 
-    def add_nid_vid_to_db(self):
+        # do we need to add this note to a visit?
         nid_vid_data = self.AddNotes.nid_vid
         if(self.AddNotes.ctype_box_2.currentText() == 'NULL'):
             nid_vid_data[1] = None
             nid_vid_data[2] = None
-            self.update_note_table()
         else:
             self.sqlInsertOrShowErr('visit_note', nid_vid_data)
-            self.update_note_table()
 
-    def query_for_pid(self):
-        res = self.sql.query.get_vid(pid = self.disp_model['pid'])
-        #vid should be an array that stores the same vid value of a person due to multiple visits.
-        self.vid = res
-        #print(vid);
+        # ether way, update note_table
+        self.update_note_table()
 
     def query_for_nid(self):
         data = self.AddNotes.notes_model
@@ -563,12 +564,11 @@ class ScheduleApp(QtWidgets.QMainWindow):
             mkmsg(str(e))
             return(False)
 
-
     def construct_drop_down_box(self):
-
         myList = list()
+        # create identifer for visit dropdown selection
         for j in range(self.visit_table.rowCount()):
-            #Append the vid onto the list
+            # Append the vid onto the list
             myList.append(self.visit_table.item(j,9).text())
             for i in range(4):
                 #Construct the list by using the value in the table
@@ -577,7 +577,13 @@ class ScheduleApp(QtWidgets.QMainWindow):
             self.AddNotes.drop_down_value.append(str(myList).strip('[]'))
             myList.clear()
 
-            #Get the vid from the table
+        # Get the vid from the table
+        res = self.sql.query.get_vid(pid=self.disp_model['pid'])
+        # vid should be an array that stores the same vid value of a person due to multiple visits.
+        self.vid = res
+        #print(vid);
+
+
 
 # actually launch everything
 if __name__ == '__main__':

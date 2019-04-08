@@ -77,14 +77,3 @@ class AddNoteWindow(QtWidgets.QDialog):
         self._want_to_close = True
         #print("sdfsfs")
         return({'valid':True,'msg':'OK'})
-    
-
-
-        
-
-
-        
-
-
-
-
