@@ -142,8 +142,11 @@ with ts as (
   group by task.task, studies
  
 
---name: list_tasks_of_study_vtype
+-- name: list_tasks_of_study_vtype
 select distinct(task) from study_task
  natural join task
  where study ilike %(study)s
  and (  modes ? %(vtype)s or modes ? 'Questionnaire' ) 
+
+-- name: list_ras
+select distinct ra from ra;

@@ -42,3 +42,4 @@ def CMenuItem(text, widget, action=lambda: mkmsg("Not Implemented yet")):
     a = QtWidgets.QAction(text, widget)
     a.triggered.connect(action)
     widget.addAction(a)
+    return(a)

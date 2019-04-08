@@ -45,6 +45,15 @@ class ScheduleApp(QtWidgets.QMainWindow):
         #if re.search('lncd|localadmin',self.RA,ignore.case=True):
         #    print("login: TODO: launch modal window")
 
+        # ## menu
+        # TODO: remove "new" from main.ui
+        menubar = self.menuBar()
+        fileMenu = menubar.addMenu('&New')
+        CMenuItem("RA", fileMenu)
+        CMenuItem("Study", fileMenu)
+        CMenuItem("Task", fileMenu)
+        CMenuItem("Visit Type", fileMenu)
+
         ## setup person search field
         # by name
         self.fullname.textChanged.connect(self.search_people_by_name)
@@ -104,8 +113,19 @@ class ScheduleApp(QtWidgets.QMainWindow):
         #Make the visit table uneditable
         self.visit_table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
         self.visit_table.itemClicked.connect(self.visit_item_select)
-        # Context menu
-        CMenuItem("Assign RA", self.visit_table)
+
+        # ## context menu + sub-menu for visits: adding RAs
+        visit_menu = QtWidgets.QMenu("visit_menu", self.visit_table)
+        CMenuItem("no show", visit_menu)
+        CMenuItem("reschedule", visit_menu)
+        # find all RAs and add to context menu
+        assignRA = visit_menu.addMenu("&Assign RA")
+        for ra in self.sql.query.list_ras():
+            CMenuItem(ra[0], assignRA,
+                      lambda x, ra_=ra[0]: self.updateVisitRA(ra_))
+        self.visit_table.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.visit_table.customContextMenuRequested.connect(
+                lambda pos: visit_menu.exec_(self.visit_table.mapToGlobal(pos)))
 
         # contact table
         contact_columns=['who','cvalue', 'relation', 'nogood', 'added', 'cid']
@@ -278,7 +298,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.schedule_what_data['fullname'] = fullname
         self.update_schedule_what_label()
 
-    def visit_item_select(self,thing):
+    def visit_item_select(self, thing=None):
         row_i = self.visit_table.currentRow()
         d     = self.visit_table_data[row_i]
         vid   = d[self.visit_columns.index('vid')]
@@ -294,7 +314,16 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.checkin_what_data['datetime'] = d[self.visit_columns.index('day')]
         self.update_checkin_what_label()
 
-
+    def updateVisitRA(self, ra):
+        row_i = self.visit_table.currentRow()
+        d = self.visit_table_data[row_i]
+        vid = d[self.visit_columns.index('vid')]
+        pid = self.disp_model['pid']
+        mkmsg('Still implementing: %s to %d (%d)' % (ra, vid, pid))
+        # TODO:
+        #  1. update google calendar title
+        #  2. add to visit_action
+        #  3. refresh visit view
 
     def update_visit_table(self):
         pid=self.disp_model['pid']
