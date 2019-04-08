@@ -49,6 +49,12 @@ select
   where vid = %(vid)s
   -- and "action" = 'checkedin'
 
+-- name: cal_info_by_vid
+select
+ study, vtype, visitno, age, sex, concat_ws(' ',fname,lname), dur_hr, vtimestamp, note, ra, googleuri
+ from visit_summary natural join person
+ where vid = %(vid)s
+
 -- name: note_by_pid
 select note,dropcode, ndate, vtimestamp, note.ra, vid from note 
    natural left  join visit_note natural left join visit

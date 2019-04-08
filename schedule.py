@@ -7,7 +7,8 @@ import AddNotes, AddContact, ScheduleVisit, AddPerson, CheckinVisit
 from PyQt5 import uic, QtCore, QtGui, QtWidgets
 import datetime
 import subprocess, re  # for whoami
-from LNCDutils import mkmsg, generic_fill_table, CMenuItem
+from LNCDutils import mkmsg, generic_fill_table, CMenuItem,\
+                      update_gcal, get_info_for_cal
 from LNCDutils import *
 
 # google reports UTC, we are EST or EDT. get the diff between google and us
@@ -321,9 +322,20 @@ class ScheduleApp(QtWidgets.QMainWindow):
         pid = self.disp_model['pid']
         mkmsg('Still implementing: %s to %d (%d)' % (ra, vid, pid))
         # TODO:
+        info = get_info_for_cal(self.sql.query, vid)
+        info['ra'] = ra
+        print(info)
+        return
         #  1. update google calendar title
-        #  2. add to visit_action
-        #  3. refresh visit view
+        self.cal.delete_event(info['googleuri'])
+        e = update_gcal(self.cal, info, assign=True)
+        #  2. add to visit_action # vatimestamp? auto inserted?
+        self.insert('visit_action',
+                    {'ra': ra, 'action': 'assigned', 'vid': vid})
+        #  3. update visit
+        self.sql.update('visit', 'googleuri', e['id'], 'vid', vid)
+        #  4. refresh visit view
+        self.update_visit_table()
 
     def update_visit_table(self):
         pid=self.disp_model['pid']

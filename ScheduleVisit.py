@@ -61,17 +61,11 @@ class ScheduleVisitWindow(QtWidgets.QDialog):
     use lncdCal class to add the event to the calendar
     and the resulting eventid to the model (as googleuri)
     """
-    def add_to_calendar(self,cal,disp_model_person_dict):
-        # prefer values in model over person dict
-        printmodel= {**disp_model_person_dict, **self.model}
-        printmodel['initials']="".join( map(lambda x:x[0], printmodel['fullname'].split() )  )
-        printmodel['createwhen']=datetime.datetime.now()
-        #(datetime.datetime.now() - dob).total_seconds()/(60*60*24*365.25)
-        title="%(study)s/%(vtype)s x%(visitno)d %(age).0fyo%(sex)s (%(initials)s)"%printmodel
-        desc="%(note)s\n-- %(ra)s on %(createwhen)s"%printmodel
-        # from e.g. "Thu Oct 26 14:00:00 2017" to datetime object
-        startdt=datetime.datetime.strptime( self.model['vtimestamp'], "%a %b %d %H:%M:%S %Y" )
-        event=cal.insert_event(startdt,self.model['dur_hr'],title,desc)
+    def add_to_calendar(self, cal, disp_model_person_dict):
+        printmodel = {**disp_model_person_dict, **self.model}
+        printmodel['initials'] = "".join(
+                map(lambda x: x[0], printmodel['fullname'].split()))
+        event = make_calendar_event(cal, printmodel)
         self.model['googleuri'] = event.get('id')
 
     """
@@ -89,5 +83,3 @@ class ScheduleVisitWindow(QtWidgets.QDialog):
         # TODO: check dob is not today
         self._want_to_close = True
         return({'valid':True,'msg':'OK'})
-    
-        
