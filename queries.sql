@@ -76,6 +76,13 @@ select
   from visit_summary
   where pid = %(pid)s
 
+-- name: vdesc_from_pid
+select
+  vid, concat_ws(' ', to_char(vtimestamp,'YYYY-mm-dd'),  study, vtype) as vdesc
+  from visit_summary
+  where pid = %(pid)s
+  order by vtimestamp desc
+
 -- name: get_pid_of_visit
 select
   pid, vid

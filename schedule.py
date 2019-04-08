@@ -70,7 +70,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # context menu
         a = QtWidgets.QAction("Add Note/Drop", self.people_table)
         a.triggered.connect(self.add_notes_pushed)
-        # TODO: set to correct pid
+        # TODO: pid still set at previous left click! no update on right click
         self.people_table.addAction(a)
         #people_table_menu = QtWidgets.QMenu(self)
         #self.people_table.contextMenuEvent(people_table_menu)
@@ -136,7 +136,6 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
         ## add notes and query for pid from visit_summary
         self.AddNotes = AddNotes.AddNoteWindow(self)
-        self.add_notes_button.clicked.connect(self.construct_drop_down_box)
         #Do the autocomplete later
         self.add_notes_button.clicked.connect(self.add_notes_pushed)
         self.AddNotes.accepted.connect(self.add_notes_to_db)
@@ -522,7 +521,9 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # self.Addnotes.setpersondata(d)
         self.AddNotes.set_note(self.disp_model['pid'],
                                self.disp_model['fullname'],
-                               self.disp_model['ndate'])
+                               self.disp_model['ndate'],
+                               self.sql.query.vdesc_from_pid)
+        # dropbox full of possible visits
         self.AddNotes.show()
 
     def add_notes_to_db(self):
@@ -576,12 +577,6 @@ class ScheduleApp(QtWidgets.QMainWindow):
             #Pass the value to the array(drop_down_value) in the ArrayNotes file
             self.AddNotes.drop_down_value.append(str(myList).strip('[]'))
             myList.clear()
-
-        # Get the vid from the table
-        res = self.sql.query.get_vid(pid=self.disp_model['pid'])
-        # vid should be an array that stores the same vid value of a person due to multiple visits.
-        self.vid = res
-        #print(vid);
 
 
 
