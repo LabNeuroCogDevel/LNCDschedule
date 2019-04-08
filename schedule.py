@@ -7,7 +7,7 @@ import AddNotes, AddContact, ScheduleVisit, AddPerson, CheckinVisit
 from PyQt5 import uic, QtCore, QtGui, QtWidgets
 import datetime
 import subprocess, re  # for whoami
-from LNCDutils import mkmsg
+from LNCDutils import mkmsg, generic_fill_table, CMenuItem
 from LNCDutils import *
 
 # google reports UTC, we are EST or EDT. get the diff between google and us
@@ -67,13 +67,17 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # wire up clicks
         self.people_table.itemClicked.connect(self.people_item_select)
         self.people_table.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)
-        # context menu
-        a = QtWidgets.QAction("Add Note/Drop", self.people_table)
-        a.triggered.connect(self.add_notes_pushed)
-        # TODO: pid still set at previous left click! no update on right click
-        self.people_table.addAction(a)
-        #people_table_menu = QtWidgets.QMenu(self)
-        #self.people_table.contextMenuEvent(people_table_menu)
+
+        # ## people context menu
+        def select_and_note():
+            # right click alone wont populate person
+            self.people_item_select()
+            self.add_notes_pushed()
+        CMenuItem("Add Note/Drop", self.people_table, select_and_note)
+        CMenuItem("Add ID", self.people_table)
+        # same as
+        # a = QtWidgets.QAction("Add Id", self.people_table)
+        # self.people_table.addAction(a)
 
         ## cal_table: setup search calendar "cal_table"
         cal_columns=['date','time','what']
@@ -100,6 +104,8 @@ class ScheduleApp(QtWidgets.QMainWindow):
         #Make the visit table uneditable
         self.visit_table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
         self.visit_table.itemClicked.connect(self.visit_item_select)
+        # Context menu
+        CMenuItem("Assign RA", self.visit_table)
 
         # contact table
         contact_columns=['who','cvalue', 'relation', 'nogood', 'added', 'cid']
@@ -247,7 +253,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
             count = count + 1
 
-    def people_item_select(self, thing):
+    def people_item_select(self, thing=None):
         row_i = self.people_table.currentRow()
         d = self.people_table_data[row_i]
         # main model

@@ -33,3 +33,12 @@ def mkmsg(msg,icon=QtWidgets.QMessageBox.Critical):
        mkmsg.win.setIcon(icon)
        mkmsg.win.setText(msg)
        mkmsg.win.show()
+
+
+def CMenuItem(text, widget, action=lambda: mkmsg("Not Implemented yet")):
+    """
+    generic to add a context menu item
+    """
+    a = QtWidgets.QAction(text, widget)
+    a.triggered.connect(action)
+    widget.addAction(a)
