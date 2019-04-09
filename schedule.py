@@ -601,7 +601,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
     def update_contact_to_db(self):
 
         data = self.EditContact.edit_model 
-        _________________________________________
+        self.sqlUpdateOrShowErr('contact', data)
 
 
     # self.AddContact.accepted.connect(self.add_contact_to_db)
@@ -672,8 +672,10 @@ class ScheduleApp(QtWidgets.QMainWindow):
             mkmsg(str(e))
             return(False)
 
-    def sqlUpdateOrShowErr(self, table):
-        _____________________________________
+    #def sqlUpdateOrShowErr(self, table):
+        #try:
+            #self.sql.update(table,)
+            # _____________________________________
 
 
     def construct_drop_down_box(self):

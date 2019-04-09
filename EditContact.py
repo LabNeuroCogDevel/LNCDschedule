@@ -9,6 +9,8 @@ class EditContactWindow(QtWidgets.QDialog):
 
     def __init__(self,parent = None):
 
+        columns=['ctype','changes','cid']
+        self.edit_model = { k: None for k in columns }
         super(EditContactWindow,self).__init__(parent)
         uic.loadUi('./ui/edit_contact.ui',self)
         self.setWindowTitle('Edit Contact')
@@ -19,7 +21,7 @@ class EditContactWindow(QtWidgets.QDialog):
 
     def allvals(self, key = 'all'):
         if(key in ['ctype'    ,'all']): self.edit_model['ctype']=self.ctype_box.currentText()
-        if(key in ['value'    ,'all']): self.edit_model['relation']=self.value_box.text()
+        if(key in ['value'    ,'all']): self.edit_model['changes']=self.value_box.text()
     def edit_contact(self,cid):
         self.value_box_2.setText(str(cid))
-        edit_model['cid'] = cid
+        self.edit_model['cid'] = cid
