@@ -4,7 +4,6 @@ __pycache__/
 *\#
 .\#*
 *.autosave
-
 *.ini
 *.p12
 .DS_Store
