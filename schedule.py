@@ -81,12 +81,6 @@ class ScheduleApp(QtWidgets.QMainWindow):
         searchMenu.addAction(lonly)
         searchMenu.addAction(lno)
 
-        # replace checkboxs in the gui
-        # #The eliminate drop class box is checked
-        # self.checkBox.stateChanged.connect(self.subject_drop) #NoDropCheck
-        # #The eliminate non Lunaid box is checked
-        # self.checkBox_2.stateChanged.connect(self.Lunaid_drop) #LunaOnlyCheck
-
         # ## setup person search field
         # by name
         self.fullname.textChanged.connect(self.search_people_by_name)
