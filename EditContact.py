@@ -18,8 +18,8 @@ class EditContactWindow(QtWidgets.QDialog):
         self.value_box.textChanged.connect(lambda: self.allvals('value'))
 
     def allvals(self, key = 'all'):
-        if(key in ['ctype'    ,'all']): self.contact_model['ctype']=self.ctype_box.currentText()
-        if(key in ['cid'    ,'all']): self.contact_model['who']=self.cid_box.text()
-        if(key in ['value'    ,'all']): self.contact_model['relation']=self.value_box.text()
+        if(key in ['ctype'    ,'all']): self.edit_model['ctype']=self.ctype_box.currentText()
+        if(key in ['value'    ,'all']): self.edit_model['relation']=self.value_box.text()
     def edit_contact(self,cid):
         self.value_box_2.setText(str(cid))
+        edit_model['cid'] = cid

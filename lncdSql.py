@@ -56,7 +56,7 @@ class lncdSql():
         cur.execute(sql,d)
         cur.close()
 
-    def update(table_name, column_change, id_column, value, id):
+    def update(self,table_name, column_change, id_column, value, id):
         sql = self.mkupdate(table_name, column_change, id_column. value, id)
         print(sql.as_string(self.conn)%d)
         cur=self.conn.cursor()
