@@ -33,3 +33,65 @@ def mkmsg(msg,icon=QtWidgets.QMessageBox.Critical):
        mkmsg.win.setIcon(icon)
        mkmsg.win.setText(msg)
        mkmsg.win.show()
+
+
+def CMenuItem(text, widget, action=lambda: mkmsg("Not Implemented yet")):
+    """
+    generic to add a context menu item
+    """
+    a = QtWidgets.QAction(text, widget)
+    a.triggered.connect(action)
+    widget.addAction(a)
+    return(a)
+
+
+# ## calendar
+def make_calendar_event(cal, info, assign=False):
+    """
+    give a dictionary with all the visit info, get back a google event
+    study, vtype, visitno, age, sex, initials, dur_hr, vtimestamp, note, ra
+    """
+    # prefer values in model over person dict
+    info['createwhen'] = datetime.datetime.now()
+    # (datetime.datetime.now() - dob).total_seconds()/(60*60*24*365.25)
+    title = "%(study)s/%(vtype)s"
+    title += " x%(visitno)d %(age).0fyo%(sex)s (%(initials)s)"
+    if assign:
+        title += " -- %(ra)"
+    # format
+    title = title % info
+    # description
+    desc = "%(note)s\n-- %(ra)s on %(createwhen)s" % info
+    # from e.g. "Thu Oct 26 14:00:00 2017" to datetime object
+    startdt = datetime.datetime.strptime(info['vtimestamp'],
+                                         "%a %b %d %H:%M:%S %Y")
+    event = cal.insert_event(startdt, info['dur_hr'], title, desc)
+    return(event)
+
+
+def get_info_for_cal(query, vid):
+    """
+    get info we need to update a calender event on google
+    using visit id and visit_summary in db
+    """
+    res = query.cal_info_by_vid(vid=vid)
+    if res is None:
+        mkmsg('Error finding vid %d' % vid)
+        return()
+    headers = ['study', 'vtype', 'visitno', 'age', 'sex', 'fullname',
+               'dur_hr', 'vtimestamp', 'note', 'ra', 'id']
+    info = dict(zip(headers, res[0]))
+    return(info)
+
+
+def update_gcal(cal, info, assign=False):
+    """
+    update google calendar event:
+       delete and create anew to replace/update
+       a visit in the db on google calendar
+       using dictionary (see get_info_for_cal, then make some changes)
+    """
+    print('updating gcal with %s' % info)
+    cal.delete_event(info['calid'])
+    event = make_calendar_event(cal, info, assign)
+    return(event)

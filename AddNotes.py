@@ -18,7 +18,7 @@ class AddNoteWindow(QtWidgets.QDialog):
         columns = ['note', 'pid']
         self.visit = None
 
-        self.notes_model = {k: None for k in columns }
+        self.notes_model = {k: None for k in columns}
         super(AddNoteWindow, self).__init__(parent)
         uic.loadUi('./ui/add_notes.ui', self)
         self.setWindowTitle('Add Notes')
@@ -31,35 +31,36 @@ class AddNoteWindow(QtWidgets.QDialog):
         self.note_edit.textChanged.connect(lambda: self.allvals('note'))
 
         #Get the newly entered text for preparing to enter them to the database.
-    def set_note(self, pid, name, ndate):
+
+    def set_note(self, pid, name, ndate, sqlfunc):
+        """
+        contruct note dialog box
+        """
         self.notes_model['pid'] = pid
-        #Clear the drop_down box every time it changes to a new subject.
+        # Clear the drop_down box every time it changes to a new subject.
         self.ctype_box_2.clear()
-
-        #Loop through the array which contains the drop down values and then put it in the drop_down box.
-        self.ctype_box_2.addItem('NULL')
-
-        for x in range(len(self.drop_down_value)):
-            self.ctype_box_2.addItem(self.drop_down_value[x])
-             #Clear the drop_down_value every time it changes to a new obejct.
-        self.drop_down_value.clear()
+        self.vid_lookup = {}
         self.nid_vid.clear()
 
-        #Method to add the ndate to the datebase
+        # add possible visits that could be assocated with the note
+        res = sqlfunc(pid=pid)
+        self.ctype_box_2.addItem('NULL')  # always have null
+        if res:
+            self.ctype_box_2.addItems([x[1] for x in res])
+            self.vid_lookup = {x[1]: x[0] for x in res}
+
+    # Method to add the ndate to the datebase
     def add_ndate(self):
         self.notes_model['ndate'] = datetime.datetime.now()
 
     def get_vid(self):
-        #Get the vid value when the ok button is clicked on the set node page.
-        if(self.ctype_box_2.currentText() == 'NULL'):
-            vid = None
-        else: 
-            vid = (self.ctype_box_2.currentText()).split(',')[0]
-            #vid is shown as a string, so we need to remove "'" before converting it to an int
-            self.nid_vid['vid'] = int(re.sub("'", "", vid))
+        visit_desc = self.ctype_box_2.currentText()
+        # Get the vid value when the ok button is clicked on the set node page.
+        if(visit_desc != 'NULL'):
+            self.nid_vid['vid'] = self.vid_lookup[visit_desc]
 
     def allvals(self,key='all'):
-        print('contact: updating %s'%key)
+        print('note: updating %s'%key)
         #Directly pass the ctype_box_2 value into a variable called visit to query from the DB.
         if(key in ['ctype'   ,'all']): self.visit = comboval(self.ctype_box_2)
         #print(self.visit)
@@ -77,14 +78,3 @@ class AddNoteWindow(QtWidgets.QDialog):
         self._want_to_close = True
         #print("sdfsfs")
         return({'valid':True,'msg':'OK'})
-    
-
-
-        
-
-
-        
-
-
-
-

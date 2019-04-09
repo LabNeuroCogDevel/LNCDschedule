@@ -65,6 +65,12 @@ select
   where vid = %(vid)s
   -- and "action" = 'checkedin'
 
+-- name: cal_info_by_vid
+select
+ study, vtype, visitno, age, sex, concat_ws(' ',fname,lname), dur_hr, vtimestamp, note, ra, googleuri
+ from visit_summary natural join person
+ where vid = %(vid)s
+
 -- name: note_by_pid
 select note,dropcode, ndate, vtimestamp, note.ra, vid from note 
    natural left  join visit_note natural left join visit
@@ -85,15 +91,23 @@ select
   fullname
   from person_search_view
   where pid = %(pid)s
+
 -- name: get_vid
 select
   pid
   from visit_summary
   where pid = %(pid)s
 
--- name: get_pid
+-- name: vdesc_from_pid
 select
-  pid,vid
+  vid, concat_ws(' ', to_char(vtimestamp,'YYYY-mm-dd'),  study, vtype) as vdesc
+  from visit_summary
+  where pid = %(pid)s
+  order by vtimestamp desc
+
+-- name: get_pid_of_visit
+select
+  pid, vid
   from visit_summary
   where vtimestamp = %(vtimestamp)s
     and study like %(study)s
@@ -150,8 +164,11 @@ with ts as (
   group by task.task, studies
  
 
---name: list_tasks_of_study_vtype
+-- name: list_tasks_of_study_vtype
 select distinct(task) from study_task
  natural join task
  where study ilike %(study)s
  and (  modes ? %(vtype)s or modes ? 'Questionnaire' ) 
+
+-- name: list_ras
+select distinct ra from ra;
