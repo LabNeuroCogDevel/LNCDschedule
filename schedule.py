@@ -58,7 +58,36 @@ class ScheduleApp(QtWidgets.QMainWindow):
         CMenuItem("Task", fileMenu)
         CMenuItem("Visit Type", fileMenu)
 
-        ## setup person search field
+        # search settings
+        searchMenu = menubar.addMenu('&Search')
+
+        # add items to searchMenu
+        def mkbtngrp(text):
+                return(CMenuItem(text, searchMenu,
+                                 lambda x: self.search_people_by_name(), True))
+
+        self.NoDropCheck = mkbtngrp("&Drops removed")
+        # set up as exclusive (radio button like)
+        lany = mkbtngrp("&All")
+        lonly = mkbtngrp("&LunaIDs Only")
+        lno = mkbtngrp("&Without LunaIDs")
+        # create group
+        self.luna_search_settings = QtWidgets.QActionGroup(searchMenu)
+        self.luna_search_settings.addAction(lonly)
+        self.luna_search_settings.addAction(lno)
+        self.luna_search_settings.addAction(lany)
+        # add to menu
+        searchMenu.addAction(lany)
+        searchMenu.addAction(lonly)
+        searchMenu.addAction(lno)
+
+        # replace checkboxs in the gui
+        # #The eliminate drop class box is checked
+        # self.checkBox.stateChanged.connect(self.subject_drop) #NoDropCheck
+        # #The eliminate non Lunaid box is checked
+        # self.checkBox_2.stateChanged.connect(self.Lunaid_drop) #LunaOnlyCheck
+
+        # ## setup person search field
         # by name
         self.fullname.textChanged.connect(self.search_people_by_name)
         self.fullname.setText('')
@@ -91,11 +120,6 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # same as
         # a = QtWidgets.QAction("Add Id", self.people_table)
         # self.people_table.addAction(a)
-
-        #The eliminate drop class box is checked
-        self.checkBox.stateChanged.connect(self.subject_drop)
-        #The eliminate non Lunaid box is checked
-        self.checkBox_2.stateChanged.connect(self.Lunaid_drop)
 
         ## cal_table: setup search calendar "cal_table"
         cal_columns=['date','time','what']
@@ -224,24 +248,49 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.AddPerson.setpersondata(d)
         self.AddPerson.show()
 
-
     """
     connector for on text change of fullname textline search bar
     """
-    def search_people_by_name(self,fullname):
-        #print(fullname)
+    def search_people_by_name(self, fullname=None):
+        if fullname is None:
+            fullname = self.fullname.text()
+
         # only update if we've entered 3 or more characters
         # .. but let wildcard (%) go through
-        if(len(fullname) < 3 and fullname != '%' ): return
-        res = self.sql.query.name_search(fullname=fullname)
+        if(len(fullname) < 3 and not re.search('%', fullname)):
+            return
+
+        # use maxdrop and lunaid range to add exclusions
+        search = {
+                'fullname': fullname,
+                'maxlunaid': 99999,
+                'minlunaid': -1,
+                'maxdrop': 'family'}
+
+        # exclude dropped?
+        if self.NoDropCheck.isChecked():
+            search['maxdrop'] = 'nodrop'
+
+        # luna id status (all/without/only)
+        setting = self.luna_search_settings.checkedAction()
+        if setting is not None:
+            setting = re.sub('&', '', setting.text())
+            if re.search('LunaIDs Only', setting):
+                search['minlunaid'] = 1
+            elif re.search('Without LunaIDs', setting):
+                search['maxlunaid'] = 1
+
+        # finally query and update table
+        res = self.sql.query.name_search(**search)
         self.fill_search_table(res)
 
     # seach by id
-    def search_people_by_id(self,lunaid):
-        if(len(lunaid) != 5 ): return
+    def search_people_by_id(self, lunaid):
+        if(len(lunaid) != 5):
+            return
         try:
-          lunaid=int(lunaid)
-        except:
+            lunaid = int(lunaid)
+        except ValueError:
             mkmsg("LunaID should only be numbers")
             return
         res = self.sql.query.lunaid_search(lunaid=lunaid)
@@ -258,31 +307,6 @@ class ScheduleApp(QtWidgets.QMainWindow):
         res = self.sql.query.att_search(**d)
         #res = self.sql.query.att_search(sex=d['sex'],study=d['study'], minage=d['minage'],maxage=d['maxage'])
         self.fill_search_table(res)
-    """
-    fill the person search table
-    expected columns are from pep_columns (8)
-    res is a list of vectors(8) from sql query
-    """ 
-    def subject_drop(self):
-    
-        if(self.checkBox.isChecked()):
-            #Only get things when the maxdrop is null
-            res = self.sql.query.subject_search()
-            self.fill_search_table(res)
-        else:
-            #New Query that simply gets everthing from the database
-            res = self.sql.query.get_everything()
-            self.fill_search_table(res)
-
-    def Lunaid_drop(self):
-        if(self.checkBox_2.isChecked()):
-            #Only get things when the lunaid is null
-            res = self.sql.query.lunaid_search()
-            self.fill_search_table(res)
-        else:
-            #New Query that simply gets everthing from the database
-            res = self.sql.query.get_everything()
-            self.fill_search_table(res)
 
     def fill_search_table(self,res):
         count = 0
