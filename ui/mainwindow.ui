@@ -171,9 +171,9 @@
    <widget class="QTableWidget" name="contact_table">
     <property name="geometry">
      <rect>
-      <x>650</x>
+      <x>530</x>
       <y>470</y>
-      <width>411</width>
+      <width>531</width>
       <height>251</height>
      </rect>
     </property>
@@ -181,9 +181,9 @@
    <widget class="QTableWidget" name="visit_table">
     <property name="geometry">
      <rect>
-      <x>650</x>
+      <x>530</x>
       <y>250</y>
-      <width>411</width>
+      <width>531</width>
       <height>171</height>
      </rect>
     </property>
@@ -287,7 +287,7 @@
    <widget class="QLabel" name="visit_label">
     <property name="geometry">
      <rect>
-      <x>830</x>
+      <x>760</x>
       <y>220</y>
       <width>161</width>
       <height>16</height>
@@ -305,7 +305,7 @@
    <widget class="QLabel" name="contacts_label">
     <property name="geometry">
      <rect>
-      <x>820</x>
+      <x>750</x>
       <y>450</y>
       <width>241</width>
       <height>16</height>
@@ -428,9 +428,9 @@
    <widget class="QTableWidget" name="note_table">
     <property name="geometry">
      <rect>
-      <x>650</x>
+      <x>530</x>
       <y>30</y>
-      <width>411</width>
+      <width>531</width>
       <height>171</height>
      </rect>
     </property>
@@ -438,7 +438,7 @@
    <widget class="QLabel" name="notes_label">
     <property name="geometry">
      <rect>
-      <x>830</x>
+      <x>760</x>
       <y>10</y>
       <width>161</width>
       <height>16</height>
@@ -479,32 +479,6 @@
      <string>Edit Contact</string>
     </property>
    </widget>
-   <widget class="QCheckBox" name="checkBox">
-    <property name="geometry">
-     <rect>
-      <x>490</x>
-      <y>80</y>
-      <width>151</width>
-      <height>20</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Eliminate drop cases</string>
-    </property>
-   </widget>
-   <widget class="QCheckBox" name="checkBox_2">
-    <property name="geometry">
-     <rect>
-      <x>490</x>
-      <y>140</y>
-      <width>151</width>
-      <height>20</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Eliminate non Luna ID</string>
-    </property>
-   </widget>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <widget class="QMenuBar" name="menubar">
@@ -513,18 +487,9 @@
      <x>0</x>
      <y>0</y>
      <width>1072</width>
-     <height>22</height>
+     <height>20</height>
     </rect>
    </property>
-   <widget class="QMenu" name="menuStudy">
-    <property name="title">
-     <string>new</string>
-    </property>
-    <addaction name="actionStudy"/>
-    <addaction name="actionTask"/>
-    <addaction name="actionVisit_type"/>
-   </widget>
-   <addaction name="menuStudy"/>
   </widget>
   <action name="actionStudy">
    <property name="text">
