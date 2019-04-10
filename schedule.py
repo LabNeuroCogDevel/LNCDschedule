@@ -33,7 +33,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.setWindowTitle('LNCD Scheduler')
 
         # data store
-        self.disp_model = {'pid': None, 'fullname': None, 'ndate': None, 'age': None,'sex': None}
+        self.disp_model = {'pid': None, 'fullname': None, 'age': None,'sex': None}
 
         # get other modules for querying db and calendar
         try:
@@ -608,11 +608,6 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.AddContact.show()
 
 
-    def add_notes_pushed(self):
-        #self.Addnotes.setpersondata(d)
-        self.AddNotes.set_note(self.disp_model['pid'],self.disp_model['fullname'], self.disp_model['ndate'])
-        self.AddNotes.show()
-
     def edit_contact_pushed(self):
 
         self.EditContact.edit_contact(self.contact_cid)
@@ -648,8 +643,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # self.Addnotes.setpersondata(d)
         self.AddNotes.set_note(self.disp_model['pid'],
                                self.disp_model['fullname'],
-                               self.disp_model['ndate'],
-                               self.sql.query.vdesc_from_pid)
+                               self.sql.query)
         # dropbox full of possible visits
         self.AddNotes.show()
 
@@ -657,33 +651,53 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # Error check
         if not self.useisvalid(self.AddNotes, "Cannot add note"):
             return
-        data = self.AddNotes.notes_model
 
-        # Store the chosen value from the drop down box
-        self.AddNotes.get_vid()
-        self.AddNotes.add_ndate()
-        self.sqlInsertOrShowErr('note', data)
-        self.update_note_table()
-        self.query_for_nid()
+        # add ra to model
+        data = {**self.AddNotes.notes_model, 'ra': self.RA}
 
-        # do we need to add this note to a visit?
-        nid_vid_data = self.AddNotes.nid_vid
-        if(self.AddNotes.ctype_box_2.currentText() == 'NULL'):
-            nid_vid_data[1] = None
-            nid_vid_data[2] = None
+        # look at drop code and vid
+        dropcode = self.AddNotes.get_drop()
+        vid = self.AddNotes.get_vid()
+
+        # if we have a drop, insert with drops_view trigger
+        if(dropcode is not None):
+            note_dict = {**data,
+                         'vid': vid,
+                         'dropcode': self.AddNotes.get_drop(),
+                         }
+            self.sqlInsertOrShowErr('drops_view', note_dict)
+
+        # no drop but do have visit, use trigger on visit_note_view
+        elif(vid is not None):
+            note_dict = {**data,
+                         'vid': vid,
+                         }
+            self.sqlInsertOrShowErr('visit_note_view', note_dict)
+
+        # boring old note insert. no trigger for also insert to person
         else:
-            self.sqlInsertOrShowErr('visit_note', nid_vid_data)
+            self.sqlInsertOrShowErr('note', data)
+            nid = self.query_for_nid()
+            if nid is None:
+                return
+            nid_pid = {'pid': self.AddNotes.notes_model['pid'], 'nid': nid}
+            self.sqlInsertOrShowErr('person_note', nid_pid)
 
-        # ether way, update note_table
+        # whatever we've done, we need to update the view
         self.update_note_table()
 
     def query_for_nid(self):
         data = self.AddNotes.notes_model
-        nid = self.sql.query.get_nid(pid = data['pid'], note = data['note'], ndate = data['ndate'])
-        self.AddNotes.nid_vid['nid'] = nid[0][0]
+        nid = self.sql.query.get_nid(pid=data['pid'],
+                                     note=data['note'],
+                                     ndate=data['ndate'])
+        if nid is None:
+            return(nid[0][0])
+        else:
+            mkmsg('Error inserting note!')
+            return(None)
 
-
-    def sqlInsertOrShowErr(self,table,d):
+    def sqlInsertOrShowErr(self, table, d):
         try:
             # self.sql.query.insert_person(**(self.AddPerson.persondata))
             self.sql.insert(table, d)
