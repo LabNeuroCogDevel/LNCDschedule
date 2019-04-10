@@ -308,31 +308,33 @@ class ScheduleApp(QtWidgets.QMainWindow):
         #res = self.sql.query.att_search(sex=d['sex'],study=d['study'], minage=d['minage'],maxage=d['maxage'])
         self.fill_search_table(res)
 
-    def fill_search_table(self,res):
-        count = 0
+    def fill_search_table(self, res):
         self.people_table_data = res
         self.people_table.setRowCount(len(res))
         # seems like we need to fill each item individually
         # loop across rows (each result) and then into columns (each value)
-        for row_i,row in enumerate(res):
-            for col_i,value in enumerate(row):
-                item=QtWidgets.QTableWidgetItem(str(value))
-                self.people_table.setItem(row_i,col_i,item)
+        for row_i, row in enumerate(res):
+            for col_i, value in enumerate(row):
+                item = QtWidgets.QTableWidgetItem(str(value))
+                self.people_table.setItem(row_i, col_i, item)
 
-        #Change the color after the textes have been successfully inserted.
-        for row_i,row in enumerate(res):
-            if (row[6] == "subject"):
-                for j in range(self.people_table.columnCount()):
-                    self.people_table.item(count, j).setBackground(QtGui.QColor(240, 128, 128))
-                     #Subject titled red
+        # Change the color after the textes have been successfully inserted.
+        # based on drop level
+        drop_colors = {'subject': QtGui.QColor(240, 128, 128),
+                       'visit':   QtGui.QColor(240, 230, 140),
+                       'future':  QtGui.QColor(240, 240, 240),
+                       'unknown': QtGui.QColor(140, 210, 140)}
 
-            if(row[6] == "visit"):
-                for j in range(self.people_table.columnCount()):
-                    self.people_table.item(count, j).setBackground(QtGui.QColor(240, 230, 140)) 
-                    #visit titled yellow
-
-            count = count + 1
-            
+        # N.B. this could go in previous for loop. left here for clarity
+        for row_i, row in enumerate(res):
+            droplevel = row[6]
+            # don't do anything if we don't have a color for this drop level
+            if droplevel is None or droplevel == 'nodrop':
+                continue
+            drop_color = drop_colors.get(droplevel, drop_colors['unknown'])
+            # go through each column of the row and color it
+            for j in range(self.people_table.columnCount()):
+                self.people_table.item(row_i, j).setBackground(drop_color)
 
     def people_item_select(self, thing=None):
         row_i = self.people_table.currentRow()
