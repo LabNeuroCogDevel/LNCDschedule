@@ -33,7 +33,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.setWindowTitle('LNCD Scheduler')
 
         # data store
-        self.disp_model = {'pid': None, 'fullname': None, 'ndate': None, 'age': None,'sex': None}
+        self.disp_model = {'pid': None, 'fullname': None, 'age': None,'sex': None}
 
         # get other modules for querying db and calendar
         try:
@@ -58,7 +58,30 @@ class ScheduleApp(QtWidgets.QMainWindow):
         CMenuItem("Task", fileMenu)
         CMenuItem("Visit Type", fileMenu)
 
-        ## setup person search field
+        # search settings
+        searchMenu = menubar.addMenu('&Search')
+
+        # add items to searchMenu
+        def mkbtngrp(text):
+                return(CMenuItem(text, searchMenu,
+                                 lambda x: self.search_people_by_name(), True))
+
+        self.NoDropCheck = mkbtngrp("&Drops removed")
+        # set up as exclusive (radio button like)
+        lany = mkbtngrp("&All")
+        lonly = mkbtngrp("&LunaIDs Only")
+        lno = mkbtngrp("&Without LunaIDs")
+        # create group
+        self.luna_search_settings = QtWidgets.QActionGroup(searchMenu)
+        self.luna_search_settings.addAction(lonly)
+        self.luna_search_settings.addAction(lno)
+        self.luna_search_settings.addAction(lany)
+        # add to menu
+        searchMenu.addAction(lany)
+        searchMenu.addAction(lonly)
+        searchMenu.addAction(lno)
+
+        # ## setup person search field
         # by name
         self.fullname.textChanged.connect(self.search_people_by_name)
         self.fullname.setText('')
@@ -91,11 +114,6 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # same as
         # a = QtWidgets.QAction("Add Id", self.people_table)
         # self.people_table.addAction(a)
-
-        #The eliminate drop class box is checked
-        self.checkBox.stateChanged.connect(self.subject_drop)
-        #The eliminate non Lunaid box is checked
-        self.checkBox_2.stateChanged.connect(self.Lunaid_drop)
 
         ## cal_table: setup search calendar "cal_table"
         cal_columns=['date','time','what']
@@ -224,24 +242,49 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.AddPerson.setpersondata(d)
         self.AddPerson.show()
 
-
     """
     connector for on text change of fullname textline search bar
     """
-    def search_people_by_name(self,fullname):
-        #print(fullname)
+    def search_people_by_name(self, fullname=None):
+        if fullname is None:
+            fullname = self.fullname.text()
+
         # only update if we've entered 3 or more characters
         # .. but let wildcard (%) go through
-        if(len(fullname) < 3 and fullname != '%' ): return
-        res = self.sql.query.name_search(fullname=fullname)
+        if(len(fullname) < 3 and not re.search('%', fullname)):
+            return
+
+        # use maxdrop and lunaid range to add exclusions
+        search = {
+                'fullname': fullname,
+                'maxlunaid': 99999,
+                'minlunaid': -1,
+                'maxdrop': 'family'}
+
+        # exclude dropped?
+        if self.NoDropCheck.isChecked():
+            search['maxdrop'] = 'nodrop'
+
+        # luna id status (all/without/only)
+        setting = self.luna_search_settings.checkedAction()
+        if setting is not None:
+            setting = re.sub('&', '', setting.text())
+            if re.search('LunaIDs Only', setting):
+                search['minlunaid'] = 1
+            elif re.search('Without LunaIDs', setting):
+                search['maxlunaid'] = 1
+
+        # finally query and update table
+        res = self.sql.query.name_search(**search)
         self.fill_search_table(res)
 
     # seach by id
-    def search_people_by_id(self,lunaid):
-        if(len(lunaid) != 5 ): return
+    def search_people_by_id(self, lunaid):
+        if(len(lunaid) != 5):
+            return
         try:
-          lunaid=int(lunaid)
-        except:
+            lunaid = int(lunaid)
+        except ValueError:
             mkmsg("LunaID should only be numbers")
             return
         res = self.sql.query.lunaid_search(lunaid=lunaid)
@@ -258,57 +301,34 @@ class ScheduleApp(QtWidgets.QMainWindow):
         res = self.sql.query.att_search(**d)
         #res = self.sql.query.att_search(sex=d['sex'],study=d['study'], minage=d['minage'],maxage=d['maxage'])
         self.fill_search_table(res)
-    """
-    fill the person search table
-    expected columns are from pep_columns (8)
-    res is a list of vectors(8) from sql query
-    """ 
-    def subject_drop(self):
-    
-        if(self.checkBox.isChecked()):
-            #Only get things when the maxdrop is null
-            res = self.sql.query.subject_search()
-            self.fill_search_table(res)
-        else:
-            #New Query that simply gets everthing from the database
-            res = self.sql.query.get_everything()
-            self.fill_search_table(res)
 
-    def Lunaid_drop(self):
-        if(self.checkBox_2.isChecked()):
-            #Only get things when the lunaid is null
-            res = self.sql.query.lunaid_search()
-            self.fill_search_table(res)
-        else:
-            #New Query that simply gets everthing from the database
-            res = self.sql.query.get_everything()
-            self.fill_search_table(res)
-
-    def fill_search_table(self,res):
-        count = 0
+    def fill_search_table(self, res):
         self.people_table_data = res
         self.people_table.setRowCount(len(res))
         # seems like we need to fill each item individually
         # loop across rows (each result) and then into columns (each value)
-        for row_i,row in enumerate(res):
-            for col_i,value in enumerate(row):
-                item=QtWidgets.QTableWidgetItem(str(value))
-                self.people_table.setItem(row_i,col_i,item)
+        for row_i, row in enumerate(res):
+            for col_i, value in enumerate(row):
+                item = QtWidgets.QTableWidgetItem(str(value))
+                self.people_table.setItem(row_i, col_i, item)
 
-        #Change the color after the textes have been successfully inserted.
-        for row_i,row in enumerate(res):
-            if (row[6] == "subject"):
-                for j in range(self.people_table.columnCount()):
-                    self.people_table.item(count, j).setBackground(QtGui.QColor(240, 128, 128))
-                     #Subject titled red
+        # Change the color after the textes have been successfully inserted.
+        # based on drop level
+        drop_colors = {'subject': QtGui.QColor(240, 128, 128),
+                       'visit':   QtGui.QColor(240, 230, 140),
+                       'future':  QtGui.QColor(240, 240, 240),
+                       'unknown': QtGui.QColor(140, 210, 140)}
 
-            if(row[6] == "visit"):
-                for j in range(self.people_table.columnCount()):
-                    self.people_table.item(count, j).setBackground(QtGui.QColor(240, 230, 140)) 
-                    #visit titled yellow
-
-            count = count + 1
-            
+        # N.B. this could go in previous for loop. left here for clarity
+        for row_i, row in enumerate(res):
+            droplevel = row[6]
+            # don't do anything if we don't have a color for this drop level
+            if droplevel is None or droplevel == 'nodrop':
+                continue
+            drop_color = drop_colors.get(droplevel, drop_colors['unknown'])
+            # go through each column of the row and color it
+            for j in range(self.people_table.columnCount()):
+                self.people_table.item(row_i, j).setBackground(drop_color)
 
     def people_item_select(self, thing=None):
         row_i = self.people_table.currentRow()
@@ -588,11 +608,6 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.AddContact.show()
 
 
-    def add_notes_pushed(self):
-        #self.Addnotes.setpersondata(d)
-        self.AddNotes.set_note(self.disp_model['pid'],self.disp_model['fullname'], self.disp_model['ndate'])
-        self.AddNotes.show()
-
     def edit_contact_pushed(self):
 
         self.EditContact.edit_contact(self.contact_cid)
@@ -628,8 +643,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # self.Addnotes.setpersondata(d)
         self.AddNotes.set_note(self.disp_model['pid'],
                                self.disp_model['fullname'],
-                               self.disp_model['ndate'],
-                               self.sql.query.vdesc_from_pid)
+                               self.sql.query)
         # dropbox full of possible visits
         self.AddNotes.show()
 
@@ -637,33 +651,53 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # Error check
         if not self.useisvalid(self.AddNotes, "Cannot add note"):
             return
-        data = self.AddNotes.notes_model
 
-        # Store the chosen value from the drop down box
-        self.AddNotes.get_vid()
-        self.AddNotes.add_ndate()
-        self.sqlInsertOrShowErr('note', data)
-        self.update_note_table()
-        self.query_for_nid()
+        # add ra to model
+        data = {**self.AddNotes.notes_model, 'ra': self.RA}
 
-        # do we need to add this note to a visit?
-        nid_vid_data = self.AddNotes.nid_vid
-        if(self.AddNotes.ctype_box_2.currentText() == 'NULL'):
-            nid_vid_data[1] = None
-            nid_vid_data[2] = None
+        # look at drop code and vid
+        dropcode = self.AddNotes.get_drop()
+        vid = self.AddNotes.get_vid()
+
+        # if we have a drop, insert with drops_view trigger
+        if(dropcode is not None):
+            note_dict = {**data,
+                         'vid': vid,
+                         'dropcode': self.AddNotes.get_drop(),
+                         }
+            self.sqlInsertOrShowErr('drops_view', note_dict)
+
+        # no drop but do have visit, use trigger on visit_note_view
+        elif(vid is not None):
+            note_dict = {**data,
+                         'vid': vid,
+                         }
+            self.sqlInsertOrShowErr('visit_note_view', note_dict)
+
+        # boring old note insert. no trigger for also insert to person
         else:
-            self.sqlInsertOrShowErr('visit_note', nid_vid_data)
+            self.sqlInsertOrShowErr('note', data)
+            nid = self.query_for_nid()
+            if nid is None:
+                return
+            nid_pid = {'pid': self.AddNotes.notes_model['pid'], 'nid': nid}
+            self.sqlInsertOrShowErr('person_note', nid_pid)
 
-        # ether way, update note_table
+        # whatever we've done, we need to update the view
         self.update_note_table()
 
     def query_for_nid(self):
         data = self.AddNotes.notes_model
-        nid = self.sql.query.get_nid(pid = data['pid'], note = data['note'], ndate = data['ndate'])
-        self.AddNotes.nid_vid['nid'] = nid[0][0]
+        nid = self.sql.query.get_nid(pid=data['pid'],
+                                     note=data['note'],
+                                     ndate=data['ndate'])
+        if nid is None:
+            return(nid[0][0])
+        else:
+            mkmsg('Error inserting note!')
+            return(None)
 
-
-    def sqlInsertOrShowErr(self,table,d):
+    def sqlInsertOrShowErr(self, table, d):
         try:
             # self.sql.query.insert_person(**(self.AddPerson.persondata))
             self.sql.insert(table, d)

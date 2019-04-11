@@ -5,8 +5,13 @@ select * from enroll natural join person where etype like 'LunaID'
 select
  fullname,lunaid,curagefloor,dob,sex,lastvisit,maxdrop,studies,pid
  from person_search_view
- where fullname ilike %(fullname)s
- limit 20
+ where fullname ilike %(fullname)s and
+ -- make null drop 'nodrop', for all default to search max(droplevels)=='family'
+ coalesce(maxdrop,'nodrop'::droplevels) <= %(maxdrop)s and
+ -- view makes no lunaid a lunaid of 0, for all search lunaid > -1
+ coalesce(lunaid,0) > %(minlunaid)s and
+ coalesce(lunaid,0) < %(maxlunaid)s
+ limit 50
 
 -- name: lunaid_search
 select
@@ -172,3 +177,6 @@ select distinct(task) from study_task
 
 -- name: list_ras
 select distinct ra from ra;
+
+-- name: list_dropcodes
+select dropcode, droplevel from dropcode where droplevel !=  'nodrop' order by droplevel desc;
