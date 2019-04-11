@@ -672,10 +672,9 @@ class ScheduleApp(QtWidgets.QMainWindow):
             mkmsg(str(e))
             return(False)
 
-    #def sqlUpdateOrShowErr(self, table):
-        #try:
-            #self.sql.update(table,)
-            # _____________________________________
+    def sqlUpdateOrShowErr(self, table, id_column, new_value, old_value):
+        try:
+            self.sql.update(table, table, id_column, new_)
 
 
     def construct_drop_down_box(self):
