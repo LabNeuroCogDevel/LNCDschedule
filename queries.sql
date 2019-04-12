@@ -82,7 +82,11 @@ select note,dropcode, ndate, vtimestamp, note.ra, vid from note
    natural left join dropped
    where pid = %(pid)s
    order by vtimestamp desc, ndate desc 
-
+--name: get_status
+select vstatus
+from visit_person_view
+where pid = %(pid)s
+and to_char(vtimestamp,'YYYY-mm-dd') = %(vtimestamp)s
 
 -- name: contact_by_pid
 select

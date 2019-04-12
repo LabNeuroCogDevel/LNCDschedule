@@ -68,27 +68,27 @@
    </item>
    <item>
     <property name="text">
-     <string>New Item</string>
+     <string>who</string>
     </property>
    </item>
    <item>
     <property name="text">
-     <string>Cvalue</string>
+     <string>cvalue</string>
     </property>
    </item>
    <item>
     <property name="text">
-     <string>Relaiton</string>
+     <string>relation</string>
     </property>
    </item>
    <item>
     <property name="text">
-     <string>Nogood</string>
+     <string>nogood</string>
     </property>
    </item>
    <item>
     <property name="text">
-     <string>Added</string>
+     <string>added</string>
     </property>
    </item>
   </widget>

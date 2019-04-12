@@ -34,19 +34,20 @@ class lncdSql():
         col=psycopg2.sql.SQL(",").join(cols)
         valkey=psycopg2.sql.SQL(",").join(vals)
 
-        insertsql=psycopg2.sql.SQL("insert into {} ({}) values ({})").format(table, col,valkey)
+        insertsql=psycopg2.sql.SQL("insert into {} ({}) values ({})").\
+           format(table, col,valkey)
         return(insertsql)
 
-    def mkupdate(self,table,colnames, id_column, new_value, old_value):
-        table = psycopg2.sql.Identidier(table)
-        #Check if the values if always stable
-        cols=map(psycopg2.sql.Identifier,colnames);
-        vals=map(psycopg2.sql.Placeholder,colnames)
+    def mkupdate(self,table,id_column, id, new_value):
+        table = psycopg2.sql.Identifier(table)
+        id_column = psycopg2.sql.Identifier(id_column)
+        #new_value = psycopg2.sql.Placeholder(new_value)
+        #new_value = psycopg2.sql.SQL(",").join(new_value)
+        id = psycopg2.sql.Placeholder(new_value)
 
-        col=psycopg2.sql.SQL(",").join(cols)
-        valkey=psycopg2.sql.SQL(",").join(vals)
-
-        updatesql = psycopg2.sql.SQL("UPDATE {} ({}) SET {} = {} where cid = {}").format(table, colnames, old_value, new_value, id_column)
+        updatesql = psycopg2.sql.SQL("UPDATE {} SET {} = %s where cid = %s").\
+           format(table, id_column)
+        print(updatesql.as_string(self.conn))
         return updatesql
 
     def insert(self,table,d):
@@ -56,11 +57,10 @@ class lncdSql():
         cur.execute(sql,d)
         cur.close()
 
-    def update(self,table_name, id_column, column_change, value, id):
-        sql = self.mkupdate(table_name, column_change, id_column. value, id)
-        print(sql.as_string(self.conn)%d)
+    def update(self,table_name, id_column, id, column_change):
+        sql = self.mkupdate(table_name, id_column, id, column_change)
         cur=self.conn.cursor()
-        cur.execute(sql,d)
+        cur.execute(sql, (column_change, id))
         cur.close()
         """
         table eg contact

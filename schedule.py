@@ -191,6 +191,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.EditContact = EditContact.EditContactWindow(self)
         #Change the wrong cvalue if needed.
         self.edit_contact_button.clicked.connect(self.edit_contact_pushed)
+        self.EditContact.accepted.connect(self.update_contact_to_db)
 
         ## add notes and query for pid from visit_summary
         self.AddNotes = AddNotes.AddNoteWindow(self)
@@ -599,6 +600,20 @@ class ScheduleApp(QtWidgets.QMainWindow):
         full_name = self.sql.query.get_person(pid=pid)[0][0]
         # update to this person
         self.render_person(pid, full_name, current_age, current_gender)
+        self.checkin_check(pid)
+
+    def checkin_check(self, pid):
+        row_i =self.cal_table.currentRow()
+        self.scheduled_date = self.cal_table.item(row_i, 0).text()
+        print(self.scheduled_date)
+        checkin_status = self.sql.query.get_status(pid = pid, vtimestamp = self.scheduled_date)[0][0]
+        print(checkin_status)
+        print(pid)
+        if(checkin_status == 'checkedin'):
+            self.checkin_button.setEnabled(False)
+        else:
+            self.checkin_button.setEnabled(True)
+
 
     # ## CONTACTS
     # self.add_contact_button.clicked.connect(self.add_contact_pushed)
@@ -616,8 +631,8 @@ class ScheduleApp(QtWidgets.QMainWindow):
     def update_contact_to_db(self):
 
         data = self.EditContact.edit_model 
-        self.sqlUpdateOrShowErr('contact', data)
-
+        self.sqlUpdateOrShowErr('contact', data['ctype'], data['cid'], data['changes'])
+        self.update_contact_table()
 
     # self.AddContact.accepted.connect(self.add_contact_to_db)
     def add_contact_to_db(self):
@@ -636,6 +651,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
         row_i =self.contact_table.currentRow()
         self.contact_cid = self.contact_table.item(row_i, 5).text()
+        self.name = self.contact_table.item(row_i, 0).text()
         #print(contact_cid)
 
     # ## Notes
@@ -706,9 +722,14 @@ class ScheduleApp(QtWidgets.QMainWindow):
             mkmsg(str(e))
             return(False)
 
-    def sqlUpdateOrShowErr(self, table, id_column, new_value, old_value):
+    #Later better map all the data into one variable so that it's easy to see.
+    def sqlUpdateOrShowErr(self, table, id_column, id, new_value):
         try:
-            self.sql.update(table, table, id_column, new_)
+            self.sql.update(table, id_column, id, new_value)
+            return(True)
+        except Exception as e:
+            mkmsg(str(e))
+            return(False)
 
 
     def construct_drop_down_box(self):
