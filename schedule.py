@@ -565,6 +565,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
      * potental schedual data and srings
     """
     def cal_item_select(self):
+        #First enable the button no matter what
         self.checkin_button.setEnabled(True)
         row_i = self.cal_table.currentRow()
         cal_desc = self.cal_table.item(row_i, 2).text()
