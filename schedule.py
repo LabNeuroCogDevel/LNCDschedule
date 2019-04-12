@@ -565,6 +565,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
      * potental schedual data and srings
     """
     def cal_item_select(self):
+        self.checkin_button.setEnabled(True)
         row_i = self.cal_table.currentRow()
         cal_desc = self.cal_table.item(row_i, 2).text()
         print(cal_desc)
@@ -597,22 +598,20 @@ class ScheduleApp(QtWidgets.QMainWindow):
         if len(res) == 0:
             return
         pid = res[0][0]
+        self.checkin_check(pid)
         full_name = self.sql.query.get_person(pid=pid)[0][0]
         # update to this person
         self.render_person(pid, full_name, current_age, current_gender)
-        self.checkin_check(pid)
 
     def checkin_check(self, pid):
         row_i =self.cal_table.currentRow()
         self.scheduled_date = self.cal_table.item(row_i, 0).text()
         print(self.scheduled_date)
-        checkin_status = self.sql.query.get_status(pid = pid, vtimestamp = self.scheduled_date)[0][0]
-        print(checkin_status)
-        print(pid)
-        if(checkin_status == 'checkedin'):
+        self.checkin_status = self.sql.query.get_status(pid = pid, vtimestamp = self.scheduled_date)[0][0]
+        print(self.checkin_status)
+
+        if(self.checkin_status == 'checkedin'):
             self.checkin_button.setEnabled(False)
-        else:
-            self.checkin_button.setEnabled(True)
 
 
     # ## CONTACTS
