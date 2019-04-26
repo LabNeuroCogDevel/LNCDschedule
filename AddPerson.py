@@ -33,9 +33,12 @@ class AddPersonWindow(QtWidgets.QDialog):
         print("set person data: %s"%str(d))
         for k in self.persondata.keys():
             if k in d: self.persondata[k] = d[k]
+        if (self.persondata['fname'][:1] == '%'):
+            self.fname_edit.setText(self.persondata['fname'][1:]) #Get rid of the first % in the name 
+        else:
+            self.fname_edit.setText(self.persondata['fname']) #if there is no % sign, simply add everything in it.
 
-        self.fname_edit.setText(self.persondata['fname'] )
-        self.lname_edit.setText(self.persondata['lname'] )
+            self.lname_edit.setText(self.persondata['lname'])
 
     """
     set data from gui edit value

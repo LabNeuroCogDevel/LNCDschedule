@@ -237,7 +237,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>Move Visit Info</string>
+     <string>More Visit Info</string>
     </property>
    </widget>
    <widget class="QLabel" name="search_note_label">
@@ -487,7 +487,7 @@
      <x>0</x>
      <y>0</y>
      <width>1072</width>
-     <height>20</height>
+     <height>22</height>
     </rect>
    </property>
   </widget>

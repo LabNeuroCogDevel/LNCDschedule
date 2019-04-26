@@ -3,7 +3,7 @@
 import sys
 import LNCDcal
 import lncdSql
-import AddNotes, AddContact,EditContact, ScheduleVisit, AddPerson, CheckinVisit
+import AddNotes, AddContact,EditContact, EditVisit, ScheduleVisit, AddPerson, CheckinVisit
 from PyQt5 import uic, QtCore, QtGui, QtWidgets
 import datetime
 import subprocess, re  # for whoami
@@ -23,6 +23,8 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
         #Defined for editing the contact_table
         self.contact_cid = 0
+        #Defined for editing the visit table
+        self.visit_id = 0
         # schedule and checkin data
         self.schedule_what_data = {'fullname': '', 'pid': None, 'date': None, 'time': None}
         self.checkin_what_data =  {'fullname': '', 'vid': None, 'datetime': None, 'pid': None,'vtype':None, 'study':None}
@@ -139,12 +141,14 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.visit_table.setHorizontalHeaderLabels(self.visit_columns)
         #Make the visit table uneditable
         self.visit_table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
+        #The thing must be clicked!!!!!!
         self.visit_table.itemClicked.connect(self.visit_item_select)
 
         # ## context menu + sub-menu for visits: adding RAs
         visit_menu = QtWidgets.QMenu("visit_menu", self.visit_table)
         CMenuItem("no show", visit_menu)
-        CMenuItem("reschedule", visit_menu)
+        #Jump to reschedule visit function whenever the reschdule button is clicked.
+        CMenuItem("reschedule", visit_menu, lambda: self.reschedule_visit())
         # find all RAs and add to context menu
         assignRA = visit_menu.addMenu("&Assign RA")
         for ra in self.sql.query.list_ras():
@@ -189,7 +193,14 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
         #Edit contact
         self.EditContact = EditContact.EditContactWindow(self)
+        #Edit visit
+        self.EditVisit = EditVisit.EditVisitWindow(self)
+        #Whenever the ok button is clocked in the Editvisit table, the function update_visit_to_db will be called.
+        self.EditVisit.accepted.connect(self.update_visit_to_db)
+        #add the vid value into the interface
+        self.visit_table.itemClicked.connect(self.edit_visit_table)
         #Change the wrong cvalue if needed.
+        #Must make sure it's clicked
         self.edit_contact_button.clicked.connect(self.edit_contact_pushed)
         self.EditContact.accepted.connect(self.update_contact_to_db)
 
@@ -372,6 +383,10 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.checkin_what_data['vtype'] = d[self.visit_columns.index('vtype')]
         self.checkin_what_data['datetime'] = d[self.visit_columns.index('day')]
         self.update_checkin_what_label()
+    def reschedule_visit(self):
+        #print("Entering reschedule");
+        self.EditVisit.edit_visit(self.visit_id)
+        self.EditVisit.show()
 
     def updateVisitRA(self, ra):
         row_i = self.visit_table.currentRow()
@@ -393,6 +408,16 @@ class ScheduleApp(QtWidgets.QMainWindow):
         #  3. update visit
         self.sql.update('visit', 'googleuri', e['id'], 'vid', vid)
         #  4. refresh visit view
+        self.update_visit_table()
+
+    def edit_visit_table(self):
+        row_i = self.visit_table.currentRow()
+        self.visit_id = self.visit_table.item(row_i, 9).text()
+        self.name = self.visit_table.item(row_i, 0).text()
+        #update the new visit info to the database
+    def update_visit_to_db(self):
+        data = self.EditVisit.edit_model 
+        self.sqlUpdateOrShowErr('visit_summary', data['ctype'], data['vid'], data['changes'])
         self.update_visit_table()
 
     def update_visit_table(self):
@@ -649,7 +674,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
     def edit_contact_table(self):
 
-        row_i =self.contact_table.currentRow()
+        row_i = self.contact_table.currentRow()
         self.contact_cid = self.contact_table.item(row_i, 5).text()
         self.name = self.contact_table.item(row_i, 0).text()
         #print(contact_cid)
