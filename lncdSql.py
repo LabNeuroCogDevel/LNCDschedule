@@ -38,15 +38,16 @@ class lncdSql():
            format(table, col,valkey)
         return(insertsql)
 
-    def mkupdate(self,table,id_column, id, new_value):
+    def mkupdate(self,table,id_column, id, new_value, id_type):
         table = psycopg2.sql.Identifier(table)
         id_column = psycopg2.sql.Identifier(id_column)
+        id_type = psycopg2.sql.Identifier(id_type)
         #new_value = psycopg2.sql.Placeholder(new_value)
         #new_value = psycopg2.sql.SQL(",").join(new_value)
         id = psycopg2.sql.Placeholder(new_value)
 
-        updatesql = psycopg2.sql.SQL("UPDATE {} SET {} = %s where cid = %s").\
-           format(table, id_column)
+        updatesql = psycopg2.sql.SQL("UPDATE {} SET {} = %s where {} = %s").\
+           format(table, id_column, id_type)
         print(updatesql.as_string(self.conn))
         return updatesql
 
@@ -57,8 +58,8 @@ class lncdSql():
         cur.execute(sql,d)
         cur.close()
 
-    def update(self,table_name, id_column, id, column_change):
-        sql = self.mkupdate(table_name, id_column, id, column_change)
+    def update(self,table_name, id_column, id, column_change, id_type):
+        sql = self.mkupdate(table_name, id_column, id, column_change, id_type)
         cur=self.conn.cursor()
         cur.execute(sql, (column_change, id))
         cur.close()

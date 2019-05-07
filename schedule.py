@@ -3,13 +3,15 @@
 import sys
 import LNCDcal
 import lncdSql
-import AddNotes, AddContact,EditContact, EditVisit, ScheduleVisit, AddPerson, CheckinVisit
+import AddNotes, AddContact,EditContact, ScheduleVisit, AddPerson, CheckinVisit
 from PyQt5 import uic, QtCore, QtGui, QtWidgets
 import datetime
 import subprocess, re  # for whoami
 from LNCDutils import mkmsg, generic_fill_table, CMenuItem,\
                       update_gcal, get_info_for_cal
 from LNCDutils import *
+
+import psycopg2
 
 # google reports UTC, we are EST or EDT. get the diff between google and us
 launchtime=int(datetime.datetime.now().strftime('%s'))
@@ -25,6 +27,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.contact_cid = 0
         #Defined for editing the visit table
         self.visit_id = 0
+        old_google_uri = None
         # schedule and checkin data
         self.schedule_what_data = {'fullname': '', 'pid': None, 'date': None, 'time': None}
         self.checkin_what_data =  {'fullname': '', 'vid': None, 'datetime': None, 'pid': None,'vtype':None, 'study':None}
@@ -148,7 +151,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         visit_menu = QtWidgets.QMenu("visit_menu", self.visit_table)
         CMenuItem("no show", visit_menu)
         #Jump to reschedule visit function whenever the reschdule button is clicked.
-        CMenuItem("reschedule", visit_menu, lambda: self.reschedule_visit())
+        CMenuItem("reschedule", visit_menu, lambda: self.reschedule_all())
         # find all RAs and add to context menu
         assignRA = visit_menu.addMenu("&Assign RA")
         for ra in self.sql.query.list_ras():
@@ -193,10 +196,6 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
         #Edit contact
         self.EditContact = EditContact.EditContactWindow(self)
-        #Edit visit
-        self.EditVisit = EditVisit.EditVisitWindow(self)
-        #Whenever the ok button is clocked in the Editvisit table, the function update_visit_to_db will be called.
-        self.EditVisit.accepted.connect(self.update_visit_to_db)
         #add the vid value into the interface
         self.visit_table.itemClicked.connect(self.edit_visit_table)
         #Change the wrong cvalue if needed.
@@ -383,10 +382,22 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.checkin_what_data['vtype'] = d[self.visit_columns.index('vtype')]
         self.checkin_what_data['datetime'] = d[self.visit_columns.index('day')]
         self.update_checkin_what_label()
-    def reschedule_visit(self):
-        #print("Entering reschedule");
-        self.EditVisit.edit_visit(self.visit_id)
-        self.EditVisit.show()
+    def reschedule_all(self):
+        row_i = self.visit_table.currentRow()
+        vid = self.visit_table.item(row_i, 9).text()
+        googleuri = self.sql.query.get_googleuri(vid = vid)
+        #Reschedule everything in the visit
+        #Delete the visit first
+        try:
+            self.sql.query.delete_visit(vid=self.visit_id)
+        except psycopg2.ProgrammingError:
+            print('Error that does not make sense')
+        print(vid)
+        print(googleuri)
+        print('------------------------------------------------')
+        
+        #Reschedule the visit
+        self.schedule_button_pushed(googleuri)
 
     def updateVisitRA(self, ra):
         row_i = self.visit_table.currentRow()
@@ -414,12 +425,6 @@ class ScheduleApp(QtWidgets.QMainWindow):
         row_i = self.visit_table.currentRow()
         self.visit_id = self.visit_table.item(row_i, 9).text()
         self.name = self.visit_table.item(row_i, 0).text()
-        #update the new visit info to the database
-    def update_visit_to_db(self):
-        data = self.EditVisit.edit_model 
-        self.sqlUpdateOrShowErr('visit_summary', data['ctype'], data['vid'], data['changes'])
-        self.update_visit_table()
-
     def update_visit_table(self):
         pid=self.disp_model['pid']
         self.visit_table_data = self.sql.query.visit_by_pid(pid=pid)
@@ -459,7 +464,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
     ###### VISIT
     # see generic_fill_table
-    def schedule_button_pushed(self):
+    def schedule_button_pushed(self, old_google_uri=False):
         d=self.schedule_what_data['date'] 
         t=self.schedule_what_data['time']
         #Got the pid ID for the person who scheduled.
@@ -472,13 +477,18 @@ class ScheduleApp(QtWidgets.QMainWindow):
             mkmsg('select a person before trying to schedule')
             return()
         dt=datetime.datetime.combine(d, t)
-        self.ScheduleVisit.setup(pid,fullname,self.RA,dt)
+        self.ScheduleVisit.setup(pid,fullname,self.RA,dt, old_google_uri)
         self.ScheduleVisit.show()
 
     def schedule_to_db(self):
         # valid?
         if not self.useisvalid(self.ScheduleVisit, "Cannot schedule visit"): return
         #todo: add to calendar or msgerr
+        #makw the note index None so that the sql can recongnize it.
+        if(self.ScheduleVisit.model['note'] == ''):
+            self.ScheduleVisit.model['note'] = None
+            print("updated note to none")
+
         try:
             self.ScheduleVisit.add_to_calendar(self.cal,self.disp_model)
         except Exception as e:
@@ -489,10 +499,15 @@ class ScheduleApp(QtWidgets.QMainWindow):
         if not self.sqlInsertOrShowErr('visit_summary',self.ScheduleVisit.model):
             # todo: remove from calendar if sql failed
             return()
+        if(self.ScheduleVisit.old_googleuri != False and self.ScheduleVisit.old_googleuri != None and len(self.ScheduleVisit.old_googleuri) > 0):
+            google_old_uri = self.ScheduleVisit.old_googleuri[0][0]
+            print("++++++++++++++++++++++++++++++++++")
+            self.cal.delete_event(google_old_uri)
         
         # need to refresh visits
         self.update_visit_table()
         self.update_note_table()
+
 
     ## checkin
     def checkin_button_pushed(self):
@@ -656,7 +671,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
     def update_contact_to_db(self):
 
         data = self.EditContact.edit_model 
-        self.sqlUpdateOrShowErr('contact', data['ctype'], data['cid'], data['changes'])
+        self.sqlUpdateOrShowErr('contact', data['ctype'], data['cid'], data['changes'], "cid")
         self.update_contact_table()
 
     # self.AddContact.accepted.connect(self.add_contact_to_db)
@@ -748,9 +763,9 @@ class ScheduleApp(QtWidgets.QMainWindow):
             return(False)
 
     #Later better map all the data into one variable so that it's easy to see.
-    def sqlUpdateOrShowErr(self, table, id_column, id, new_value):
+    def sqlUpdateOrShowErr(self, table, id_column, id, new_value, id_type):
         try:
-            self.sql.update(table, id_column, id, new_value)
+            self.sql.update(table, id_column, id, new_value, id_type)
             return(True)
         except Exception as e:
             mkmsg(str(e))

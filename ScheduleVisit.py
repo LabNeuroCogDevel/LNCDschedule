@@ -33,10 +33,11 @@ class ScheduleVisitWindow(QtWidgets.QDialog):
     def add_vtypes(self,vals): self.vtype_box.addItems(vals)
     def add_studies(self,vals): self.study_box.addItems(vals)
 
-    def setup(self,pid,name,RA,dt):
+    def setup(self,pid,name,RA,dt, old_googleuri=None):
         print('updating schedule with %s and %s'%(pid,name))
         self.model['pid'] = pid
         self.model['ra']  = RA
+        self.old_googleuri = old_googleuri
         qdt = QtCore.QDateTime.fromTime_t(dt.timestamp())
         self.vtimestamp_edit.setDateTime(qdt)
         self.who_label.setText(name)

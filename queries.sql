@@ -54,6 +54,16 @@ select * from person_search_view where pid = %(pid)s
 --name: next_luna
 select max(lunaid) from person_search_view where lunaid < 20000
 
+--name: get_birthday
+select
+ to_char(dob,'YYYY-MM-DD')
+ from visit_person_view
+ where vid = %(vid)s
+
+--name: update_age
+update visit
+  set age = %(age)s
+  where vid = %(vid)s
 
 -- name: visit_by_pid
 select
@@ -62,6 +72,12 @@ select
   where pid = %(pid)s
   -- and "action" = 'checkedin'
   order by vtimestamp desc
+  
+-- name: get_googleuri
+select
+ googleuri
+ from visit
+ where vid = %(vid)s
 
 -- name: visit_by_vid
 select
@@ -130,7 +146,9 @@ select
     and note = %(note)s
     and ndate = %(ndate)s
 
-
+-- name: delete_visit
+  delete from visit
+    where vid = %(vid)s
 
 
 --name: list_studies

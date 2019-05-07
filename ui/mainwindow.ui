@@ -172,7 +172,7 @@
     <property name="geometry">
      <rect>
       <x>530</x>
-      <y>470</y>
+      <y>500</y>
       <width>531</width>
       <height>251</height>
      </rect>
@@ -205,7 +205,7 @@
     <property name="geometry">
      <rect>
       <x>830</x>
-      <y>740</y>
+      <y>760</y>
       <width>131</width>
       <height>22</height>
      </rect>
@@ -217,8 +217,8 @@
    <widget class="QPushButton" name="add_contact_button">
     <property name="geometry">
      <rect>
-      <x>959</x>
-      <y>740</y>
+      <x>960</x>
+      <y>760</y>
       <width>101</width>
       <height>22</height>
      </rect>
@@ -306,7 +306,7 @@
     <property name="geometry">
      <rect>
       <x>750</x>
-      <y>450</y>
+      <y>470</y>
       <width>241</width>
       <height>16</height>
      </rect>
@@ -470,7 +470,7 @@
     <property name="geometry">
      <rect>
       <x>720</x>
-      <y>740</y>
+      <y>760</y>
       <width>111</width>
       <height>22</height>
      </rect>
