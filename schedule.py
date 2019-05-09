@@ -392,9 +392,6 @@ class ScheduleApp(QtWidgets.QMainWindow):
             self.sql.query.delete_visit(vid=self.visit_id)
         except psycopg2.ProgrammingError:
             print('Error that does not make sense')
-        print(vid)
-        print(googleuri)
-        print('------------------------------------------------')
         
         #Reschedule the visit
         self.schedule_button_pushed(googleuri)
@@ -404,20 +401,35 @@ class ScheduleApp(QtWidgets.QMainWindow):
         d = self.visit_table_data[row_i]
         vid = d[self.visit_columns.index('vid')]
         pid = self.disp_model['pid']
-        mkmsg('Still implementing: %s to %d (%d)' % (ra, vid, pid))
+        #mkmsg('Still implementing: %s to %d (%d)' % (ra, vid, pid))
         # TODO:
         info = get_info_for_cal(self.sql.query, vid)
+        #Update the database for RA
         info['ra'] = ra
+        try:
+            self.sql.query.update_RA(ra = info['ra'], vid = vid)
+        except psycopg2.ProgrammingError:
+            print('Error that does not make sense')
+
         print(info)
-        return
         #  1. update google calendar title
-        self.cal.delete_event(info['googleuri'])
+        info['googleuri'] = self.sql.query.get_googleuri(vid = vid)
+        info['googleuri'] = info['googleuri'][0][0]
+        info['calid'] = info['googleuri']
+
+        #self.cal.delete_event(info['googleuri'])
         e = update_gcal(self.cal, info, assign=True)
+        #Update the event(e) in the database
+        try:
+            self.sql.query.update_uri(googleuri = e['id'], vid = vid)
+        except psycopg2.ProgrammingError:
+            print('Error that does not make sense')
+
+        new_node = {'ra':ra,'action':'assigned','vid':vid}
         #  2. add to visit_action # vatimestamp? auto inserted?
-        self.insert('visit_action',
-                    {'ra': ra, 'action': 'assigned', 'vid': vid})
+        self.sql.insert('visit_action',new_node)
         #  3. update visit
-        self.sql.update('visit', 'googleuri', e['id'], 'vid', vid)
+        #self.sql.update('visit', 'googleuri', e['id'], 'vid', vid)
         #  4. refresh visit view
         self.update_visit_table()
 
@@ -501,7 +513,6 @@ class ScheduleApp(QtWidgets.QMainWindow):
             return()
         if(self.ScheduleVisit.old_googleuri != False and self.ScheduleVisit.old_googleuri != None and len(self.ScheduleVisit.old_googleuri) > 0):
             google_old_uri = self.ScheduleVisit.old_googleuri[0][0]
-            print("++++++++++++++++++++++++++++++++++")
             self.cal.delete_event(google_old_uri)
         
         # need to refresh visits

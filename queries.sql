@@ -59,11 +59,26 @@ select
  to_char(dob,'YYYY-MM-DD')
  from visit_person_view
  where vid = %(vid)s
+ 
+--name: update_uri
+update visit
+  set googleuri = %(googleuri)s
+  where vid = %(vid)s
 
 --name: update_age
 update visit
   set age = %(age)s
   where vid = %(vid)s
+
+--name: update_RA
+update visit_action
+  set ra = %(ra)s
+  where vid = %(vid)s
+
+--name: get_time
+select  vtimestamp
+from visit_summary
+where vid = %(vid)s
 
 -- name: visit_by_pid
 select
