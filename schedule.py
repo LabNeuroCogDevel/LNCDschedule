@@ -313,7 +313,8 @@ class ScheduleApp(QtWidgets.QMainWindow):
     # by attributes
     def search_people_by_att(self,*argv):
         #Error check
-        if(self.max_age_search.text() == '' or self.min_age_search.text() == ''):
+        if(self.max_age_search.text() == '' or self.min_age_search.text() == '' or not self.max_age_search.text().isdigit() or not self.min_age_search.text().isdigit()):
+            mkmsg("one of the field is either empty or not a number, nothing will work. Please fix it and try again")
             return
 
         d={ 'study': comboval(self.study_search), \
