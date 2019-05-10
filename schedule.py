@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 import sys
 import LNCDcal
 import lncdSql
@@ -291,7 +290,16 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
     # seach by id
     def search_people_by_id(self, lunaid):
+        if(lunaid == '' or not lunaid.isdigit()):
+            mkmsg("LunaID should only be numbers")
+            return
         if(len(lunaid) != 5):
+            try:
+                res = self.sql.query.lunaid_search_all(lunaid=lunaid)
+            except ValueError:
+                mkmsg("LunaID should only be numbers")
+            people_data = res
+            self.fill_search_table(res)
             return
         try:
             lunaid = int(lunaid)
@@ -304,6 +312,10 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
     # by attributes
     def search_people_by_att(self,*argv):
+        #Error check
+        if(self.max_age_search.text() == '' or self.min_age_search.text() == ''):
+            return
+
         d={ 'study': comboval(self.study_search), \
                      'sex': comboval(self.sex_search), \
                      'minage': self.min_age_search.text(), \
@@ -425,7 +437,10 @@ class ScheduleApp(QtWidgets.QMainWindow):
         except psycopg2.ProgrammingError:
             print('Error that does not make sense')
 
-        new_node = {'ra':ra,'action':'assigned','vid':vid}
+        #For this, sched is origionally assigned. Changed it to sche so that the data base will  accept the vstatus.
+        #//////////////////////////////////////////////
+        new_node = {'ra':ra,'action':'sched','vid':vid}
+        #//////////////////////////////////////////////
         #  2. add to visit_action # vatimestamp? auto inserted?
         self.sql.insert('visit_action',new_node)
         #  3. update visit

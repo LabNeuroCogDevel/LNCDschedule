@@ -31,12 +31,13 @@ select
   fullname,lunaid,curagefloor,dob,sex,lastvisit,maxdrop,studies,pid
 from person_search_view 
 
--- name: lunaid_search
+--name: lunaid_search_all
 select 
   fullname,lunaid,curagefloor,dob,sex,lastvisit,maxdrop,studies,pid
 from person_search_view 
-where lunaid is not null;
--- name: att_searchs
+where lunaid >= %(lunaid)s;
+
+-- name: att_search
 -- N.B. ~ '' == like '%'
 select
  fullname,lunaid,curagefloor,dob,sex,lastvisit,maxdrop,studies,pid
