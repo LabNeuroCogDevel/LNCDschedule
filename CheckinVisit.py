@@ -2,6 +2,7 @@ from PyQt5 import uic,QtCore, QtWidgets,QtGui
 from LNCDutils import  *
 import json
 import pprint
+from psycopg2 import IntegrityError
 
 """
 This class provides a window for scheduling visit information
@@ -198,7 +199,11 @@ class CheckinVisitWindow(QtWidgets.QDialog):
        pp.pprint(d)
 
        # actually do it
-       sql.insert('visit_checkin_view',d)
+       try:
+           sql.insert('visit_checkin_view',d)
+       except IntegrityError as e:
+           mkmsg("Please do not add duplicated keys")
+
        
 
 

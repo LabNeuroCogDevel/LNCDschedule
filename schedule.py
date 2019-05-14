@@ -21,7 +21,6 @@ people_data = None
 class ScheduleApp(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
-
         #Defined for editing the contact_table
         self.contact_cid = 0
         #Defined for editing the visit table
@@ -314,7 +313,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
     def search_people_by_att(self,*argv):
         #Error check
         if(self.max_age_search.text() == '' or self.min_age_search.text() == '' or not self.max_age_search.text().isdigit() or not self.min_age_search.text().isdigit()):
-            mkmsg("one of the field is either empty or not a number, nothing will work. Please fix it and try again")
+            mkmsg("One of the input on the input box is either empty or not a number, nothing will work. Please fix it and try again")
             return
 
         d={ 'study': comboval(self.study_search), \
@@ -356,6 +355,8 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
     def people_item_select(self, thing=None):
         row_i = self.people_table.currentRow()
+        #Color it whenever its clicked so that RA should know which one to right click
+        #self.click_color(self.people_table, row_i)
         d = self.people_table_data[row_i]
         # main model
 
@@ -388,6 +389,10 @@ class ScheduleApp(QtWidgets.QMainWindow):
         pid     = self.disp_model['pid']
         fullname= self.disp_model['fullname']
 
+        #for j in range(self.visit_table.columnCount()):
+        #self.visit_table.item(row_i, j).setBackground(QtGui.QColor(182, 236, 48))
+        self.click_color(self.visit_table, row_i)
+
         self.checkin_what_data['vid'] = vid
         self.checkin_what_data['study'] = study
         self.checkin_what_data['pid'] = pid
@@ -408,6 +413,16 @@ class ScheduleApp(QtWidgets.QMainWindow):
         
         #Reschedule the visit
         self.schedule_button_pushed(googleuri)
+
+        self.update_visit_table()
+    #Change color of the row whenever do leftclick
+    def click_color(self, table, row_i):
+        for i in range (table.rowCount()):
+            for j in range(table.columnCount()):
+                if i == row_i:
+                    table.item(i, j).setBackground(QtGui.QColor(222, 249, 177))
+                    continue
+                table.item(i, j).setBackground(QtGui.QColor(255, 255, 255))
 
     def updateVisitRA(self, ra):
         row_i = self.visit_table.currentRow()
