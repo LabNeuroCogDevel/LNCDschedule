@@ -122,6 +122,11 @@ class ScheduleApp(QtWidgets.QMainWindow):
         cal_columns=['date','time','what']
         self.cal_table.setColumnCount(len(cal_columns))
         self.cal_table.setHorizontalHeaderLabels(cal_columns)
+        #Adjust the cal table width
+        header = self.cal_table.horizontalHeader()       
+        header.setSectionResizeMode(0, QtWidgets.QHeaderView.Stretch)
+        header.setSectionResizeMode(1, QtWidgets.QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(2, QtWidgets.QHeaderView.ResizeToContents)
         self.cal_table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
         self.cal_table.itemClicked.connect(self.cal_item_select)
         # and hook up the calendar date select widget to a query
@@ -730,8 +735,8 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.update_contact_table()
 
     def edit_contact_table(self):
-
         row_i = self.contact_table.currentRow()
+        self.click_color(self.contact_table, row_i)
         self.contact_cid = self.contact_table.item(row_i, 5).text()
         self.name = self.contact_table.item(row_i, 0).text()
         #print(contact_cid)
