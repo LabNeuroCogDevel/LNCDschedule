@@ -73,7 +73,7 @@ class CheckinVisitWindow(QtWidgets.QDialog):
         if addtask not in self.model['tasks']:
             self.tasks_list.addItem(addtask)
             if not self.study in addtask_studies:
-              self.tasks_list.item(nextpos).setBackground(QtGui.QColor('red'))
+              self.tasks_list.item(nextpos).setBackground(QtGui.QColor(249, 155, 102))
         # update all tasks display (colors)
         self.all_task_disp()
         self.all_tasks_table.clearSelection()

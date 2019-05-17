@@ -2,22 +2,20 @@
 import sys
 import LNCDcal
 import lncdSql
+import psycopg2
+import datetime
+from LNCDutils import *
+import subprocess, re  # for whoami
 import AddNotes, AddContact,EditContact, ScheduleVisit, AddPerson, CheckinVisit
 from PyQt5 import uic, QtCore, QtGui, QtWidgets
-import datetime
-import subprocess, re  # for whoami
 from LNCDutils import mkmsg, generic_fill_table, CMenuItem,\
                       update_gcal, get_info_for_cal
-from LNCDutils import *
-
-import psycopg2
 
 # google reports UTC, we are EST or EDT. get the diff between google and us
 launchtime=int(datetime.datetime.now().strftime('%s'))
 tzfromutc = datetime.datetime.fromtimestamp(launchtime) - datetime.datetime.utcfromtimestamp(launchtime)
 
 people_data = None
-
 class ScheduleApp(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
@@ -197,13 +195,22 @@ class ScheduleApp(QtWidgets.QMainWindow):
         #Call to edit the contact table whenver the item is clicked
         self.contact_table.itemClicked.connect(self.edit_contact_table)
 
+        #Menu bar for contact table
+        contact_menu = QtWidgets.QMenu("contact_menu", self.contact_table)
+        CMenuItem("Edit Contact", contact_menu, lambda: self.edit_contact_pushed())
+        #Jump to reschedule visit function whenever the reschdule button is clicked.
+        CMenuItem("Record Contact", contact_menu, lambda: self.record_push())
+        self.contact_table.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.contact_table.customContextMenuRequested.connect(
+                lambda pos: contact_menu.exec_(self.contact_table.mapToGlobal(pos)))
+
         #Edit contact
         self.EditContact = EditContact.EditContactWindow(self)
         #add the vid value into the interface
         self.visit_table.itemClicked.connect(self.edit_visit_table)
         #Change the wrong cvalue if needed.
         #Must make sure it's clicked
-        self.edit_contact_button.clicked.connect(self.edit_contact_pushed)
+        #self.edit_contact_button.clicked.connect(self.edit_contact_pushed)
         self.EditContact.accepted.connect(self.update_contact_to_db)
 
         ## add notes and query for pid from visit_summary
@@ -339,13 +346,15 @@ class ScheduleApp(QtWidgets.QMainWindow):
             for col_i, value in enumerate(row):
                 item = QtWidgets.QTableWidgetItem(str(value))
                 self.people_table.setItem(row_i, col_i, item)
+        self.changing_color(row_i, res)
 
+    def changing_color(self, row_i, res):
         # Change the color after the textes have been successfully inserted.
         # based on drop level
-        drop_colors = {'subject': QtGui.QColor(240, 128, 128),
+        drop_colors = {'subject': QtGui.QColor(249, 179, 139),
                        'visit':   QtGui.QColor(240, 230, 140),
                        'future':  QtGui.QColor(240, 240, 240),
-                       'unknown': QtGui.QColor(140, 210, 140)}
+                       'unknown': QtGui.QColor(203, 233, 109)}
 
         # N.B. this could go in previous for loop. left here for clarity
         for row_i, row in enumerate(res):
@@ -361,7 +370,8 @@ class ScheduleApp(QtWidgets.QMainWindow):
     def people_item_select(self, thing=None):
         row_i = self.people_table.currentRow()
         #Color it whenever its clicked so that RA should know which one to right click
-        #self.click_color(self.people_table, row_i)
+        self.click_color(self.people_table, row_i)
+
         d = self.people_table_data[row_i]
         # main model
 
@@ -425,9 +435,27 @@ class ScheduleApp(QtWidgets.QMainWindow):
         for i in range (table.rowCount()):
             for j in range(table.columnCount()):
                 if i == row_i:
-                    table.item(i, j).setBackground(QtGui.QColor(222, 249, 177))
+                    table.item(i, j).setBackground(QtGui.QColor(191, 243, 228))
                     continue
                 table.item(i, j).setBackground(QtGui.QColor(255, 255, 255))
+        #Get rid of the color in other tables
+        if table == self.visit_table:
+            self.refresh_blank(self.contact_table)
+            self.refresh_blank(self.people_table)
+
+        elif table == self.contact_table:
+            self.refresh_blank(self.visit_table)
+            self.refresh_blank(self.people_table)
+
+        elif table == self.people_table:
+            self.refresh_blank(self.visit_table)
+            self.refresh_blank(self.contact_table)
+
+
+    def refresh_blank(self, table):
+        for i in range (table.rowCount()):
+                for j in range(table.columnCount()):
+                    table.item(i, j).setBackground(QtGui.QColor(255, 255, 255))
 
     def updateVisitRA(self, ra):
         row_i = self.visit_table.currentRow()
@@ -555,6 +583,9 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.update_visit_table()
         self.update_note_table()
 
+    #Method for record push --Waiting for later implementation
+    def record_push(self):
+        mkmsg("Still implementing")
 
     ## checkin
     def checkin_button_pushed(self):
