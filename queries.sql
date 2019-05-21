@@ -139,6 +139,18 @@ select
   from visit_summary
   where pid = %(pid)s
 
+-- name: get_tasks
+select
+  task
+  from visit_task
+  where vid = %(vid)s
+  and task = %(task)s
+-- name: get_measures
+select
+  measures
+  from visit_task
+  where vid = %(vid)s
+
 -- name: vdesc_from_pid
 select
   vid, concat_ws(' ', to_char(vtimestamp,'YYYY-mm-dd'),  study, vtype) as vdesc

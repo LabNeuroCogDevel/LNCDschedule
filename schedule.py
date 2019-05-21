@@ -6,7 +6,7 @@ import psycopg2
 import datetime
 from LNCDutils import *
 import subprocess, re  # for whoami
-import AddNotes, AddContact,EditContact, ScheduleVisit, AddPerson, CheckinVisit
+import AddNotes, AddContact,EditContact, ScheduleVisit, AddPerson, CheckinVisit, MoreInfo
 from PyQt5 import uic, QtCore, QtGui, QtWidgets
 from LNCDutils import mkmsg, generic_fill_table, CMenuItem,\
                       update_gcal, get_info_for_cal
@@ -208,6 +208,9 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.EditContact = EditContact.EditContactWindow(self)
         #add the vid value into the interface
         self.visit_table.itemClicked.connect(self.edit_visit_table)
+
+        self.MoreInfo = MoreInfo.MoreInfoWindow(self)
+        self.visit_info_button.clicked.connect(self.more_information_pushed)
         #Change the wrong cvalue if needed.
         #Must make sure it's clicked
         #self.edit_contact_button.clicked.connect(self.edit_contact_pushed)
@@ -415,6 +418,14 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.checkin_what_data['vtype'] = d[self.visit_columns.index('vtype')]
         self.checkin_what_data['datetime'] = d[self.visit_columns.index('day')]
         self.update_checkin_what_label()
+
+    #Function to show more informations in checkin
+    def more_information_pushed(self):
+        row_i = self.visit_table.currentRow()
+        vid = self.visit_table.item(row_i, 9).text()
+        self.MoreInfo.setup(vid,self.sql)
+        self.MoreInfo.show()
+
     def reschedule_all(self):
         row_i = self.visit_table.currentRow()
         vid = self.visit_table.item(row_i, 9).text()
@@ -488,7 +499,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
         #For this, sched is origionally assigned. Changed it to sche so that the data base will  accept the vstatus.
         #//////////////////////////////////////////////
-        new_node = {'ra':ra,'action':'sched','vid':vid}
+        new_node = {'ra':ra,'action':'assigned','vid':vid}
         #//////////////////////////////////////////////
         #  2. add to visit_action # vatimestamp? auto inserted?
         self.sql.insert('visit_action',new_node)
