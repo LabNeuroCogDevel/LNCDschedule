@@ -52,9 +52,12 @@ class MoreInfoWindow(QtWidgets.QDialog):
             pep_columns = measures.keys()
             pep_values = measures.values()
 
+            #Not printing anything
+            self.textbox = []
             for i, v in enumerate(pep_columns):
-                self.textbox[i] = QtWidgets.QLineEdit(self)
-                self.textbox[i].move(200, i*20)
+                self.textbox = (QtWidgets.QLineEdit(self))
+                self.textbox.move(20, 20*i)
+                self.textbox.resize(200, 32)
 
             print(pep_values)
             #print(pep_columns)

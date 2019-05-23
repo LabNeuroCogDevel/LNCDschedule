@@ -349,7 +349,10 @@ class ScheduleApp(QtWidgets.QMainWindow):
             for col_i, value in enumerate(row):
                 item = QtWidgets.QTableWidgetItem(str(value))
                 self.people_table.setItem(row_i, col_i, item)
-        self.changing_color(row_i, res)
+        try:
+            self.changing_color(row_i, res)
+        except UnboundLocalError:
+        	print('weird error')
 
     def changing_color(self, row_i, res):
         # Change the color after the textes have been successfully inserted.
