@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>442</width>
+    <width>710</width>
     <height>407</height>
    </rect>
   </property>
@@ -24,16 +24,6 @@
    </property>
    <property name="text">
     <string>Info:</string>
-   </property>
-  </widget>
-  <widget class="QTableWidget" name="info_table">
-   <property name="geometry">
-    <rect>
-     <x>150</x>
-     <y>20</y>
-     <width>291</width>
-     <height>371</height>
-    </rect>
    </property>
   </widget>
   <widget class="QListWidget" name="tasks_list">

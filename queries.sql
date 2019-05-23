@@ -144,12 +144,12 @@ select
   task
   from visit_task
   where vid = %(vid)s
-  and task = %(task)s
 -- name: get_measures
 select
   measures
   from visit_task
   where vid = %(vid)s
+  and task = %(task)s
 
 -- name: vdesc_from_pid
 select
