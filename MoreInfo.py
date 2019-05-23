@@ -4,7 +4,6 @@ import json
 import pprint
 from psycopg2 import IntegrityError
 import lncdSql, sys
-import tkinter as tk
 """
 This class provides a window for demonstrating information
 data in checkin
@@ -53,11 +52,9 @@ class MoreInfoWindow(QtWidgets.QDialog):
             pep_columns = measures.keys()
             pep_values = measures.values()
 
-            root = tk.Tk()
-            T = tk.Text(root, height=50, width=10)
-            T.pack()
-            T.insert(pep_values)
-            tk.mainloop()
+            for i, v in enumerate(pep_columns):
+                self.textbox[i] = QtWidgets.QLineEdit(self)
+                self.textbox[i].move(200, i*20)
 
             print(pep_values)
             #print(pep_columns)
