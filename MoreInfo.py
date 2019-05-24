@@ -58,14 +58,15 @@ class MoreInfoWindow(QtWidgets.QDialog):
 
             #Set up the list
             value = []
-            for key, val in measures.items():
-                if val is None:
-                    value.append(str(key)+'=>'+'None')
-                else:
-                    value.append(str(key)+'=>'+str(val))
-                self.list_view.insertItems(0,value)
-
-            print(pep_values)
+            try:
+                for key, val in measures.items():
+                    if val is None:
+                        value.append(str(key)+'=>'+'None')
+                    else:
+                        value.append(str(key)+'=>'+str(val))
+                    self.list_view.insertItems(0,value)
+            except AttributeError:
+                print('Nontype')
             #print(pep_columns)
 
             #Set up the table
