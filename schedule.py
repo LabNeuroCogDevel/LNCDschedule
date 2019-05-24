@@ -352,7 +352,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         try:
             self.changing_color(row_i, res)
         except UnboundLocalError:
-        	print('weird error')
+            print('weird error')
 
     def changing_color(self, row_i, res):
         # Change the color after the textes have been successfully inserted.
@@ -451,7 +451,15 @@ class ScheduleApp(QtWidgets.QMainWindow):
                 if i == row_i:
                     table.item(i, j).setBackground(QtGui.QColor(191, 243, 228))
                     continue
-                table.item(i, j).setBackground(QtGui.QColor(255, 255, 255))
+                if(table is self.people_table):
+                    try:
+                        self.table_background(table, i, j)
+                    except AttributeError:
+                            print('NonType')
+                else: 
+                    table.item(i, j).setBackground(QtGui.QColor(255, 255, 255))
+
+     
         #Get rid of the color in other tables
         if table == self.visit_table:
             self.refresh_blank(self.contact_table)
@@ -465,11 +473,35 @@ class ScheduleApp(QtWidgets.QMainWindow):
             self.refresh_blank(self.visit_table)
             self.refresh_blank(self.contact_table)
 
+    def table_background(self, table, i, j):
+
+                if table.item(i, 6).text() == 'subject':
+                    color =  QtGui.QColor(249, 179, 139)
+                    table.item(i, j).setBackground(color)
+                elif  table.item(i, 6).text() == 'visit':
+                    color =  QtGui.QColor(240, 230, 140)
+                    table.item(i, j).setBackground(color)
+                elif table.item(i, 6).text() == 'future':
+                    color = QtGui.QColor(240, 240, 240)
+                    table.item(i, j).setBackground(color)
+                elif table.item(i, 6).text() == 'family' or table.item(i, 6).text() == 'unknown' :
+                    color = QtGui.QColor(203, 233, 109)
+                    table.item(i, j).setBackground(color)
+                else:
+                    table.item(i, j).setBackground(QtGui.QColor(255, 255, 255))
 
     def refresh_blank(self, table):
         for i in range (table.rowCount()):
                 for j in range(table.columnCount()):
-                    table.item(i, j).setBackground(QtGui.QColor(255, 255, 255))
+                    if table is self.people_table:
+                        try:
+                            self.table_background(table, i, j)
+                        except AttributeError:
+                            print('NonType')
+                    else:
+                        table.item(i, j).setBackground(QtGui.QColor(255, 255, 255))
+
+                    #table.item(i, j).setBackground(QtGui.QColor(255, 255, 255))
 
     def updateVisitRA(self, ra):
         row_i = self.visit_table.currentRow()

@@ -4,6 +4,7 @@ import json
 import pprint
 from psycopg2 import IntegrityError
 import lncdSql, sys
+from PyQt5.QtWidgets import QLabel
 """
 This class provides a window for demonstrating information
 data in checkin
@@ -49,15 +50,20 @@ class MoreInfoWindow(QtWidgets.QDialog):
             measures = measures[0][0]
             #Measures contain all the measured data of one task that has been selected.
             #Add rhe task as one columns before adding all the keys
-            pep_columns = measures.keys()
-            pep_values = measures.values()
+            if(measures is not None):
+                pep_columns = measures.keys()
+                pep_values = measures.values()
+            else:
+                mkmsg('measures is none')
 
-            #Not printing anything
-            self.textbox = []
-            for i, v in enumerate(pep_columns):
-                self.textbox = (QtWidgets.QLineEdit(self))
-                self.textbox.move(20, 20*i)
-                self.textbox.resize(200, 32)
+            #Set up the list
+            value = []
+            for key, val in measures.items():
+                if val is None:
+                    value.append(str(key)+'=>'+'None')
+                else:
+                    value.append(str(key)+'=>'+str(val))
+                self.list_view.insertItems(0,value)
 
             print(pep_values)
             #print(pep_columns)
