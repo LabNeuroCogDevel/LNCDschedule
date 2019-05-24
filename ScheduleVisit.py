@@ -38,7 +38,7 @@ class ScheduleVisitWindow(QtWidgets.QDialog):
         self.model['pid'] = pid
         self.model['ra']  = RA
         self.old_googleuri = old_googleuri
-        qdt = QtCore.QDateTime.fromTime_t(dt.timestamp())
+        qdt = QtCore.QDateTime.fromTime_t(int(dt.timestamp()))
         self.vtimestamp_edit.setDateTime(qdt)
         self.who_label.setText(name)
 
