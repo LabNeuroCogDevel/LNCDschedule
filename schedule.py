@@ -46,21 +46,21 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
         ## who is using the app?
         self.RA = subprocess.check_output("whoami").decode().replace('\n','').replace('\r','')
-        print("RA: %s"%self.RA)
+        print("RA: %s" % self.RA)
         #if re.search('lncd|localadmin',self.RA,ignore.case=True):
         #    print("login: TODO: launch modal window")
 
+        # AddStudies modal (accessed from menu)
+        self.AddStudy = AddStudy.AddStudyWindow(self)
+        self.AddStudy.accepted.connect(self.add_study_to_db)
+
         # ## menu
-        # TODO: remove "new" from main.ui
         menubar = self.menuBar()
         fileMenu = menubar.addMenu('&New')
         CMenuItem("RA", fileMenu)
         addStudy = CMenuItem("Study", fileMenu, self.add_studies)
         CMenuItem("Task", fileMenu)
         CMenuItem("Visit Type", fileMenu)
-        self.AddStudy = AddStudy.AddStudyWindow(self)
-
-        self.AddStudy.accepted.connect(self.add_study_to_db)
 
         # search settings
         searchMenu = menubar.addMenu('&Search')
@@ -336,16 +336,19 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.fill_search_table(res)
 
     # by attributes
-    def search_people_by_att(self,*argv):
-        #Error check
-        if(self.max_age_search.text() == '' or self.min_age_search.text() == '' or not self.max_age_search.text().isdigit() or not self.min_age_search.text().isdigit()):
+    def search_people_by_att(self, *argv):
+        # Error check
+        if(self.max_age_search.text() == '' or
+           self.min_age_search.text() == '' or
+           not self.max_age_search.text().isdigit() or
+           not self.min_age_search.text().isdigit()):
             mkmsg("One of the input on the input box is either empty or not a number, nothing will work. Please fix it and try again")
             return
 
-        d={ 'study': comboval(self.study_search), \
-                     'sex': comboval(self.sex_search), \
-                     'minage': self.min_age_search.text(), \
-                     'maxage': self.max_age_search.text() }
+        d = {'study': comboval(self.study_search),
+             'sex': comboval(self.sex_search),
+             'minage': self.min_age_search.text(),
+             'maxage': self.max_age_search.text()}
         print(d)
         res = self.sql.query.att_search(**d)
         #res = self.sql.query.att_search(sex=d['sex'],study=d['study'], minage=d['minage'],maxage=d['maxage'])
