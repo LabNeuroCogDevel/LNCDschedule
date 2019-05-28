@@ -6,7 +6,7 @@ import psycopg2
 import datetime
 from LNCDutils import *
 import subprocess, re  # for whoami
-import AddNotes, AddContact,EditContact, ScheduleVisit, AddPerson, CheckinVisit, MoreInfo
+import AddNotes, AddContact,AddStudy, EditContact, ScheduleVisit, AddPerson, CheckinVisit, MoreInfo
 from PyQt5 import uic, QtCore, QtGui, QtWidgets
 from LNCDutils import mkmsg, generic_fill_table, CMenuItem,\
                       update_gcal, get_info_for_cal
@@ -55,9 +55,12 @@ class ScheduleApp(QtWidgets.QMainWindow):
         menubar = self.menuBar()
         fileMenu = menubar.addMenu('&New')
         CMenuItem("RA", fileMenu)
-        CMenuItem("Study", fileMenu)
+        addStudy = CMenuItem("Study", fileMenu, self.add_studies)
         CMenuItem("Task", fileMenu)
         CMenuItem("Visit Type", fileMenu)
+        self.AddStudy = AddStudy.AddStudyWindow(self)
+
+        self.AddStudy.accepted.connect(self.add_study_to_db)
 
         # search settings
         searchMenu = menubar.addMenu('&Search')
@@ -245,6 +248,14 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.show()
 
     ###### Generic
+    
+    def add_study_to_db(self):
+        study_data = self.AddStudy.study_data
+        self.sql.insert('study', study_data)
+        print(study_data)
+
+    def add_studies(self):
+        self.AddStudy.show()
 
     # check with isvalid method
     # used for ScheduleVisit and AddContact
