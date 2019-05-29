@@ -821,8 +821,8 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # catch sql error
         data = self.AddContact.contact_model
         data['added'] = datetime.datetime.now()
-        #The contact is referring to the table in debeaver.
-        self.sqlInsertOrShowErr('contact',data)
+        # The contact is referring to the table in debeaver.
+        self.sqlInsertOrShowErr('contact', data)
         self.update_contact_table()
 
     def edit_contact_table(self):
