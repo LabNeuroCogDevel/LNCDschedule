@@ -111,14 +111,20 @@ select
 -- name: note_by_pid
 select note,dropcode, ndate, vtimestamp, note.ra, vid from note 
    natural left  join visit_note natural left join visit
-   natural left join dropped
-   where pid = %(pid)s
+   natural left  join visit_drop
+   left join dropped on dropped.did = visit_drop.did
+   where note.pid = %(pid)s
    order by vtimestamp desc, ndate desc 
+
+--name: get_dropcode
+select dropcode from dropped
+    where nid = %(nid)s
+
 --name: get_status
 select vstatus
-from visit_person_view
-where pid = %(pid)s
-and to_char(vtimestamp,'YYYY-mm-dd') = %(vtimestamp)s
+    from visit_person_view
+    where pid = %(pid)s
+    and to_char(vtimestamp,'YYYY-mm-dd') = %(vtimestamp)s
 
 -- name: contact_by_pid
 select

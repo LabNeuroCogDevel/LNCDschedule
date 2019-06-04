@@ -453,6 +453,9 @@ class ScheduleApp(QtWidgets.QMainWindow):
             self.sql.query.delete_visit(vid=self.visit_id)
         except psycopg2.ProgrammingError:
             print('Error that does not make sense')
+        except psycopg2.InternalError:
+            mkmsg('Please do not reschedule checkedin')
+            return
         
         #Reschedule the visit
         self.schedule_button_pushed(googleuri)
@@ -572,7 +575,8 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
     def update_note_table(self):
         #pid=self.disp_model['pid']
-        self.note_table_data = self.sql.query.note_by_pid(pid=self.disp_model['pid'])
+        print(self.disp_model['pid'])
+        self.note_table_data=self.sql.query.note_by_pid(pid=self.disp_model['pid'])
         generic_fill_table(self.note_table,self.note_table_data)
 
     """
@@ -684,6 +688,8 @@ class ScheduleApp(QtWidgets.QMainWindow):
           mkmsg('checkin failed!\n%s'%e)
         self.CheckinVisit.checkin_to_db(self.sql)
         # todo: update person search to get lunaid if updated
+        #Update the visit table so that the current vastatus changed to checkedin
+        self.update_visit_table
 
     ###### Notes
     # see generic_fill_table
@@ -845,6 +851,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # Error check
         if not self.useisvalid(self.AddNotes, "Cannot add note"):
             return
+        
 
         # add ra to model
         data = {**self.AddNotes.notes_model, 'ra': self.RA}
@@ -859,8 +866,8 @@ class ScheduleApp(QtWidgets.QMainWindow):
                          'vid': vid,
                          'dropcode': self.AddNotes.get_drop(),
                          }
+            print(note_dict['vid'])
             self.sqlInsertOrShowErr('drops_view', note_dict)
-
         # no drop but do have visit, use trigger on visit_note_view
         elif(vid is not None):
             note_dict = {**data,

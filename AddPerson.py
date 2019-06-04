@@ -46,7 +46,8 @@ class AddPersonWindow(QtWidgets.QDialog):
     """
     def allvals(self,key='all'):
         print('updating %s'%key)
-        if(key in ['dob','all']):   self.persondata['dob']   = caltodate(self.dob_edit)
+        if(key in ['dob','all']):   self.persondata['dob']   = caltodate(self.dob_edit).date()
+        print(self.persondata['dob'])
         if(key in ['hand','all']):  self.persondata['hand']  = comboval(self.hand_edit)
         if(key in ['sex','all']):   self.persondata['sex']   = comboval(self.sex_edit)
         if(key in ['fname','all']): self.persondata['fname'] = self.fname_edit.text()

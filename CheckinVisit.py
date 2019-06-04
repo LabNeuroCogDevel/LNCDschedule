@@ -3,6 +3,7 @@ from LNCDutils import  *
 import json
 import pprint
 from psycopg2 import IntegrityError
+import lncdSql
 
 """
 This class provides a window for scheduling visit information
@@ -203,9 +204,8 @@ class CheckinVisitWindow(QtWidgets.QDialog):
            sql.insert('visit_checkin_view',d)
        except IntegrityError as e:
            mkmsg("Please do not add duplicated keys")
-
-       
-
+           return
+       sql.update('visit', 'vstatus', self.model['vid'], 'checkedin', 'vid')
 
 if __name__ == "__main__":
 # usage:  python3 CheckinVisit.py 3952
