@@ -5,50 +5,56 @@ import lncdSql
 import psycopg2
 import datetime
 from LNCDutils import *
-import subprocess, re  # for whoami
-import AddNotes, AddContact,AddStudy, EditContact, ScheduleVisit, AddPerson, CheckinVisit, MoreInfo
+import subprocess
+import re  # for whoami
+import AddNotes, AddContact, AddStudy, EditContact,\
+       ScheduleVisit, AddPerson, CheckinVisit, MoreInfo
 from PyQt5 import uic, QtCore, QtGui, QtWidgets
 from LNCDutils import mkmsg, generic_fill_table, CMenuItem,\
                       update_gcal, get_info_for_cal
 
 # google reports UTC, we are EST or EDT. get the diff between google and us
-launchtime=int(datetime.datetime.now().strftime('%s'))
-tzfromutc = datetime.datetime.fromtimestamp(launchtime) - datetime.datetime.utcfromtimestamp(launchtime)
+launchtime = int(datetime.datetime.now().strftime('%s'))
+tzfromutc = datetime.datetime.fromtimestamp(launchtime) - \
+            datetime.datetime.utcfromtimestamp(launchtime)
 
-people_data = None
+
 class ScheduleApp(QtWidgets.QMainWindow):
-    def __init__(self):
+    def __init__(self, config_file='config.ini'):
         super().__init__()
-        #Defined for editing the contact_table
+        # Defined for editing the contact_table
         self.contact_cid = 0
-        #Defined for editing the visit table
+        # Defined for editing the visit table
         self.visit_id = 0
         old_google_uri = None
         # schedule and checkin data
-        self.schedule_what_data = {'fullname': '', 'pid': None, 'date': None, 'time': None}
-        self.checkin_what_data =  {'fullname': '', 'vid': None, 'datetime': None, 'pid': None,'vtype':None, 'study':None}
-        
+        self.schedule_what_data = {'fullname': '', 'pid': None, 'date': None,
+                                   'time': None}
+        self.checkin_what_data = {'fullname': '', 'vid': None,
+                                  'datetime': None, 'pid': None,
+                                  'vtype': None, 'study': None}
 
         # load gui (created with qtcreator)
-        uic.loadUi('./ui/mainwindow.ui',self)
+        uic.loadUi('./ui/mainwindow.ui', self)
         self.setWindowTitle('LNCD Scheduler')
 
         # data store
-        self.disp_model = {'pid': None, 'fullname': None, 'age': None,'sex': None}
+        self.disp_model = {'pid': None, 'fullname': None,
+                           'age': None, 'sex': None}
 
         # get other modules for querying db and calendar
         try:
-          self.cal = LNCDcal.LNCDcal('config.ini')
-          self.sql = lncdSql.lncdSql('config.ini')
+            self.cal = LNCDcal.LNCDcal(config_file)
+            self.sql = lncdSql.lncdSql(config_file,
+                                       gui=QtWidgets.QApplication.instance())
         except Exception as e:
-          mkmsg("ERROR: app will not work!\n%s"%str(e))
-          return
+            mkmsg("ERROR: app will not work!\n%s" % str(e))
+            return
 
-        ## who is using the app?
-        self.RA = subprocess.check_output("whoami").decode().replace('\n','').replace('\r','')
+        # ## who is using the app?
+        self.RA = subprocess.check_output("whoami").decode().\
+            replace('\n', '').replace('\r', '')
         print("RA: %s" % self.RA)
-        #if re.search('lncd|localadmin',self.RA,ignore.case=True):
-        #    print("login: TODO: launch modal window")
 
         # AddStudies modal (accessed from menu)
         self.AddStudy = AddStudy.AddStudyWindow(self)
@@ -323,7 +329,6 @@ class ScheduleApp(QtWidgets.QMainWindow):
                 res = self.sql.query.lunaid_search_all(lunaid=lunaid)
             except ValueError:
                 mkmsg("LunaID should only be numbers")
-            people_data = res
             self.fill_search_table(res)
             return
         try:
@@ -332,7 +337,6 @@ class ScheduleApp(QtWidgets.QMainWindow):
             mkmsg("LunaID should only be numbers")
             return
         res = self.sql.query.lunaid_search(lunaid=lunaid)
-        people_data = res
         self.fill_search_table(res)
 
     # by attributes
@@ -342,7 +346,9 @@ class ScheduleApp(QtWidgets.QMainWindow):
            self.min_age_search.text() == '' or
            not self.max_age_search.text().isdigit() or
            not self.min_age_search.text().isdigit()):
-            mkmsg("One of the input on the input box is either empty or not a number, nothing will work. Please fix it and try again")
+            mkmsg("One of the input on the input box is either " +
+                  "empty or not a number, nothing will work. " +
+                  "Please fix it and try again")
             return
 
         d = {'study': comboval(self.study_search),
@@ -938,6 +944,11 @@ if __name__ == '__main__':
     import os
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
-    app = QtWidgets.QApplication(sys.argv)
-    window = ScheduleApp()
+    app = QtWidgets.QApplication([])
+
+    if len(sys.argv) > 1:
+        window = ScheduleApp(config_file=sys.argv[1])
+    else:
+        window = ScheduleApp()
+
     sys.exit(app.exec_())

@@ -1,9 +1,12 @@
-import psycopg2, psycopg2.sql
+import psycopg2
+import psycopg2.sql
 import pyesql
 import configparser
+import PasswordDialog
+
 
 class lncdSql():
-    def __init__(self,config):
+    def __init__(self, config, gui=None):
         # read config.ini file like
         # [SQL]
         #  host=...
@@ -11,21 +14,41 @@ class lncdSql():
         #  ..
         cfg = configparser.ConfigParser()
         cfg.read(config)
-        constr = 'dbname=%(dbname)s user=%(user)s host=%(host)s port=%(port)s'%cfg._sections['SQL']
-        #print('connecting with %s'%constr)
-        #self.conn = psycopg2.connect('dbname=lncddb user=lncd host=arnold.wpic.upmc.edu')
+        confline = 'dbname=%(dbname)s user=%(user)s host=%(host)s'
+        # if we specify a port, use it
+        if cfg._sections['SQL'].get('port'):
+            confline += " port=%(port)s"
+
+        # if the config doesn't have a username, we will try to get one
+        if not cfg._sections['SQL'].get('user'):
+            if gui is None or gui is False:
+                raise Exception('No username in config file' +
+                                'and no gui to authenticate requested!')
+            else:
+                user_pass = PasswordDialog.user_pass(gui)
+                cfg._sections['SQL']['user'] = user_pass['user']
+                cfg._sections['SQL']['password'] = user_pass['pass']
+
+        # only set password if its not empty
+        # otherise we can continue without using a password... maybe
+        if cfg._sections['SQL']['password']:
+            confline += " password=%(password)s"
+
+        constr = confline % cfg._sections['SQL']
+
+        print('connecting with %s' % constr)
         self.conn = psycopg2.connect(constr)
         self.conn.set_session(autocommit=True)
 
         sqls = pyesql.parse_file('./queries.sql')
         self.query = sqls(self.conn)
-        #a=self.query.name_search(fullname='%Foran%')
+        # a=self.query.name_search(fullname='%Foran%')
 
     """
     make a table and a list of names (dict key) and
-    create a psycopg2 sql object that can be executed 
+    create a psycopg2 sql object that can be executed
     """
-    def mkinsert(self,table,colnames):
+    def mkinsert(self, table, colnames):
         table=psycopg2.sql.Identifier(table)
         # are keys and values order always stable??
         cols=map(psycopg2.sql.Identifier,colnames);

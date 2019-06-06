@@ -25,6 +25,11 @@
 
 ## Notes
 
+### Testing
+use `make test`
+
+Depends on `pytest`, `pytest-qt` and `pytest-pgsql`
+
 ### Database
 
 Explore with `DBeaver`.
@@ -34,6 +39,8 @@ The database is built elsewhere. Insert and update triggers exist here
   `~/src/db/mdb_psql_clj/resources/sql/triggers.sql`
 and the schema is defined here
   `~/src/db/mdb_psql_clj/resources/sql/makedb.sql`
+
+These are mirrored in the `sql/` directory.
 
 
 Visit has some confusing views:
