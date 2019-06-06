@@ -445,7 +445,10 @@ class ScheduleApp(QtWidgets.QMainWindow):
     #Function to show more informations in checkin
     def more_information_pushed(self):
         row_i = self.visit_table.currentRow()
-        vid = self.visit_table.item(row_i, 9).text()
+        if self.visit_table.item(row_i, 9) != None:
+            vid = self.visit_table.item(row_i, 9).text()
+        else:
+            return
         self.MoreInfo.setup(vid,self.sql)
         self.MoreInfo.show()
 
@@ -886,6 +889,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
             self.sqlInsertOrShowErr('note', data)
             nid = self.query_for_nid()
             if nid is None:
+                self.update_note_table()
                 return
             nid_pid = {'pid': self.AddNotes.notes_model['pid'], 'nid': nid}
             self.sqlInsertOrShowErr('person_note', nid_pid)
@@ -901,7 +905,6 @@ class ScheduleApp(QtWidgets.QMainWindow):
         if nid is None:
             return(nid[0][0])
         else:
-            mkmsg('Error inserting note!')
             return(None)
 
     def sqlInsertOrShowErr(self, table, d):
