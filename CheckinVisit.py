@@ -100,22 +100,33 @@ class CheckinVisitWindow(QtWidgets.QDialog):
 
     def setup(self, d, RA, study_tasks):
         # d has keys: pid,vid,fullname,study,vtype
-        print('updating checkin with %(pid)s(%(fullname)s) for %(study)s/%(vtype)s'%d)
+        print('updating checkin with ' +
+              '%(pid)s(%(fullname)s) for %(study)s/%(vtype)s %(lunaid)s' % d)
         self.pid = d['pid']
         self.model['ra'] = RA
         self.model['vid'] = d['vid']
-        self.who_label.setText("%s/%s: %s" % (d['study'], d['vtype'], d['fullname']))
+        self.who_label.setText("%(study)s/%(vtype)s: %(fullname)s" % d)
+
         self.tasks_list.insertItems(0, study_tasks)
         self.study = d['study']
         self.vtype = d['vtype']
         self.all_task_disp()
+
+        # clear luna field
+        self.lunaid_edit.setText('')
+        self.lunaid_edit.setDisabled(False)
+
         # dont set lunaid if we have one
         self.has_luna = d.get('lunaid') is not None
         if self.has_luna:
             self.lunaid_edit.setText(str(d['lunaid']))
             self.lunaid_edit.setDisabled(True)
-        elif d.get('nextluna') is not None:
-            self.lunaid_edit.setText(str(d['nextluna']))
+
+        # set to next luna if we have a next luna
+        elif d.get('next_luna') is not None:
+            self.lunaid_edit.setText(str(d['next_luna']))
+        else:
+            print('WARNING: no luna and no next_luna!')
 
     def all_task_disp(self):
         # subset data on search

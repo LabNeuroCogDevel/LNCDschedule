@@ -31,7 +31,8 @@ class ScheduleApp(QtWidgets.QMainWindow):
                                    'time': None}
         self.checkin_what_data = {'fullname': '', 'vid': None,
                                   'datetime': None, 'pid': None,
-                                  'vtype': None, 'study': None}
+                                  'vtype': None, 'study': None,
+                                  'lunaid': None, 'next_luna': None}
 
         # load gui (created with qtcreator)
         uic.loadUi('./ui/mainwindow.ui', self)
@@ -395,12 +396,12 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
     def people_item_select(self, thing=None):
         row_i = self.people_table.currentRow()
-        #Color it whenever its clicked so that RA should know which one to right click
+        # Color row when clicked -- indicate action target for right click
         self.click_color(self.people_table, row_i)
 
         d = self.people_table_data[row_i]
         # main model
-
+        print('people table: subject selected: %s' % d[8])
         self.render_person(pid=d[8], fullname=d[0], age=d[2],
                            sex=d[4], lunaid=d[1])
 
@@ -412,11 +413,13 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.disp_model['fullname'] = fullname
         self.disp_model['age'] = age
         self.disp_model['sex'] = sex
+        self.disp_model['lunaid'] = lunaid
+        # try to get a pid if we are calling from a place that doesn't have it
         if lunaid is None:
             res = self.sql.query.get_lunaid_from_pid(pid=pid)
             if res:
-               lunaid = res[0][0]
-        self.disp_model['lunaid'] = lunaid
+                lunaid = res[0][0]
+
         # update visit table
         self.update_visit_table()
         # update contact table
@@ -427,6 +430,9 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.schedule_what_data['pid'] = pid
         self.schedule_what_data['fullname'] = fullname
         self.update_schedule_what_label()
+        # TODO:
+        # do we want to clear other models
+        #  clear: checkin_what_data schedule_what_data
 
     def visit_item_select(self, thing=None):
         row_i = self.visit_table.currentRow()
@@ -440,10 +446,10 @@ class ScheduleApp(QtWidgets.QMainWindow):
         #self.visit_table.item(row_i, j).setBackground(QtGui.QColor(182, 236, 48))
         self.click_color(self.visit_table, row_i)
 
-        self.checkin_what_data['vid'] = vid
-        self.checkin_what_data['study'] = study
         self.checkin_what_data['pid'] = pid
         self.checkin_what_data['fullname'] = fullname
+        self.checkin_what_data['vid'] = vid
+        self.checkin_what_data['study'] = study
         self.checkin_what_data['vtype'] = d[self.visit_columns.index('vtype')]
         self.checkin_what_data['datetime'] = d[self.visit_columns.index('day')]
 
@@ -451,6 +457,8 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # use lunaid from person table
         if pid == self.disp_model['pid']:
             self.checkin_what_data['lunaid'] = self.disp_model['lunaid']
+        else:
+            self.checkin_what_data['lunaid'] = None
 
         self.update_checkin_what_label()
 
@@ -674,7 +682,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
     # ## checkin
     def checkin_button_pushed(self):
-        pid=self.checkin_what_data['pid']
+        pid = self.checkin_what_data['pid']
         # vid = self.checkin_what_data['vid']
         fullname = self.checkin_what_data['fullname']
         study = self.checkin_what_data['study']
@@ -693,13 +701,14 @@ class ScheduleApp(QtWidgets.QMainWindow):
             print(self.checkin_what_data)
             nextluna_res = self.sql.query.next_luna()
             nxln = nextluna_res[0][0]
-            self.checkin_what_data['nextluna'] = nxln + 1
+            self.checkin_what_data['next_luna'] = nxln + 1
+            print('next luna is %d' % self.checkin_what_data['next_luna'])
 
         # (self,pid,name,RA,study,study_tasks)
         study_tasks = [x[0] for x in
                        self.sql.query.
                        list_tasks_of_study_vtype(study=study, vtype=vtype)]
-        print("launching %(fullname)s for %(study)s/%(vtype)s" %
+        print("checkin: launching %(fullname)s for %(study)s/%(vtype)s" %
               self.checkin_what_data)
         # checkin_what_data sends: pid,vid,fullname,study,vtype
         self.CheckinVisit.setup(self.checkin_what_data, self.RA, study_tasks)
@@ -726,6 +735,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
     def update_schedule_what_label(self):
         text = "%(fullname)s: %(date)s@%(time)s"%(self.schedule_what_data)
         self.schedule_what_label.setText(text)
+
     def update_checkin_what_label(self):
         text = "%(fullname)s - %(datetime)s"%(self.checkin_what_data)
         self.checkin_what_label.setText(text)
