@@ -7,7 +7,7 @@ import datetime
 from LNCDutils import *
 import subprocess
 import re  # for whoami
-import AddNotes, AddContact, AddStudy, EditContact,\
+import AddNotes, EditPeople, AddContact, AddStudy, EditContact,\
        ScheduleVisit, AddPerson, CheckinVisit, MoreInfo
 from PyQt5 import uic, QtCore, QtGui, QtWidgets
 from LNCDutils import mkmsg, generic_fill_table, CMenuItem,\
@@ -122,6 +122,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
             self.add_notes_pushed()
         CMenuItem("Add Note/Drop", self.people_table, select_and_note)
         CMenuItem("Add ID", self.people_table)
+        CMenuItem("Edit Person", self.people_table, self.change_person)
         # same as
         # a = QtWidgets.QAction("Add Id", self.people_table)
         # self.people_table.addAction(a)
@@ -187,7 +188,10 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.study_list = [ r[0] for r in self.sql.query.list_studies() ]
         # populate search with results
         self.study_search.addItems(self.study_list)
-
+        
+        #Assigning Edit People
+        self.EditPeople = EditPeople.EditPeopleWindow(self)
+        self.EditPeople.accepted.connect(self.change_person_to_db)
         ## add person
         self.AddPerson = AddPerson.AddPersonWindow(self)
         self.add_person_button.clicked.connect(self.add_person_pushed)
@@ -273,7 +277,26 @@ class ScheduleApp(QtWidgets.QMainWindow):
             return(False)
         return(True)
         
-        
+    def change_person(self):
+        #print('it is working')
+        self.EditPeople.edit_person(self.disp_model['pid'])
+        self.EditPeople.show()
+
+    def change_person_to_db(self):
+        #print(self.EditPeople.edit_model)
+        data = self.EditPeople.edit_model 
+        row_i = self.people_table.currentRow()
+        fullname = self.people_table.item(row_i, 0).text()
+        self.sqlUpdateOrShowErr('person', data['ctype'], data['pid'], data['changes'], "pid")
+        if(data['ctype'] is 'fname'):
+            lname = fullname.split(1)
+            fullname = data['changes']+' '+lname
+        if(data['ctype'] is 'lname'):
+            lname = fullname.split(0)
+            fullname = fname+' '+data['changes']
+        self.update_people_table(fullname)
+
+
     ###### PEOPLE
     def add_person_pushed(self):
         name = self.fullname.text().title().split(' ')
@@ -607,6 +630,9 @@ class ScheduleApp(QtWidgets.QMainWindow):
         print(self.disp_model['pid'])
         self.note_table_data=self.sql.query.note_by_pid(pid=self.disp_model['pid'])
         generic_fill_table(self.note_table,self.note_table_data)
+
+    def update_people_table(self, fullname):
+        self.search_people_by_name(fullname)
 
     """
     person to db
