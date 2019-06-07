@@ -26,7 +26,6 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.contact_cid = 0
         # Defined for editing the visit table
         self.visit_id = 0
-        old_google_uri = None
         # schedule and checkin data
         self.schedule_what_data = {'fullname': '', 'pid': None, 'date': None,
                                    'time': None}
@@ -40,7 +39,8 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
         # data store
         self.disp_model = {'pid': None, 'fullname': None,
-                           'age': None, 'sex': None}
+                           'age': None, 'sex': None,
+                           'lunaid': None}
 
         # get other modules for querying db and calendar
         try:
@@ -401,9 +401,10 @@ class ScheduleApp(QtWidgets.QMainWindow):
         d = self.people_table_data[row_i]
         # main model
 
-        self.render_person(pid=d[8], fullname=d[0], age=d[2], sex=d[4])
+        self.render_person(pid=d[8], fullname=d[0], age=d[2],
+                           sex=d[4], lunaid=d[1])
 
-    def render_person(self, pid, fullname, age, sex):
+    def render_person(self, pid, fullname, age, sex, lunaid=None):
         """
         how to populate all the subject info
         """
@@ -411,6 +412,11 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.disp_model['fullname'] = fullname
         self.disp_model['age'] = age
         self.disp_model['sex'] = sex
+        if lunaid is None:
+            res = self.sql.query.get_lunaid_from_pid(pid=pid)
+            if res:
+               lunaid = res[0][0]
+        self.disp_model['lunaid'] = lunaid
         # update visit table
         self.update_visit_table()
         # update contact table
@@ -440,12 +446,18 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.checkin_what_data['fullname'] = fullname
         self.checkin_what_data['vtype'] = d[self.visit_columns.index('vtype')]
         self.checkin_what_data['datetime'] = d[self.visit_columns.index('day')]
+
+        # as long as disp model matches visit (when wouldn't it?)
+        # use lunaid from person table
+        if pid == self.disp_model['pid']:
+            self.checkin_what_data['lunaid'] = self.disp_model['lunaid']
+
         self.update_checkin_what_label()
 
-    #Function to show more informations in checkin
+    # Function to show more informations in checkin
     def more_information_pushed(self):
         row_i = self.visit_table.currentRow()
-        if self.visit_table.item(row_i, 9) != None:
+        if self.visit_table.item(row_i, 9) is not None:
             vid = self.visit_table.item(row_i, 9).text()
         else:
             return
@@ -455,7 +467,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
     def reschedule_all(self):
         row_i = self.visit_table.currentRow()
         vid = self.visit_table.item(row_i, 9).text()
-        googleuri = self.sql.query.get_googleuri(vid = vid)
+        googleuri = self.sql.query.get_googleuri(vid=vid)
         #Reschedule everything in the visit
         #Delete the visit first
         try:
@@ -614,7 +626,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
     ###### VISIT
     # see generic_fill_table
     def schedule_button_pushed(self, old_google_uri=False):
-        d=self.schedule_what_data['date'] 
+        d=self.schedule_what_data['date']
         t=self.schedule_what_data['time']
         #Got the pid ID for the person who scheduled.
         pid=self.disp_model['pid']
@@ -660,45 +672,52 @@ class ScheduleApp(QtWidgets.QMainWindow):
     def record_push(self):
         mkmsg("Still implementing")
 
-    ## checkin
+    # ## checkin
     def checkin_button_pushed(self):
         pid=self.checkin_what_data['pid']
-        vid=self.checkin_what_data['vid']
-        fullname=self.checkin_what_data['fullname']
+        # vid = self.checkin_what_data['vid']
+        fullname = self.checkin_what_data['fullname']
         study = self.checkin_what_data['study']
         vtype = self.checkin_what_data['vtype']
-        if study==None or vtype==None:
+        if study is None or vtype is None:
             mkmsg('pick a visit with a study and visit type')
             return()
-        if pid == None or fullname == None:
+        if pid is None or fullname is None:
             mkmsg('select a person before trying to checkin (howd you get here?)')
             return()
 
         # que up a new lunaid
         # N.B. we never undo this, but check is always for lunaid first
-        if self.checkin_what_data.get('lunaid') == None:
-           self.checkin_what_data['nextluna'] = (self.sql.query.next_luna())[0][0] + 1
+        if self.checkin_what_data.get('lunaid') is None:
+            print('have no luna in checkin data! getting next')
+            print(self.checkin_what_data)
+            nextluna_res = self.sql.query.next_luna()
+            nxln = nextluna_res[0][0]
+            self.checkin_what_data['nextluna'] = nxln + 1
 
-        #(self,pid,name,RA,study,study_tasks)
-        study_tasks = [ x[0] for x in self.sql.query.list_tasks_of_study_vtype(study=study,vtype=vtype) ]
-        print("launching %(fullname)s for %(study)s/%(vtype)s"%self.checkin_what_data)
+        # (self,pid,name,RA,study,study_tasks)
+        study_tasks = [x[0] for x in
+                       self.sql.query.
+                       list_tasks_of_study_vtype(study=study, vtype=vtype)]
+        print("launching %(fullname)s for %(study)s/%(vtype)s" %
+              self.checkin_what_data)
         # checkin_what_data sends: pid,vid,fullname,study,vtype
-        self.CheckinVisit.setup(self.checkin_what_data,self.RA,study_tasks)
+        self.CheckinVisit.setup(self.checkin_what_data, self.RA, study_tasks)
         self.CheckinVisit.show()
 
-    """
-    wrap CheckinVisit's own checkin_to_db to add error msg and refresh visits
-    """
     def checkin_to_db(self):
+        """
+        wrap CheckinVisit's own checkin_to_db to add error msg and refresh visits
+        """
         try:
-          self.update_visit_table()
-        except Exception as e:
-          print(e)
-          mkmsg('checkin failed!\n%s'%e)
+            self.update_visit_table()
+        except Exception as err:
+            print(err)
+            mkmsg('checkin failed!\n%s' % err)
         self.CheckinVisit.checkin_to_db(self.sql)
         # todo: update person search to get lunaid if updated
-        #Update the visit table so that the current vastatus changed to checkedin
-        self.update_visit_table
+        # Update the visit table so that the current vastatus changed to checkedin
+        self.update_visit_table()
 
     ###### Notes
     # see generic_fill_table
@@ -795,6 +814,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.checkin_check(pid)
         full_name = self.sql.query.get_person(pid=pid)[0][0]
         # update to this person
+        # TODO: lookup lunaid
         self.render_person(pid, full_name, current_age, current_gender)
 
     def checkin_check(self, pid):

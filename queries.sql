@@ -55,6 +55,9 @@ select * from person_search_view where pid = %(pid)s
 --name: next_luna
 select max(lunaid) from person_search_view where lunaid < 20000
 
+--name: get_lunaid_from_pid
+select id from enroll where pid = %(pid)s and etype like 'LunaID'
+
 --name: get_birthday
 select
  to_char(dob,'YYYY-MM-DD')
