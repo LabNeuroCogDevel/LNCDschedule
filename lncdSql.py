@@ -3,15 +3,42 @@ import psycopg2.sql
 import pyesql
 import configparser
 import PasswordDialog
+import re  # just for censoring password
 
 
 class lncdSql():
-    def __init__(self, config, gui=None):
+    def __init__(self, config, gui=None, conn=None):
+
+        # can only have one master QT app pointer
+        # so record it in the class (or None/False if not using it)
+
+        if config is not None:
+            constr = self.connstr_from_config(config, gui)
+            print('connecting: ' +
+                  re.sub('pasword=[^\s]+', 'password=*censored*', constr))
+            self.conn = psycopg2.connect(constr)
+            self.conn.set_session(autocommit=True)
+        elif conn is not None:
+            self.conn = conn
+        else:
+            raise Exception("Bad arguments! need config or conn")
+
+        sqls = pyesql.parse_file('./queries.sql')
+        self.query = sqls(self.conn)
+        # a=self.query.name_search(fullname='%Foran%')
+
+    def connstr_from_config(self, config, gui):
+        """
+        return connection string after reading config file
+        can use a gui to get user/pass if needed
+        """
+        # TODO: move to utils? does not depend on "self"
         # read config.ini file like
         # [SQL]
         #  host=...
         #  dbname=...
         #  ..
+
         cfg = configparser.ConfigParser()
         cfg.read(config)
         confline = 'dbname=%(dbname)s user=%(user)s host=%(host)s'
@@ -35,23 +62,16 @@ class lncdSql():
             confline += " password=%(password)s"
 
         constr = confline % cfg._sections['SQL']
+        return(constr)
 
-        print('connecting with %s' % constr)
-        self.conn = psycopg2.connect(constr)
-        self.conn.set_session(autocommit=True)
-
-        sqls = pyesql.parse_file('./queries.sql')
-        self.query = sqls(self.conn)
-        # a=self.query.name_search(fullname='%Foran%')
-
-    """
-    make a table and a list of names (dict key) and
-    create a psycopg2 sql object that can be executed
-    """
     def mkinsert(self, table, colnames):
+        """
+        make a table and a list of names (dict key) and
+        create a psycopg2 sql object that can be executed
+        """
         table=psycopg2.sql.Identifier(table)
         # are keys and values order always stable??
-        cols=map(psycopg2.sql.Identifier,colnames);
+        cols=map(psycopg2.sql.Identifier,colnames)
         vals=map(psycopg2.sql.Placeholder,colnames)
 
         col=psycopg2.sql.SQL(",").join(cols)

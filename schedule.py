@@ -250,7 +250,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         ## checkin
         # init
         self.CheckinVisit = CheckinVisit.CheckinVisitWindow(self)
-        all_tasks = self.sql.query.all_tasks() 
+        all_tasks = self.sql.query.all_tasks()
         self.CheckinVisit.set_all_tasks(all_tasks)
         # wire
         self.checkin_button.clicked.connect(self.checkin_button_pushed)
@@ -492,7 +492,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
             vid = self.visit_table.item(row_i, 9).text()
         else:
             return
-        self.MoreInfo.setup(vid,self.sql)
+        self.MoreInfo.setup(vid, self.sql)
         self.MoreInfo.show()
 
     def reschedule_all(self):
