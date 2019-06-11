@@ -63,6 +63,11 @@
    </property>
    <item>
     <property name="text">
+     <string> NULL</string>
+    </property>
+   </item>
+   <item>
+    <property name="text">
      <string>dob</string>
     </property>
    </item>
