@@ -288,12 +288,15 @@ class ScheduleApp(QtWidgets.QMainWindow):
         row_i = self.people_table.currentRow()
         fullname = self.people_table.item(row_i, 0).text()
         self.sqlUpdateOrShowErr('person', data['ctype'], data['pid'], data['changes'], "pid")
-        if(data['ctype'] is 'fname'):
-            lname = fullname.split(1)
+        print(data['ctype'])
+        if(data['ctype'] == 'fname'):
+            lname = fullname.split(' ')[1]
             fullname = data['changes']+' '+lname
-        if(data['ctype'] is 'lname'):
-            lname = fullname.split(0)
+            print(fullname)
+        if(data['ctype'] == 'lname'):
+            fname = fullname.split(' ')[0]
             fullname = fname+' '+data['changes']
+            print(fullname)
         self.update_people_table(fullname)
 
 
@@ -817,6 +820,8 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.checkin_button.setEnabled(True)
         row_i = self.cal_table.currentRow()
         cal_desc = self.cal_table.item(row_i, 2).text()
+        #Find if -- is in the string, if it is, then them this even is assigned RA.
+
         print(cal_desc)
         current_date = self.cal_table.item(row_i, 0).text()
         current_time = self.cal_table.item(row_i, 1).text()
