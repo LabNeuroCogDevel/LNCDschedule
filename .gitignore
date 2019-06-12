@@ -8,3 +8,4 @@ __pycache__/
 *.p12
 .DS_Store
 *.pyc
+pgdump_*
