@@ -1,41 +1,3 @@
--- schema for postgresql database
--- use like:
---    sudo -u postgres psql < makedb.sql
-
--- kill anyone still connected
-SELECT pg_terminate_backend(pg_stat_activity.pid)
-FROM pg_stat_activity
-WHERE pg_stat_activity.datname = 'lncddb'
-  AND pid <> pg_backend_pid();
-
--- kill db to reserect it
-drop database if exists lncddb;
-create database lncddb;
-\c lncddb;
-
-
-
-
--- roles for postgrest web api
-
-drop role if exists lncd;
-create role lncd with LOGIN REPLICATION PASSWORD 'B@ngal0re';
-GRANT ALL PRIVILEGES ON DATABASE lncddb TO lncd;
-
-
--- allow web to login ... and not much else
-drop role if exists web;
-create role web with LOGIN REPLICATION PASSWORD 'local!123';
-GRANT ALL PRIVILEGES ON DATABASE lncddb TO web;
-
-drop role if exists overseer;
-create role overseer with LOGIN REPLICATION PASSWORD 'X@nadu';
-GRANT ALL PRIVILEGES ON DATABASE lncddb TO web;
-
--- GRANT CONNECT ON DATABASE lncddb TO lncd;
--- GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO web;
-GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO web;
--- CREATE TABLES
 
 create table person (
    pid     serial primary key  ,
@@ -258,7 +220,7 @@ create table ra (
    end_date timestamp,
    bday timestamp,
    studies json
-)
+);
 
 
 
