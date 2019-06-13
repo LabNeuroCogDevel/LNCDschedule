@@ -30,6 +30,7 @@ class MoreInfoWindow(QtWidgets.QDialog):
     def setup(self,vid,sql):
         #Clear the tasks_list every time
         self.tasks_list.clear()
+        self.list_view.clear()
         #Clear the table every time as well
         #self.info_table.clear()
         study_tasks = sql.query.get_tasks(vid = vid)

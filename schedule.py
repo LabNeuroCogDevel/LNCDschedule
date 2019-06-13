@@ -791,11 +791,38 @@ class ScheduleApp(QtWidgets.QMainWindow):
         dmin=dt - delta
         dmax=dt + delta
         res = self.cal.find_in_range(dmin, dmax)
+        #This res contains all the data for the week within
         self.fill_calendar_table(res)
+        #Read the table information after its filled
+        self.fill_person_informaiton(dt.date(), res)
     """
     fill the calendar table with goolge calendar items from search result
     calres is list of dict with keys ['summary', 'note', 'calid', 'starttime', 'creator', 'dur_hr', 'start']
     """
+    def fill_person_informaiton(self, date, information):
+        #Define the list
+        results = ''
+        names = {}
+        #Loop Through the table to find people that were assigned.
+        for i in range (self.cal_table.rowCount()):
+            for j in range(self.cal_table.columnCount()):
+                if '--' in self.cal_table.item(i,j).text():
+                    #Fill the drop_down box
+                    #Split the name form the events
+                    name = self.cal_table.item(i,j).text().split('--')[1]
+                    if(name in names):
+                        #If the member duplicates, increments the data
+                        names[name] = names[name] + 1
+                    else:
+                        names.update({name :  1})
+        print(names)
+        for i in names:
+            results = results + i+'--'+str(names[i])+'  '
+            #print(results)
+        self.ra_information_label.setText(results)
+            
+
+
     def fill_calendar_table(self, calres):
         self.cal_table_data = calres
         self.cal_table.setRowCount(len(calres))
