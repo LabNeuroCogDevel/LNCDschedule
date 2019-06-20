@@ -26,9 +26,10 @@ from LNCDutils import (mkmsg, generic_fill_table, CMenuItem,
 
 # google reports UTC, we are EST or EDT. get the diff between google and us
 # TODO: not used, remove or reconsider usage?
-LAUNCHTIME = int(datetime.datetime.now().strftime('%s'))
-TZFROMUTC = datetime.datetime.fromtimestamp(LAUNCHTIME) - \
-    datetime.datetime.utcfromtimestamp(LAUNCHTIME)
+# '%s' doesn't work on windows
+# LAUNCHTIME = int(datetime.datetime.now().strftime('%s'))
+# TZFROMUTC = datetime.datetime.fromtimestamp(LAUNCHTIME) - \
+#     datetime.datetime.utcfromtimestamp(LAUNCHTIME)
 
 
 class ScheduleApp(QtWidgets.QMainWindow):
