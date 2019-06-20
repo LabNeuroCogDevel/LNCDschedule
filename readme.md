@@ -26,9 +26,11 @@
 ## Notes
 
 ### Testing
-use `make test`
+use `make test`, same as `python3 -m pytest`
 
-Depends on `pytest`, `pytest-qt` and `pytest-pgsql`
+  * Depends on `pytest`, `pytest-qt` and `pytest-pgsql`
+  * within `tests` directory, but expects to be run at root directory (`./sql/` and `./*py` files)
+  * makes use of pytest autoloaded `conftest.py` to provided schema loading through shared test fixture `create_db`
 
 ### Database
 

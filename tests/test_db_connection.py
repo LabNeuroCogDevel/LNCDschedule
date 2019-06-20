@@ -4,18 +4,7 @@ import configparser
 import psycopg2
 import psycopg2.sql
 from lncdSql import lncdSql
-import pytest
 from pyesql_helper import check_column, pyesql_helper as ph
-
-
-@pytest.fixture
-def create_db(transacted_postgresql_db):
-    """
-    creates db when used as param in any 'test_fucntion'
-    returns transacted_postgresql_db so it doesn't also have to be included
-    """
-    transacted_postgresql_db.run_sql_file('sql/03_mkschema.sql')
-    return(transacted_postgresql_db)
 
 
 def test_read_config_and_connect():
@@ -37,6 +26,7 @@ def test_list_ras(create_db):
     """
     check query.list_ras()
      -- by itself, not that useful. But guide for testing other sql tests
+    (create_db in conftest.py, autoloaded by pytest)
     """
     create_db.load_csv('sql/ra.txt', 'ra')  # contains rows for 'ra1' and 'ra2'
     ras = lncdSql(None, conn=ph(create_db.connection)).\

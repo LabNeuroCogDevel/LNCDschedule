@@ -1,23 +1,43 @@
 #!/usr/bin/env python3
 import sys
-import LNCDcal
-import lncdSql
-import psycopg2
 import datetime
-from LNCDutils import *
 import subprocess
 import re  # for whoami
+<<<<<<< HEAD
 import AddNotes, EditPeople, AddContact, AddStudy, EditContact,\
        ScheduleVisit, AddPerson, CheckinVisit, MoreInfo,VisitsCards
 from PyQt5 import uic, QtCore, QtGui, QtWidgets
 from LNCDutils import mkmsg, generic_fill_table, CMenuItem,\
                       update_gcal, get_info_for_cal
 from googleapiclient.errors import HttpError
+=======
+import psycopg2
+from PyQt5 import uic, QtCore, QtGui, QtWidgets
+from LNCDcal import LNCDcal
+
+# local files
+from lncdSql import lncdSql
+import AddNotes
+import EditPeople
+import AddContact
+import AddStudy
+import EditContact
+import ScheduleVisit
+import AddPerson
+import CheckinVisit
+import MoreInfo
+# local tools
+from LNCDutils import (mkmsg, generic_fill_table, CMenuItem,
+                       update_gcal, get_info_for_cal,
+                       caltodate)
+
+>>>>>>> 44a19b2392f947c07245c2093a22d09425180906
 
 # google reports UTC, we are EST or EDT. get the diff between google and us
-launchtime = int(datetime.datetime.now().strftime('%s'))
-tzfromutc = datetime.datetime.fromtimestamp(launchtime) - \
-            datetime.datetime.utcfromtimestamp(launchtime)
+# TODO: not used, remove or reconsider usage?
+LAUNCHTIME = int(datetime.datetime.now().strftime('%s'))
+TZFROMUTC = datetime.datetime.fromtimestamp(LAUNCHTIME) - \
+    datetime.datetime.utcfromtimestamp(LAUNCHTIME)
 
 
 class ScheduleApp(QtWidgets.QMainWindow):
@@ -46,14 +66,16 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
         # get other modules for querying db and calendar
         try:
-            self.cal = LNCDcal.LNCDcal(config_file)
-            self.sql = lncdSql.lncdSql(config_file,
-                                       gui=QtWidgets.QApplication.instance())
-        except Exception as e:
-            mkmsg("ERROR: app will not work!\n%s" % str(e))
+            self.cal = LNCDcal(config_file)
+            self.sql = lncdSql(config_file,
+                               gui=QtWidgets.QApplication.instance())
+        except Exception as err:
+            mkmsg("ERROR: cannot load calendar or DB!\n%s" %
+                  str(err))
             return
 
         # ## who is using the app?
+        # TODO: self.RA should come from self.sql !
         self.RA = subprocess.check_output("whoami").decode().\
             replace('\n', '').replace('\r', '')
         print("RA: %s" % self.RA)
@@ -76,8 +98,8 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
         # add items to searchMenu
         def mkbtngrp(text):
-                return(CMenuItem(text, searchMenu,
-                                 lambda x: self.search_people_by_name(), True))
+            return(CMenuItem(text, searchMenu,
+                             lambda x: self.search_people_by_name(), True))
 
         self.NoDropCheck = mkbtngrp("&Drops removed")
         # set up as exclusive (radio button like)
@@ -102,7 +124,9 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # by name
         self.fullname.textChanged.connect(self.search_people_by_name)
         self.fullname.setText('')
-        self.search_people_by_name(self.fullname.text()+'%') # doesnt already happens, why?
+        self.search_people_by_name(
+            self.fullname.text() +
+            '%')  # doesnt already happens, why?
 
         # by lunaid
         self.subjid_search.textChanged.connect(self.search_people_by_id)
@@ -112,11 +136,15 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.sex_search.activated.connect(self.search_people_by_att)
         self.study_search.activated.connect(self.search_people_by_att)
 
-        ## people_talbe: setup search table "people_table"
-        pep_columns=['fullname','lunaid','age','dob','sex','lastvisit','maxdrop','studies']
+        # ## people_table ##
+        #  setup search table "people_table"
+        pep_columns = [
+            'fullname', 'lunaid', 'age', 'dob',
+            'sex', 'lastvisit', 'maxdrop', 'studies']
         self.people_table.setColumnCount(len(pep_columns))
         self.people_table.setHorizontalHeaderLabels(pep_columns)
-        self.people_table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
+        self.people_table.setEditTriggers(
+            QtWidgets.QAbstractItemView.NoEditTriggers)
         # wire up clicks
         self.people_table.itemClicked.connect(self.people_item_select)
         self.people_table.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)
@@ -133,42 +161,52 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # a = QtWidgets.QAction("Add Id", self.people_table)
         # self.people_table.addAction(a)
 
-        ## cal_table: setup search calendar "cal_table"
-        cal_columns=['date','time','what']
+        # ## cal_table ##
+        # setup search calendar "cal_table"
+        cal_columns = ['date', 'time', 'what']
         self.cal_table.setColumnCount(len(cal_columns))
         self.cal_table.setHorizontalHeaderLabels(cal_columns)
-        #Adjust the cal table width
-        header = self.cal_table.horizontalHeader()       
+        # Adjust the cal table width
+        header = self.cal_table.horizontalHeader()
         header.setSectionResizeMode(0, QtWidgets.QHeaderView.Stretch)
         header.setSectionResizeMode(1, QtWidgets.QHeaderView.ResizeToContents)
         header.setSectionResizeMode(2, QtWidgets.QHeaderView.ResizeToContents)
-        self.cal_table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
+        self.cal_table.setEditTriggers(
+            QtWidgets.QAbstractItemView.NoEditTriggers)
         self.cal_table.itemClicked.connect(self.cal_item_select)
         # and hook up the calendar date select widget to a query
         self.calendarWidget.selectionChanged.connect(self.search_cal_by_date)
-        self.search_cal_by_date() # update for current day
-        # TODO: eventually want to use DB instead of calendar. need to update backend!
+        self.search_cal_by_date()  # update for current day
+        # TODO: eventually want to use DB instead of calendar. need to update
+        # backend!
 
-        ## note table
-        note_columns=['note','dropcode','ndate','vtimestamp','ra','vid']
+        # ## note table ##
+        note_columns = [
+                'note', 'dropcode', 'ndate',
+                'vtimestamp', 'ra', 'vid']
         self.note_table.setColumnCount(len(note_columns))
         self.note_table.setHorizontalHeaderLabels(note_columns)
-        #Make the note_table uneditable
-        self.note_table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
+        # Make the note_table uneditable
+        self.note_table.setEditTriggers(
+            QtWidgets.QAbstractItemView.NoEditTriggers)
 
-        ## visit table
-        self.visit_columns=['day', 'study', 'vstatus','vtype', 'vscore', 'age', 'note', 'dvisit','dperson','vid']
+        # ## visit table ##
+        self.visit_columns = [
+            'day', 'study', 'vstatus', 'vtype', 'vscore',
+            'age', 'note', 'dvisit', 'dperson', 'vid']
         self.visit_table.setColumnCount(len(self.visit_columns))
         self.visit_table.setHorizontalHeaderLabels(self.visit_columns)
-        #Make the visit table uneditable
-        self.visit_table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
-        #The thing must be clicked!!!!!!
+        # Make the visit table uneditable
+        self.visit_table.setEditTriggers(
+            QtWidgets.QAbstractItemView.NoEditTriggers)
+        # The thing must be clicked!!!!!!
         self.visit_table.itemClicked.connect(self.visit_item_select)
 
         # ## context menu + sub-menu for visits: adding RAs
         visit_menu = QtWidgets.QMenu("visit_menu", self.visit_table)
         CMenuItem("no show", visit_menu)
-        #Jump to reschedule visit function whenever the reschdule button is clicked.
+        # Jump to reschedule visit function whenever the reschdule button is
+        # clicked.
         CMenuItem("reschedule", visit_menu, lambda: self.reschedule_all())
         # find all RAs and add to context menu
         assignRA = visit_menu.addMenu("&Assign RA")
@@ -177,85 +215,95 @@ class ScheduleApp(QtWidgets.QMainWindow):
                       lambda x, ra_=ra[0]: self.updateVisitRA(ra_))
         self.visit_table.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.visit_table.customContextMenuRequested.connect(
-                lambda pos: visit_menu.exec_(self.visit_table.mapToGlobal(pos)))
+            lambda pos: visit_menu.exec_(self.visit_table.mapToGlobal(pos)))
 
         # contact table
-        contact_columns=['who','cvalue', 'relation', 'nogood', 'added', 'cid']
+        contact_columns = ['who', 'cvalue', 'relation',
+                           'nogood', 'added', 'cid']
         self.contact_table.setColumnCount(len(contact_columns))
         self.contact_table.setHorizontalHeaderLabels(contact_columns)
-        #Make the contact_table uneditable
-        self.contact_table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
+        # Make the contact_table uneditable
+        self.contact_table.setEditTriggers(
+            QtWidgets.QAbstractItemView.NoEditTriggers)
 
         # schedule time widget
         self.timeEdit.timeChanged.connect(self.update_checkin_time)
 
-        ## general db info
+        # ## general db info ##
         # study list used for checkin and search
-        self.study_list = [ r[0] for r in self.sql.query.list_studies() ]
+        self.study_list = [r[0] for r in self.sql.query.list_studies()]
         # populate search with results
         self.study_search.addItems(self.study_list)
-        
-        #Assigning Edit People
+
+        # Assigning Edit People
         self.EditPeople = EditPeople.EditPeopleWindow(self)
         self.EditPeople.accepted.connect(self.change_person_to_db)
-        ## add person
+        # ## add person ##
         self.AddPerson = AddPerson.AddPersonWindow(self)
         self.add_person_button.clicked.connect(self.add_person_pushed)
         self.AddPerson.accepted.connect(self.add_person_to_db)
 
-        ## add contact
+        # ## add contact ##
         self.AddContact = AddContact.AddContactWindow(self)
         # autocomple stuffs
-        self.AddContact.add_ctypes( [ r[0] for r in self.sql.query.list_ctype() ] )
-        self.AddContact.suggest_relation([ r[0] for r in self.sql.query.list_relation() ] )
+        self.AddContact.add_ctypes([r[0] for r in self.sql.query.list_ctype()])
+        self.AddContact.suggest_relation(
+            [r[0] for r in self.sql.query.list_relation()])
         # connect it up
         self.add_contact_button.clicked.connect(self.add_contact_pushed)
         self.AddContact.accepted.connect(self.add_contact_to_db)
 
-        #Call to edit the contact table whenver the item is clicked
+        # Call to edit the contact table whenver the item is clicked
         self.contact_table.itemClicked.connect(self.edit_contact_table)
 
-        #Menu bar for contact table
+        # Menu bar for contact table
         contact_menu = QtWidgets.QMenu("contact_menu", self.contact_table)
-        CMenuItem("Edit Contact", contact_menu, lambda: self.edit_contact_pushed())
-        #Jump to reschedule visit function whenever the reschdule button is clicked.
-        CMenuItem("Record Contact", contact_menu, lambda: self.record_push())
+        CMenuItem("Edit Contact", contact_menu,
+                  lambda: self.edit_contact_pushed())
+        # Jump to reschedule visit function whenever the reschdule button is
+        # clicked.
+        CMenuItem("Record Contact", contact_menu,
+                  lambda: self.record_contact_push())
         self.contact_table.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.contact_table.customContextMenuRequested.connect(
-                lambda pos: contact_menu.exec_(self.contact_table.mapToGlobal(pos)))
+            lambda pos:
+                contact_menu.exec_(self.contact_table.mapToGlobal(pos)))
 
-        #Edit contact
+        # Edit contact
         self.EditContact = EditContact.EditContactWindow(self)
-        #add the vid value into the interface
+        # add the vid value into the interface
         self.visit_table.itemClicked.connect(self.edit_visit_table)
 
         self.VisitsCards = VisitsCards.VisitsCardsWindow(self)
 
         self.MoreInfo = MoreInfo.MoreInfoWindow(self)
         self.visit_info_button.clicked.connect(self.more_information_pushed)
-        #Change the wrong cvalue if needed.
-        #Must make sure it's clicked
-        #self.edit_contact_button.clicked.connect(self.edit_contact_pushed)
+        # Change the wrong cvalue if needed.
+        # Must make sure it's clicked
+        # self.edit_contact_button.clicked.connect(self.edit_contact_pushed)
         self.EditContact.accepted.connect(self.update_contact_to_db)
 
-        ## add notes and query for pid from visit_summary
+        # ## add notes ##
+        # and query for pid from visit_summary
         self.AddNotes = AddNotes.AddNoteWindow(self)
-        #Do the autocomplete later
+        # Do the autocomplete later
         self.add_notes_button.clicked.connect(self.add_notes_pushed)
         self.AddNotes.accepted.connect(self.add_notes_to_db)
-        #connect it up
+        # connect it up
 
-        ### Visit
-        ## schedule
+        # ## add visit ##
+        #
+        # # schedule #
         # init
         self.ScheduleVisit = ScheduleVisit.ScheduleVisitWindow(self)
         self.ScheduleVisit.add_studies(self.study_list)
-        self.ScheduleVisit.add_vtypes([ r[0] for r in self.sql.query.list_vtypes() ])
+        self.ScheduleVisit.add_vtypes(
+            [r[0] for r in self.sql.query.list_vtypes()])
         # wire
         self.schedule_button.clicked.connect(self.schedule_button_pushed)
         self.ScheduleVisit.accepted.connect(self.schedule_to_db)
 
-        ## checkin
+        # ## checkin
         # init
         self.CheckinVisit = CheckinVisit.CheckinVisitWindow(self)
         all_tasks = self.sql.query.all_tasks()
@@ -266,7 +314,12 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
         self.show()
 
+<<<<<<< HEAD
     ###### Generic
+=======
+    # #### GENERIC ####
+
+>>>>>>> 44a19b2392f947c07245c2093a22d09425180906
     def add_study_to_db(self):
         study_data = self.AddStudy.study_data
         self.sql.insert('study', study_data)
@@ -277,41 +330,51 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
     # check with isvalid method
     # used for ScheduleVisit and AddContact
-    def useisvalid(self,obj,msgdesc):
-        check=obj.isvalid()
+    def useisvalid(self, obj, msgdesc):
+        check = obj.isvalid()
         if(not check['valid']):
-            mkmsg('%s: %s'%(msgdesc,check['msg']) )
+            mkmsg('%s: %s' % (msgdesc, check['msg']))
             return(False)
         return(True)
-        
+
     def change_person(self):
-        #print('it is working')
+        # print('it is working')
         self.EditPeople.edit_person(self.disp_model['pid'])
         self.EditPeople.show()
 
     def change_person_to_db(self):
-        #print(self.EditPeople.edit_model)
-        data = self.EditPeople.edit_model 
+        # print(self.EditPeople.edit_model)
+        data = self.EditPeople.edit_model
         row_i = self.people_table.currentRow()
         fullname = self.people_table.item(row_i, 0).text()
-        self.sqlUpdateOrShowErr('person', data['ctype'], data['pid'], data['changes'], "pid")
+        self.sqlUpdateOrShowErr(
+            'person',
+            data['ctype'],
+            data['pid'],
+            data['changes'],
+            "pid")
         print(data['ctype'])
         if(data['ctype'] == 'fname'):
             lname = fullname.split(' ')[1]
-            fullname = data['changes']+' '+lname
+            fullname = data['changes'] + ' ' + lname
             print(fullname)
         if(data['ctype'] == 'lname'):
             fname = fullname.split(' ')[0]
-            fullname = fname+' '+data['changes']
+            fullname = fname + ' ' + data['changes']
             print(fullname)
         self.update_people_table(fullname)
 
+<<<<<<< HEAD
     ###### PEOPLE
+=======
+    # #### PEOPLE #####
+
+>>>>>>> 44a19b2392f947c07245c2093a22d09425180906
     def add_person_pushed(self):
         name = self.fullname.text().title().split(' ')
-        print('spliting name at len %d'%len(name))
-        fname=name[0] if len(name)>=1 else ''
-        lname=" ".join(name[1:]) if len(name)>=2 else ''
+        print('spliting name at len %d' % len(name))
+        fname = name[0] if len(name) >= 1 else ''
+        lname = " ".join(name[1:]) if len(name) >= 2 else ''
         d = {'fname': fname, 'lname': lname}
         self.AddPerson.setpersondata(d)
         self.AddPerson.show()
@@ -319,6 +382,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
     """
     connector for on text change of fullname textline search bar
     """
+
     def search_people_by_name(self, fullname=None):
         if fullname is None:
             fullname = self.fullname.text()
@@ -330,10 +394,10 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
         # use maxdrop and lunaid range to add exclusions
         search = {
-                'fullname': fullname,
-                'maxlunaid': 99999,
-                'minlunaid': -1,
-                'maxdrop': 'family'}
+            'fullname': fullname,
+            'maxlunaid': 99999,
+            'minlunaid': -1,
+            'maxdrop': 'family'}
 
         # exclude dropped?
         if self.NoDropCheck.isChecked():
@@ -411,8 +475,8 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # Change the color after the textes have been successfully inserted.
         # based on drop level
         drop_colors = {'subject': QtGui.QColor(249, 179, 139),
-                       'visit':   QtGui.QColor(240, 230, 140),
-                       'future':  QtGui.QColor(240, 240, 240),
+                       'visit': QtGui.QColor(240, 230, 140),
+                       'future': QtGui.QColor(240, 240, 240),
                        'unknown': QtGui.QColor(203, 233, 109)}
 
         # N.B. this could go in previous for loop. left here for clarity
@@ -478,13 +542,13 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.checkin_button.setEnabled(True)
 
         row_i = self.visit_table.currentRow()
-        d     = self.visit_table_data[row_i]
-        vid   = d[self.visit_columns.index('vid')]
+        d = self.visit_table_data[row_i]
+        vid = d[self.visit_columns.index('vid')]
         study = d[self.visit_columns.index('study')]
-        pid     = self.disp_model['pid']
-        fullname= self.disp_model['fullname']
+        pid = self.disp_model['pid']
+        fullname = self.disp_model['fullname']
 
-        #for j in range(self.visit_table.columnCount()):
+        # for j in range(self.visit_table.columnCount()):
         #self.visit_table.item(row_i, j).setBackground(QtGui.QColor(182, 236, 48))
         self.click_color(self.visit_table, row_i)
 
@@ -521,8 +585,8 @@ class ScheduleApp(QtWidgets.QMainWindow):
         row_i = self.visit_table.currentRow()
         vid = self.visit_table.item(row_i, 9).text()
         googleuri = self.sql.query.get_googleuri(vid=vid)
-        #Reschedule everything in the visit
-        #Delete the visit first
+        # Reschedule everything in the visit
+        # Delete the visit first
         try:
             self.sql.query.delete_visit(vid=self.visit_id)
         except psycopg2.ProgrammingError:
@@ -530,14 +594,15 @@ class ScheduleApp(QtWidgets.QMainWindow):
         except psycopg2.InternalError:
             mkmsg('Please do not reschedule checkedin')
             return
-        
-        #Reschedule the visit
+
+        # Reschedule the visit
         self.schedule_button_pushed(googleuri)
 
         self.update_visit_table()
-    #Change color of the row whenever do leftclick
+    # Change color of the row whenever do leftclick
+
     def click_color(self, table, row_i):
-        for i in range (table.rowCount()):
+        for i in range(table.rowCount()):
             for j in range(table.columnCount()):
                 if i == row_i:
                     table.item(i, j).setBackground(QtGui.QColor(191, 243, 228))
@@ -546,12 +611,11 @@ class ScheduleApp(QtWidgets.QMainWindow):
                     try:
                         self.table_background(table, i, j)
                     except AttributeError:
-                            print('NonType')
-                else: 
+                        print('NonType')
+                else:
                     table.item(i, j).setBackground(QtGui.QColor(255, 255, 255))
 
-     
-        #Get rid of the color in other tables
+        # Get rid of the color in other tables
         if table == self.visit_table:
             self.refresh_blank(self.contact_table)
             self.refresh_blank(self.people_table)
@@ -566,55 +630,54 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
     def table_background(self, table, i, j):
 
-                if table.item(i, 6).text() == 'subject':
-                    color =  QtGui.QColor(249, 179, 139)
-                    table.item(i, j).setBackground(color)
-                elif  table.item(i, 6).text() == 'visit':
-                    color =  QtGui.QColor(240, 230, 140)
-                    table.item(i, j).setBackground(color)
-                elif table.item(i, 6).text() == 'future':
-                    color = QtGui.QColor(240, 240, 240)
-                    table.item(i, j).setBackground(color)
-                elif table.item(i, 6).text() == 'family' or table.item(i, 6).text() == 'unknown' :
-                    color = QtGui.QColor(203, 233, 109)
-                    table.item(i, j).setBackground(color)
+        if table.item(i, 6).text() == 'subject':
+            color = QtGui.QColor(249, 179, 139)
+            table.item(i, j).setBackground(color)
+        elif table.item(i, 6).text() == 'visit':
+            color = QtGui.QColor(240, 230, 140)
+            table.item(i, j).setBackground(color)
+        elif table.item(i, 6).text() == 'future':
+            color = QtGui.QColor(240, 240, 240)
+            table.item(i, j).setBackground(color)
+        elif table.item(i, 6).text() == 'family' or table.item(i, 6).text() == 'unknown':
+            color = QtGui.QColor(203, 233, 109)
+            table.item(i, j).setBackground(color)
+        else:
+            table.item(i, j).setBackground(QtGui.QColor(255, 255, 255))
+
+    def refresh_blank(self, table):
+        for i in range(table.rowCount()):
+            for j in range(table.columnCount()):
+                if table is self.people_table:
+                    try:
+                        self.table_background(table, i, j)
+                    except AttributeError:
+                        print('NonType')
                 else:
                     table.item(i, j).setBackground(QtGui.QColor(255, 255, 255))
 
-    def refresh_blank(self, table):
-        for i in range (table.rowCount()):
-                for j in range(table.columnCount()):
-                    if table is self.people_table:
-                        try:
-                            self.table_background(table, i, j)
-                        except AttributeError:
-                            print('NonType')
-                    else:
-                        table.item(i, j).setBackground(QtGui.QColor(255, 255, 255))
-
-                    #table.item(i, j).setBackground(QtGui.QColor(255, 255, 255))
+                #table.item(i, j).setBackground(QtGui.QColor(255, 255, 255))
 
     def updateVisitRA(self, ra):
 
         row_i = self.visit_table.currentRow()
         d = self.visit_table_data[row_i]
         vid = d[self.visit_columns.index('vid')]
-        pid = self.disp_model['pid']
-        #mkmsg('Still implementing: %s to %d (%d)' % (ra, vid, pid))
-        # TODO:
+        # pid = self.disp_model['pid']
         info = get_info_for_cal(self.sql.query, vid)
-        #Update the database for RA
+        # Update the database for RA
         info['ra'] = ra
         try:
-            self.sql.query.update_RA(ra = info['ra'], vid = vid)
+            self.sql.query.update_RA(ra=info['ra'], vid=vid)
         except psycopg2.ProgrammingError:
             print('Error that does not make sense')
 
         print(info)
         #  1. update google calendar title
-        info['googleuri'] = self.sql.query.get_googleuri(vid = vid)
+        info['googleuri'] = self.sql.query.get_googleuri(vid=vid)
         info['googleuri'] = info['googleuri'][0][0]
         info['calid'] = info['googleuri']
+<<<<<<< HEAD
         
         try:
             #self.cal.delete_event(info['googleuri'])
@@ -623,114 +686,135 @@ class ScheduleApp(QtWidgets.QMainWindow):
             mkmsg('Please do not assign RA to scheduled subject')
             return
         #Update the event(e) in the database
+=======
+
+        # self.cal.delete_event(info['googleuri'])
+        event = update_gcal(self.cal, info, assign=True)
+        # Update the event(event) in the database
+>>>>>>> 44a19b2392f947c07245c2093a22d09425180906
         try:
-            self.sql.query.update_uri(googleuri = e['id'], vid = vid)
+            self.sql.query.update_uri(googleuri=event['id'], vid=vid)
         except psycopg2.ProgrammingError:
             print('Error that does not make sense')
 
-        #For this, sched is origionally assigned. Changed it to sche so that the data base will  accept the vstatus.
-        #//////////////////////////////////////////////
-        new_node = {'ra':ra,'action':'assigned','vid':vid}
-        #//////////////////////////////////////////////
+        # For this, sched is origionally assigned. Changed it to sche so that the data base will  accept the vstatus.
+        # //////////////////////////////////////////////
+        new_node = {'ra': ra, 'action': 'assigned', 'vid': vid}
+        # //////////////////////////////////////////////
         #  2. add to visit_action # vatimestamp? auto inserted?
-        self.sql.insert('visit_action',new_node)
+        self.sql.insert('visit_action', new_node)
         #  3. update visit
-        #self.sql.update('visit', 'googleuri', e['id'], 'vid', vid)
+        # TODO/FIXME: is this done elsewhere?  20190615WF
+        # self.sql.update('visit', 'googleuri', event['id'], 'vid', vid)
         #  4. refresh visit view
         self.update_visit_table()
 
     def edit_visit_table(self):
+        """ on item click: set visit as subject for actions """
         row_i = self.visit_table.currentRow()
         self.visit_id = self.visit_table.item(row_i, 9).text()
         self.name = self.visit_table.item(row_i, 0).text()
+
     def update_visit_table(self):
-        pid=self.disp_model['pid']
+        """ update visit table display"""
+        pid = self.disp_model['pid']
         self.visit_table_data = self.sql.query.visit_by_pid(pid=pid)
-        generic_fill_table(self.visit_table,self.visit_table_data)
+        generic_fill_table(self.visit_table, self.visit_table_data)
 
     def update_contact_table(self):
-        self.contact_table_data=self.sql.query.contact_by_pid(pid=self.disp_model['pid'])
-        generic_fill_table(self.contact_table,self.contact_table_data)
+        """ update contact table display"""
+        self.contact_table_data = self.sql.query.contact_by_pid(
+            pid=self.disp_model['pid'])
+        generic_fill_table(self.contact_table, self.contact_table_data)
 
     def update_note_table(self):
-        #pid=self.disp_model['pid']
+        """ update note table display"""
+        # pid=self.disp_model['pid']
         print(self.disp_model['pid'])
-        self.note_table_data=self.sql.query.note_by_pid(pid=self.disp_model['pid'])
-        generic_fill_table(self.note_table,self.note_table_data)
+        self.note_table_data = self.sql.query.note_by_pid(
+            pid=self.disp_model['pid'])
+        generic_fill_table(self.note_table, self.note_table_data)
 
     def update_people_table(self, fullname):
+        """ update person table display"""
+        # TODO/FIXME: what if want search by lunaid or age or study or ...
         self.search_people_by_name(fullname)
 
-    """
-    person to db
-    """
     def add_person_to_db(self):
+        """ person to db """
         print(self.AddPerson.persondata)
         # pop up window and return if not valid
-        if(not self.AddPerson.isvalid() ):
-           mkmsg("Missing data must be provided before we can continue adding the person")
-           return 
+        if not self.AddPerson.isvalid():
+            mkmsg("Person: nothing to add")
+            return
 
-        self.fullname.setText( '%(fname)s %(lname)s'%self.AddPerson.persondata)
+        self.fullname.setText('%(fname)s %(lname)s' %
+                              self.AddPerson.persondata)
         # put error into dialog box
         try:
-          #self.sql.query.insert_person(**(self.AddPerson.persondata))
-          data=self.AddPerson.persondata
-          data['adddate'] = datetime.datetime.now()
-          self.sql.insert('person',data)
-        except Exception as e:
-          mkmsg(str(e))
-          return
+            # self.sql.query.insert_person(**(self.AddPerson.persondata))
+            data = self.AddPerson.persondata
+            data['adddate'] = datetime.datetime.now()
+            self.sql.insert('person', data)
+        except Exception as err:
+            mkmsg(str(err))
+            return
 
         self.search_people_by_name(self.fullname.text())
 
-    ###### VISIT
+    # #### VISIT #####
     # see generic_fill_table
     def schedule_button_pushed(self, old_google_uri=False):
-        d=self.schedule_what_data['date']
-        t=self.schedule_what_data['time']
-        #Got the pid ID for the person who scheduled.
-        pid=self.disp_model['pid']
-        fullname=self.disp_model['fullname']
-        if d==None or t==None:
+        d = self.schedule_what_data['date']
+        t = self.schedule_what_data['time']
+        # Got the pid ID for the person who scheduled.
+        pid = self.disp_model['pid']
+        fullname = self.disp_model['fullname']
+        if d is None or t is None:
             mkmsg('set a date and time before scheduling')
             return()
-        if pid == None or fullname == None:
+        if pid is None or fullname is None:
             mkmsg('select a person before trying to schedule')
             return()
-        dt=datetime.datetime.combine(d, t)
-        self.ScheduleVisit.setup(pid,fullname,self.RA,dt, old_google_uri)
+        dt = datetime.datetime.combine(d, t)
+        self.ScheduleVisit.setup(pid, fullname, self.RA, dt, old_google_uri)
         self.ScheduleVisit.show()
 
     def schedule_to_db(self):
         # valid?
-        if not self.useisvalid(self.ScheduleVisit, "Cannot schedule visit"): return
-        #todo: add to calendar or msgerr
-        #makw the note index None so that the sql can recongnize it.
+        if not self.useisvalid(self.ScheduleVisit, "Cannot schedule visit"):
+            return
+        # todo: add to calendar or msgerr
+        # makw the note index None so that the sql can recongnize it.
         if(self.ScheduleVisit.model['note'] == ''):
             self.ScheduleVisit.model['note'] = None
             print("updated note to none")
 
         try:
-            self.ScheduleVisit.add_to_calendar(self.cal,self.disp_model)
-        except Exception as e:
-            mkmsg('Failed to add to google calendar; not adding. %s'%str(e))
+            self.ScheduleVisit.add_to_calendar(self.cal, self.disp_model)
+        except Exception as err:
+            mkmsg('Failed to add to google calendar; not adding. %s' % str(err))
             return()
         # catch sql error
         # N.B. action(vstatus) intentionally empty -- will be set to 'sched'
-        if not self.sqlInsertOrShowErr('visit_summary',self.ScheduleVisit.model):
-            # todo: remove from calendar if sql failed
+        if not self.sqlInsertOrShowErr(
+                'visit_summary', self.ScheduleVisit.model):
+            # TODO/FIXME: remove from calendar if sql failed
             return()
-        if(self.ScheduleVisit.old_googleuri != False and self.ScheduleVisit.old_googleuri != None and len(self.ScheduleVisit.old_googleuri) > 0):
+
+        # we have a valid old_googleuri -> remove it
+        if(self.ScheduleVisit.old_googleuri and
+           self.ScheduleVisit.old_googleuri is not None and
+           len(self.ScheduleVisit.old_googleuri) > 0):
             google_old_uri = self.ScheduleVisit.old_googleuri[0][0]
             self.cal.delete_event(google_old_uri)
-        
+
         # need to refresh visits
         self.update_visit_table()
         self.update_note_table()
 
-    #Method for record push --Waiting for later implementation
-    def record_push(self):
+    # Method for record push --Waiting for later implementation
+    def record_contact_push(self):
         mkmsg("Still implementing")
 
     # ## checkin
@@ -778,19 +862,20 @@ class ScheduleApp(QtWidgets.QMainWindow):
             mkmsg('checkin failed!\n%s' % err)
         self.CheckinVisit.checkin_to_db(self.sql)
         # todo: update person search to get lunaid if updated
-        # Update the visit table so that the current vastatus changed to checkedin
+        # Update the visit table so that the current vastatus changed to
+        # checkedin
         self.update_visit_table()
 
-    ###### Notes
+    # #### NOTES ####
     # see generic_fill_table
 
-    ###### Labels
+    # Labels
     def update_schedule_what_label(self):
-        text = "%(fullname)s: %(date)s@%(time)s"%(self.schedule_what_data)
+        text = "%(fullname)s: %(date)s@%(time)s" % (self.schedule_what_data)
         self.schedule_what_label.setText(text)
 
     def update_checkin_what_label(self):
-        text = "%(fullname)s - %(datetime)s"%(self.checkin_what_data)
+        text = "%(fullname)s - %(datetime)s" % (self.checkin_what_data)
         self.checkin_what_label.setText(text)
 
     def update_checkin_time(self):
@@ -798,88 +883,94 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.schedule_what_data['time'] = time
         self.update_schedule_what_label()
 
-        
-    ###### CALENDAR
-    
+    # ### CALENDAR ###
+
     def search_cal_by_date(self):
-        #selectedQdate=self.calendarWidget.selectedDate().toPyDate()
-        #dt=datetime.datetime.fromordinal( selectedQdate.toordinal() )
-        dt=caltodate(self.calendarWidget)
+        # selectedQdate=self.calendarWidget.selectedDate().toPyDate()
+        # dt=datetime.datetime.fromordinal( selectedQdate.toordinal() )
+        dt = caltodate(self.calendarWidget)
         print(dt)
-        # update schedule 
-        self.schedule_what_data['date']=dt.date()
+        # update schedule
+        self.schedule_what_data['date'] = dt.date()
         self.update_schedule_what_label()
         # update calendar table
-        #now=datetime.datetime.now()
-        delta =datetime.timedelta(days=5)
-        dmin=dt - delta
-        dmax=dt + delta
+        # now=datetime.datetime.now()
+        delta = datetime.timedelta(days=5)
+        dmin = dt - delta
+        dmax = dt + delta
         res = self.cal.find_in_range(dmin, dmax)
-        #This res contains all the data for the week within
+        # This res contains all the data for the week within
         self.fill_calendar_table(res)
-        #Read the table information after its filled
+        # Read the table information after its filled
         self.fill_person_informaiton(dt.date(), res)
-    """
-    fill the calendar table with goolge calendar items from search result
-    calres is list of dict with keys ['summary', 'note', 'calid', 'starttime', 'creator', 'dur_hr', 'start']
-    """
+
     def fill_person_informaiton(self, date, information):
-        #Define the list
+        """
+        count number of RAs assigned to each visit
+        """
+        # Define the list
         results = ''
         names = {}
-        #Loop Through the table to find people that were assigned.
-        for i in range (self.cal_table.rowCount()):
+        # Loop Through the table to find people that were assigned.
+        for i in range(self.cal_table.rowCount()):
             for j in range(self.cal_table.columnCount()):
-                if '--' in self.cal_table.item(i,j).text():
-                    #Fill the drop_down box
-                    #Split the name form the events
-                    name = self.cal_table.item(i,j).text().split('--')[1]
-                    if(name in names):
-                        #If the member duplicates, increments the data
+                if '--' in self.cal_table.item(i, j).text():
+                    # Fill the drop_down box
+                    # Split the name form the events
+                    name = self.cal_table.item(i, j).text().split('--')[1]
+                    if name in names:
+                        # If the member duplicates, increments the data
                         names[name] = names[name] + 1
                     else:
-                        names.update({name :  1})
+                        names.update({name: 1})
         print(names)
         for i in names:
-            results = results + i+'--'+str(names[i])+'  '
-            #print(results)
+            results = results + i + '--' + str(names[i]) + '  '
+            # print(results)
         self.ra_information_label.setText(results)
-            
-
 
     def fill_calendar_table(self, calres):
+        """
+        update calendar table with calres
+        :param calres: is list of dict with keys
+          'summary', 'note', 'calid', 'starttime', 'creator', 'dur_hr', 'start'
+        * fill the calendar table with goolge calendar items from search result
+        * separate time into date and time of day, add summary
+        """
         self.cal_table_data = calres
         self.cal_table.setRowCount(len(calres))
         for row_i, calevent in enumerate(calres):
             # google uses UTC, but we are in EST or EDT
-            #st   = str(calevent['starttime'] + tzfromutc)
-            #st=str(calevent['starttime'])
-            m_d=calevent['starttime'].strftime('%Y-%m-%d')
-            tm=calevent['starttime'].strftime('%H:%M')
-            self.cal_table.setItem(row_i, 0, QtWidgets.QTableWidgetItem(m_d) )
-            self.cal_table.setItem(row_i, 1, QtWidgets.QTableWidgetItem(tm) )
+            # st   = str(calevent['starttime'] + TZFROMUTC)
+            # st=str(calevent['starttime'])
+            m_d = calevent['starttime'].strftime('%Y-%m-%d')
+            tm = calevent['starttime'].strftime('%H:%M')
+            self.cal_table.setItem(row_i, 0, QtWidgets.QTableWidgetItem(m_d))
+            self.cal_table.setItem(row_i, 1, QtWidgets.QTableWidgetItem(tm))
             eventname = calevent['summary']
-            self.cal_table.setItem(row_i, 2, QtWidgets.QTableWidgetItem(eventname) )
+            self.cal_table.setItem(
+                row_i, 2, QtWidgets.QTableWidgetItem(eventname))
 
-    """
-    when we hit an item in the calendar table, update
-     * potential checkin data and label
-     * potental schedual data and srings
-    """
     def cal_item_select(self):
-        #First enable the button no matter what
+        """
+        when we hit an item in the calendar table, update
+         * potential checkin data and label
+         * potental schedual data and srings
+        """
+        # First enable the button no matter what
         self.checkin_button.setEnabled(True)
         row_i = self.cal_table.currentRow()
         cal_desc = self.cal_table.item(row_i, 2).text()
-        #Find if -- is in the string, if it is, then them this even is assigned RA.
+        # Find if -- is in the string, if it is, then them this even is
+        # assigned RA.
 
         print(cal_desc)
         current_date = self.cal_table.item(row_i, 0).text()
         current_time = self.cal_table.item(row_i, 1).text()
-        current_date_time = current_date + ' ' + current_time+':00'
+        current_date_time = current_date + ' ' + current_time + ':00'
         current_study = self.cal_table.item(row_i, 2).text().split('/')[0]
         # 7T x1 EEG-23yof (EG) - MB, LT
-        title_regex = re.match('(\w+)/(\w+) x(\d+) (\d+)yo(\w)', cal_desc)
+        title_regex = re.match(r'(\w+)/(\w+) x(\d+) (\d+)yo(\w)', cal_desc)
         if not title_regex:
             mkmsg("cannot parse calendar event title!\n" +
                   "expect 'study/type xX YYyo[m/f]' but have\n" + cal_desc)
@@ -900,8 +991,9 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # Debuging, see results
         print(res)
 
-        if len(res) == 0:
+        if not res:
             return
+
         pid = res[0][0]
         self.checkin_check(pid)
         full_name = self.sql.query.get_person(pid=pid)[0][0]
@@ -910,37 +1002,42 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.render_person(pid, full_name, current_age, current_gender)
 
     def checkin_check(self, pid):
-        row_i =self.cal_table.currentRow()
+        row_i = self.cal_table.currentRow()
         self.scheduled_date = self.cal_table.item(row_i, 0).text()
         print(self.scheduled_date)
-        self.checkin_status = self.sql.query.get_status(pid = pid, vtimestamp = self.scheduled_date)[0][0]
+        self.checkin_status = self.sql.query.get_status(
+            pid=pid, vtimestamp=self.scheduled_date)[0][0]
         print(self.checkin_status)
 
-        if(self.checkin_status == 'checkedin'):
+        if self.checkin_status == 'checkedin':
             self.checkin_button.setEnabled(False)
 
-
-    # ## CONTACTS
+    # ### CONTACTS ###
     # self.add_contact_button.clicked.connect(self.add_contact_pushed)
+
     def add_contact_pushed(self):
+        """ show add modal when button is pushed """
         # self.AddContact.setpersondata(d)
-        self.AddContact.set_contact(self.disp_model['pid'], self.disp_model['fullname'])
+        self.AddContact.set_contact(
+            self.disp_model['pid'],
+            self.disp_model['fullname'])
         self.AddContact.show()
 
-
     def edit_contact_pushed(self):
-
+        """ show edit modal when button is pushed """
         self.EditContact.edit_contact(self.contact_cid)
         self.EditContact.show()
 
     def update_contact_to_db(self):
-
-        data = self.EditContact.edit_model 
-        self.sqlUpdateOrShowErr('contact', data['ctype'], data['cid'], data['changes'], "cid")
+        """ run sql update and refresh contact table """
+        data = self.EditContact.edit_model
+        self.sqlUpdateOrShowErr('contact', data['ctype'], data['cid'],
+                                data['changes'], "cid")
         self.update_contact_table()
 
     # self.AddContact.accepted.connect(self.add_contact_to_db)
     def add_contact_to_db(self):
+        """ run sql add and update table """
         # do we have good input?
         if not self.useisvalid(self.AddContact, "Cannot add contact"):
             return
@@ -953,14 +1050,16 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.update_contact_table()
 
     def edit_contact_table(self):
+        """ on row click: update what contact is used for actions """
         row_i = self.contact_table.currentRow()
         self.click_color(self.contact_table, row_i)
         self.contact_cid = self.contact_table.item(row_i, 5).text()
         self.name = self.contact_table.item(row_i, 0).text()
-        #print(contact_cid)
+        # print(contact_cid)
 
     # ## Notes
     def add_notes_pushed(self):
+        """ on clikc run add notes modal """
         # self.Addnotes.setpersondata(d)
         self.AddNotes.set_note(self.disp_model['pid'],
                                self.disp_model['fullname'],
@@ -972,7 +1071,6 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # Error check
         if not self.useisvalid(self.AddNotes, "Cannot add note"):
             return
-        
 
         # add ra to model
         data = {**self.AddNotes.notes_model, 'ra': self.RA}
@@ -982,18 +1080,14 @@ class ScheduleApp(QtWidgets.QMainWindow):
         vid = self.AddNotes.get_vid()
 
         # if we have a drop, insert with drops_view trigger
-        if(dropcode is not None):
-            note_dict = {**data,
-                         'vid': vid,
-                         'dropcode': self.AddNotes.get_drop(),
-                         }
+        if dropcode is not None:
+            note_dict = {**data, 'vid': vid,
+                         'dropcode': self.AddNotes.get_drop()}
             print(note_dict['vid'])
             self.sqlInsertOrShowErr('drops_view', note_dict)
         # no drop but do have visit, use trigger on visit_note_view
-        elif(vid is not None):
-            note_dict = {**data,
-                         'vid': vid,
-                         }
+        elif vid is not None:
+            note_dict = {**data, 'vid': vid}
             self.sqlInsertOrShowErr('visit_note_view', note_dict)
 
         # boring old note insert. no trigger for also insert to person
@@ -1024,33 +1118,32 @@ class ScheduleApp(QtWidgets.QMainWindow):
             # self.sql.query.insert_person(**(self.AddPerson.persondata))
             self.sql.insert(table, d)
             return(True)
-        except Exception as e:
-            mkmsg(str(e))
+        except Exception as err:
+            mkmsg(str(err))
             return(False)
 
-    #Later better map all the data into one variable so that it's easy to see.
+    # Later better map all the data into one variable so that it's easy to see.
     def sqlUpdateOrShowErr(self, table, id_column, id, new_value, id_type):
         try:
             self.sql.update(table, id_column, id, new_value, id_type)
             return(True)
-        except Exception as e:
-            mkmsg(str(e))
+        except Exception as err:
+            mkmsg(str(err))
             return(False)
-
 
     def construct_drop_down_box(self):
         myList = list()
         # create identifer for visit dropdown selection
         for j in range(self.visit_table.rowCount()):
             # Append the vid onto the list
-            myList.append(self.visit_table.item(j,9).text())
+            myList.append(self.visit_table.item(j, 9).text())
             for i in range(4):
-                #Construct the list by using the value in the table
-                myList.append(self.visit_table.item(j,i).text())
-            #Pass the value to the array(drop_down_value) in the ArrayNotes file
+                # Construct the list by using the value in the table
+                myList.append(self.visit_table.item(j, i).text())
+            # Pass the value to the array(drop_down_value) in the ArrayNotes
+            # file
             self.AddNotes.drop_down_value.append(str(myList).strip('[]'))
             myList.clear()
-
 
 
 # actually launch everything
@@ -1059,11 +1152,11 @@ if __name__ == '__main__':
     import os
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
-    app = QtWidgets.QApplication([])
+    APP = QtWidgets.QApplication([])
 
     if len(sys.argv) > 1:
-        window = ScheduleApp(config_file=sys.argv[1])
+        WINDOW = ScheduleApp(config_file=sys.argv[1])
     else:
-        window = ScheduleApp()
+        WINDOW = ScheduleApp()
 
-    sys.exit(app.exec_())
+    sys.exit(APP.exec_())
