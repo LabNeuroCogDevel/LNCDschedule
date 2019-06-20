@@ -8,10 +8,11 @@ from LNCDutils import *
 import subprocess
 import re  # for whoami
 import AddNotes, EditPeople, AddContact, AddStudy, EditContact,\
-       ScheduleVisit, AddPerson, CheckinVisit, MoreInfo
+       ScheduleVisit, AddPerson, CheckinVisit, MoreInfo,VisitsCards
 from PyQt5 import uic, QtCore, QtGui, QtWidgets
 from LNCDutils import mkmsg, generic_fill_table, CMenuItem,\
                       update_gcal, get_info_for_cal
+from googleapiclient.errors import HttpError
 
 # google reports UTC, we are EST or EDT. get the diff between google and us
 launchtime = int(datetime.datetime.now().strftime('%s'))
@@ -69,6 +70,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         CMenuItem("Task", fileMenu)
         CMenuItem("Visit Type", fileMenu)
 
+        
         # search settings
         searchMenu = menubar.addMenu('&Search')
 
@@ -91,6 +93,10 @@ class ScheduleApp(QtWidgets.QMainWindow):
         searchMenu.addAction(lany)
         searchMenu.addAction(lonly)
         searchMenu.addAction(lno)
+
+        #Visit_table search settings
+        visitsSearchMenu = menubar.addMenu('&Visit_table Search')
+        CMenuItem("option", visitsSearchMenu, self.visit_table_queries)
 
         # ## setup person search field
         # by name
@@ -223,6 +229,8 @@ class ScheduleApp(QtWidgets.QMainWindow):
         #add the vid value into the interface
         self.visit_table.itemClicked.connect(self.edit_visit_table)
 
+        self.VisitsCards = VisitsCards.VisitsCardsWindow(self)
+
         self.MoreInfo = MoreInfo.MoreInfoWindow(self)
         self.visit_info_button.clicked.connect(self.more_information_pushed)
         #Change the wrong cvalue if needed.
@@ -259,7 +267,6 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.show()
 
     ###### Generic
-    
     def add_study_to_db(self):
         study_data = self.AddStudy.study_data
         self.sql.insert('study', study_data)
@@ -298,7 +305,6 @@ class ScheduleApp(QtWidgets.QMainWindow):
             fullname = fname+' '+data['changes']
             print(fullname)
         self.update_people_table(fullname)
-
 
     ###### PEOPLE
     def add_person_pushed(self):
@@ -421,6 +427,8 @@ class ScheduleApp(QtWidgets.QMainWindow):
                 self.people_table.item(row_i, j).setBackground(drop_color)
 
     def people_item_select(self, thing=None):
+        #Whenever the people table subjects have been selected, grey out the checkin button
+        self.checkin_button.setEnabled(False)       
         row_i = self.people_table.currentRow()
         # Color row when clicked -- indicate action target for right click
         self.click_color(self.people_table, row_i)
@@ -459,8 +467,16 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # TODO:
         # do we want to clear other models
         #  clear: checkin_what_data schedule_what_data
+    def visit_table_queries(self):
+        #print('testing testing')
+        self.VisitsCards.show()
+
+
 
     def visit_item_select(self, thing=None):
+        #Enable the button in the first place
+        self.checkin_button.setEnabled(True)
+
         row_i = self.visit_table.currentRow()
         d     = self.visit_table_data[row_i]
         vid   = d[self.visit_columns.index('vid')]
@@ -481,6 +497,9 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
         # as long as disp model matches visit (when wouldn't it?)
         # use lunaid from person table
+        # Disable the checkin button when the subject is checkedin 
+        if(d[self.visit_columns.index('vstatus')] == 'checkedin'):
+            self.checkin_button.setEnabled(False)
         if pid == self.disp_model['pid']:
             self.checkin_what_data['lunaid'] = self.disp_model['lunaid']
         else:
@@ -576,6 +595,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
                     #table.item(i, j).setBackground(QtGui.QColor(255, 255, 255))
 
     def updateVisitRA(self, ra):
+
         row_i = self.visit_table.currentRow()
         d = self.visit_table_data[row_i]
         vid = d[self.visit_columns.index('vid')]
@@ -595,9 +615,13 @@ class ScheduleApp(QtWidgets.QMainWindow):
         info['googleuri'] = self.sql.query.get_googleuri(vid = vid)
         info['googleuri'] = info['googleuri'][0][0]
         info['calid'] = info['googleuri']
-
-        #self.cal.delete_event(info['googleuri'])
-        e = update_gcal(self.cal, info, assign=True)
+        
+        try:
+            #self.cal.delete_event(info['googleuri'])
+            e = update_gcal(self.cal, info, assign=True)
+        except HttpError:
+            mkmsg('Please do not assign RA to scheduled subject')
+            return
         #Update the event(e) in the database
         try:
             self.sql.query.update_uri(googleuri = e['id'], vid = vid)
