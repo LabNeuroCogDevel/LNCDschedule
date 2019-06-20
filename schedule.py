@@ -3,14 +3,6 @@ import sys
 import datetime
 import subprocess
 import re  # for whoami
-<<<<<<< HEAD
-import AddNotes, EditPeople, AddContact, AddStudy, EditContact,\
-       ScheduleVisit, AddPerson, CheckinVisit, MoreInfo,VisitsCards
-from PyQt5 import uic, QtCore, QtGui, QtWidgets
-from LNCDutils import mkmsg, generic_fill_table, CMenuItem,\
-                      update_gcal, get_info_for_cal
-from googleapiclient.errors import HttpError
-=======
 import psycopg2
 from PyQt5 import uic, QtCore, QtGui, QtWidgets
 from LNCDcal import LNCDcal
@@ -26,12 +18,12 @@ import ScheduleVisit
 import AddPerson
 import CheckinVisit
 import MoreInfo
+import VisitsCards
 # local tools
 from LNCDutils import (mkmsg, generic_fill_table, CMenuItem,
                        update_gcal, get_info_for_cal,
                        caltodate)
 
->>>>>>> 44a19b2392f947c07245c2093a22d09425180906
 
 # google reports UTC, we are EST or EDT. get the diff between google and us
 # TODO: not used, remove or reconsider usage?
@@ -314,12 +306,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
         self.show()
 
-<<<<<<< HEAD
-    ###### Generic
-=======
     # #### GENERIC ####
-
->>>>>>> 44a19b2392f947c07245c2093a22d09425180906
     def add_study_to_db(self):
         study_data = self.AddStudy.study_data
         self.sql.insert('study', study_data)
@@ -364,12 +351,8 @@ class ScheduleApp(QtWidgets.QMainWindow):
             print(fullname)
         self.update_people_table(fullname)
 
-<<<<<<< HEAD
-    ###### PEOPLE
-=======
-    # #### PEOPLE #####
 
->>>>>>> 44a19b2392f947c07245c2093a22d09425180906
+    # #### PEOPLE #####
     def add_person_pushed(self):
         name = self.fullname.text().title().split(' ')
         print('spliting name at len %d' % len(name))
@@ -677,21 +660,14 @@ class ScheduleApp(QtWidgets.QMainWindow):
         info['googleuri'] = self.sql.query.get_googleuri(vid=vid)
         info['googleuri'] = info['googleuri'][0][0]
         info['calid'] = info['googleuri']
-<<<<<<< HEAD
         
         try:
-            #self.cal.delete_event(info['googleuri'])
-            e = update_gcal(self.cal, info, assign=True)
+            # self.cal.delete_event(info['googleuri'])
+            event = update_gcal(self.cal, info, assign=True)
         except HttpError:
             mkmsg('Please do not assign RA to scheduled subject')
             return
-        #Update the event(e) in the database
-=======
-
-        # self.cal.delete_event(info['googleuri'])
-        event = update_gcal(self.cal, info, assign=True)
-        # Update the event(event) in the database
->>>>>>> 44a19b2392f947c07245c2093a22d09425180906
+        # Update the event(e) in the database
         try:
             self.sql.query.update_uri(googleuri=event['id'], vid=vid)
         except psycopg2.ProgrammingError:
