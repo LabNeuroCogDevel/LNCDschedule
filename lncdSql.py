@@ -76,6 +76,26 @@ class lncdSql():
         cur.execute(sql, (column_change, id))
         cur.close()
 
+    def mksearch(self, table, option):
+        table = psycopg2.sql.Identifier(table)
+        option = psycopg2.sql.Identifier(option)
+
+        searchsql = psycopg2.sql.SQL("SELECT \
+                                       to_char(vtimestamp,'YYYY-MM-DD'), study , vtype, vscore, age, note, dvisit,dperson,vid \
+                                       FROM {} where pid = %s \
+                                       and {} = %s").\
+                                            format(table, option)
+        return searchsql
+
+
+    def search(self, pid, table, option, value):
+        sql = self.mksearch(table, option)
+        cur = self.conn.cursor()
+        data = cur.execute(sql, (pid, value))
+        print(data)
+        return data
+
+
 
 def connstr_from_config(config, gui):
     """

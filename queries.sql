@@ -84,6 +84,12 @@ select  vtimestamp
 from visit_summary
 where vid = %(vid)s
 
+-- name: visit_selected 
+select
+ to_char(vtimestamp,'YYYY-MM-DD'), study, "action", vtype, vscore, age, note, dvisit,dperson,vid
+ from visit_summary
+  where pid = %(pid)s
+
 -- name: visit_by_pid
 select
  to_char(vtimestamp,'YYYY-MM-DD'), study, "action", vtype, vscore, age, note, dvisit,dperson,vid
@@ -144,7 +150,7 @@ select
 
 -- name: get_vid
 select
-  pid
+  vid
   from visit_summary
   where pid = %(pid)s
 

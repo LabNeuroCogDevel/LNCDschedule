@@ -17,10 +17,11 @@ class VisitsCardsWindow(QtWidgets.QDialog):
         self.setWindowTitle('More Information')
 
     
-    def setup(self):
-        #Clear the entered data everytime
-        self.value_box.clear()
-        
+    def setup(self, pid, sql):
         #Query the database for the wildcard selected
+        self.sql = sql
         print(self.value_box.text())
+        self.data = self.sql.search(pid, 'visit_summary', self.options.currentText(), self.value_box.text())
+        print(self.data)
+
 

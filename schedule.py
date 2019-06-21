@@ -275,6 +275,9 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
         self.VisitsCards = VisitsCards.VisitsCardsWindow(self)
 
+        #Query the database when the wild cards has been selected and entered
+        self.VisitsCards.accepted.connect(self.visits_from_database)
+
         self.MoreInfo = MoreInfo.MoreInfoWindow(self)
         self.visit_info_button.clicked.connect(self.more_information_pushed)
         # Change the wrong cvalue if needed.
@@ -525,8 +528,6 @@ class ScheduleApp(QtWidgets.QMainWindow):
         #print('testing testing')
         self.VisitsCards.show()
 
-
-
     def visit_item_select(self, thing=None):
         #Enable the button in the first place
         self.checkin_button.setEnabled(True)
@@ -709,6 +710,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         """ update visit table display"""
         pid = self.disp_model['pid']
         self.visit_table_data = self.sql.query.visit_by_pid(pid=pid)
+        print(self.visit_table_data)
         generic_fill_table(self.visit_table, self.visit_table_data)
 
     def update_contact_table(self):
@@ -802,6 +804,10 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # need to refresh visits
         self.update_visit_table()
         self.update_note_table()
+
+    #Method that queries the database for the specific visits
+    def visits_from_database(self):
+       self.VisitsCards.setup(self.disp_model['pid'], self.sql)
 
     # Method for record push --Waiting for later implementation
     def record_contact_push(self):
