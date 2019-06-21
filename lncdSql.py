@@ -17,7 +17,7 @@ class lncdSql():
         if config is not None:
             constr = connstr_from_config(config, gui)
             print('connecting: ' +
-                  re.sub('pasword=[^\\s]+', 'password=*censored*', constr))
+                  re.sub('password=[^\\s]+', 'password=*censored*', constr))
             self.conn = psycopg2.connect(constr)
             self.conn.set_session(autocommit=True)
         elif conn is not None:
@@ -29,12 +29,24 @@ class lncdSql():
         self.query = sqls(self.conn)
         # a=self.query.name_search(fullname='%Foran%')
 
+        # test connection permissions
+        # query will error if user not given permission
+        # see sql/04_add-RAs.sql
+        print('testing db connection')
+        # TODO: why do we need to rethrow error for it to stop the gui?!
+        try:
+            self.query.get_lunaid_from_pid(pid=1)
+        except Exception as err:
+            print('error! %s' % err)
+            raise Exception("No permissions on db: %s" % err)
+
     def mkupdate(self, table, id_column, id, new_value, id_type):
         table = psycopg2.sql.Identifier(table)
         id_column = psycopg2.sql.Identifier(id_column)
         id_type = psycopg2.sql.Identifier(id_type)
-        #new_value = psycopg2.sql.Placeholder(new_value)
-        #new_value = psycopg2.sql.SQL(",").join(new_value)
+        # TODO: something is funny here!! new_value/id is never used?!
+        # new_value = psycopg2.sql.Placeholder(new_value)
+        # new_value = psycopg2.sql.SQL(",").join(new_value)
         id = psycopg2.sql.Placeholder(new_value)
 
         updatesql = psycopg2.sql.SQL("UPDATE {} SET {} = %s where {} = %s").\
@@ -43,6 +55,7 @@ class lncdSql():
         return updatesql
 
     def insert(self, table, d):
+        """ convience function to usert data into a table """
         sql = mkinsert(table, d.keys())
         print(sql.as_string(self.conn) % d)
         cur = self.conn.cursor()

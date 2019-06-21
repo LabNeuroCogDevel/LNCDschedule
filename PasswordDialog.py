@@ -7,6 +7,7 @@ import subprocess
 
 
 def user_pass(app=None):
+    """ prompt for username and password """
     if app is None:
         app = QApplication([])
     window = QWidget()
@@ -14,15 +15,19 @@ def user_pass(app=None):
     # acts as data model
     user_pass = {'user': None, 'pass': None}
 
-    # iteams we need to track: user, pass, login
+    # items we need to track: user, pass, login
     input_user = QLineEdit()
     input_password = QLineEdit()
     input_password.setEchoMode(QLineEdit.Password)
     login_button = QPushButton('LogIn')
 
+    # enter on password or user submits
+    input_password.returnPressed.connect(lambda: closedown(app))
+    input_user.returnPressed.connect(lambda: closedown(app))
+
     # setup user pass
-    def update_value(v, idx, up):
-        up[idx] = v
+    def update_value(v, idx, user_pass_ref):
+        user_pass_ref[idx] = v
 
     def closedown(app):
         app.quit()
@@ -38,7 +43,8 @@ def user_pass(app=None):
     # set default username based on system
     # called after connecting text change so closes in both places
     username = subprocess.check_output("whoami").decode().\
-        replace('\n', '').replace('\r', '')
+        replace('\n', '').replace('\r', '').\
+        replace('1upmc-acct\\', '')  # remove domain on win pc
     input_user.setText(username)
 
     # define layout
@@ -54,11 +60,14 @@ def user_pass(app=None):
 
     # show
     window.show()
+    # focus password -- username is probably already set
+    input_password.setFocus()
+    # run
     app.exec_()
     return(user_pass)
 
 
 # for debugging -- quickly show dialog
 if __name__ == "__main__":
-    up = user_pass()
-    print(up)
+    upcase = user_pass()
+    print(upcase)

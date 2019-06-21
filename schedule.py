@@ -59,9 +59,15 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
         # get other modules for querying db and calendar
         try:
+            print('initializing outside world: Calendar and DB')
             self.cal = LNCDcal(config_file)
             self.sql = lncdSql(config_file,
                                gui=QtWidgets.QApplication.instance())
+            print(self.sql)
+
+        except psycopg2.ProgrammingError as err:
+            mkmsg("ERROR: DB permission issue!\n%s" %
+                  str(err))
         except Exception as err:
             mkmsg("ERROR: cannot load calendar or DB!\n%s" %
                   str(err))
@@ -70,7 +76,8 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # ## who is using the app?
         # TODO: self.RA should come from self.sql !
         self.RA = subprocess.check_output("whoami").decode().\
-            replace('\n', '').replace('\r', '')
+            replace('\n', '').replace('\r', '').\
+            replace('1upmc-acct/', '')  # remove upmc bit on win comps
         print("RA: %s" % self.RA)
 
         # AddStudies modal (accessed from menu)
@@ -85,7 +92,6 @@ class ScheduleApp(QtWidgets.QMainWindow):
         CMenuItem("Task", fileMenu)
         CMenuItem("Visit Type", fileMenu)
 
-        
         # search settings
         searchMenu = menubar.addMenu('&Search')
 
