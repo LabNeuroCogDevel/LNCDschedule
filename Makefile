@@ -1,4 +1,4 @@
-.PHONY: test
+.PHONY: test lint
 
 test:
 	python3 -m pytest
@@ -8,3 +8,5 @@ Pipfile:
 
 dist/schedule/schedule:
 	python3 -m pyinstall schedule.py
+lint:
+	pylint schedule.py --extension-pkg-whitelist=PyQt5

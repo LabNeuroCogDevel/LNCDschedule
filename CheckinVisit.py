@@ -100,6 +100,8 @@ class CheckinVisitWindow(QtWidgets.QDialog):
 
     def setup(self, d, RA, study_tasks):
         # d has keys: pid,vid,fullname,study,vtype
+        #Clear the task list in the first place
+        self.tasks_list.clear()
         print('updating checkin with ' +
               '%(pid)s(%(fullname)s) for %(study)s/%(vtype)s %(lunaid)s' % d)
         self.pid = d['pid']
