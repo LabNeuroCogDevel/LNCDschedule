@@ -646,13 +646,20 @@ class ScheduleApp(QtWidgets.QMainWindow):
                 else:
                     table.item(i, j).setBackground(QtGui.QColor(255, 255, 255))
 
-                #table.item(i, j).setBackground(QtGui.QColor(255, 255, 255))
+                # table.item(i, j).setBackground(QtGui.QColor(255, 255, 255))
 
     def updateVisitRA(self, ra):
-
+        """ add or change visit RA assignment """
         row_i = self.visit_table.currentRow()
         d = self.visit_table_data[row_i]
         vid = d[self.visit_columns.index('vid')]
+
+        # do not assign a checked in visit
+        vstatus = d[self.visit_columns.index('vstatus')]
+        if vstatus == 'checkedin':
+            mkmsg("Cannot reassign a checked in visit!")
+            return
+
         # pid = self.disp_model['pid']
         info = get_info_for_cal(self.sql.query, vid)
         # Update the database for RA
@@ -671,8 +678,8 @@ class ScheduleApp(QtWidgets.QMainWindow):
         try:
             # self.cal.delete_event(info['googleuri'])
             event = update_gcal(self.cal, info, assign=True)
-        except HttpError:
-            mkmsg('Please do not assign RA to scheduled subject')
+        except Exception as err:
+            mkmsg('update error! %s' % err)
             return
         # Update the event(e) in the database
         try:
