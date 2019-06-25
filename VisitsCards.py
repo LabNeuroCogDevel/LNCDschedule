@@ -23,5 +23,7 @@ class VisitsCardsWindow(QtWidgets.QDialog):
         print(self.value_box.text())
         self.data = self.sql.search(pid, 'visit_summary', self.options.currentText(), self.value_box.text())
         print(self.data)
+        return self.data
+
 
 

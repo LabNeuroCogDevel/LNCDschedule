@@ -81,7 +81,7 @@
    </item>
    <item>
     <property name="text">
-     <string>day</string>
+     <string>vtimestamp</string>
     </property>
    </item>
    <item>

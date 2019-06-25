@@ -55,7 +55,7 @@ class lncdSql():
         return updatesql
 
     def insert(self, table, d):
-        """ convience function to usert data into a table """
+        """ convience function to insert data into a table """
         sql = mkinsert(table, d.keys())
         print(sql.as_string(self.conn) % d)
         cur = self.conn.cursor()
@@ -76,23 +76,32 @@ class lncdSql():
         cur.execute(sql, (column_change, id))
         cur.close()
 
-    def mksearch(self, table, option):
-        table = psycopg2.sql.Identifier(table)
-        option = psycopg2.sql.Identifier(option)
+    def mksearch(self, option):
+        
+        #Special casew for vtimestamp because the date is formatted differently from the database 
+        if(option == 'vtimestamp'):
+            searchsql = "SELECT to_char(vtimestamp,'YYYY-MM-DD'), study , vtype, vscore, age, note, dvisit,dperson,vid FROM visit_summary where pid = %s and to_char(vtimestamp,'YYYY-MM-DD')like %s "
+        else:
+            #General cases
+            option = psycopg2.sql.Identifier(option)
+            searchsql = psycopg2.sql.SQL("SELECT to_char(vtimestamp,'YYYY-MM-DD'), study , vtype, vscore, age, note, dvisit,dperson,vid FROM visit_summary where pid = %s and {} like %s").format(option)
 
-        searchsql = psycopg2.sql.SQL("SELECT \
-                                       to_char(vtimestamp,'YYYY-MM-DD'), study , vtype, vscore, age, note, dvisit,dperson,vid \
-                                       FROM {} where pid = %s \
-                                       and {} = %s").\
-                                            format(table, option)
+    
+        
         return searchsql
 
 
     def search(self, pid, table, option, value):
-        sql = self.mksearch(table, option)
+        sql = self.mksearch(option)
+        print(option)
+        print(sql)
         cur = self.conn.cursor()
-        data = cur.execute(sql, (pid, value))
-        print(data)
+        #Differentiate between general case and special case
+        if(option == 'vtimestamp'):
+            cur.execute(sql, (pid, value))
+        else:
+            cur.execute(sql,(pid,value))
+        data = cur.fetchall()
         return data
 
 

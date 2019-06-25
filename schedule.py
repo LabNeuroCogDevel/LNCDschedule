@@ -534,7 +534,11 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
         row_i = self.visit_table.currentRow()
         d = self.visit_table_data[row_i]
-        vid = d[self.visit_columns.index('vid')]
+        try:
+            vid = d[self.visit_columns.index('vid')]
+        except IndexError:
+            print('tuple index out of range')
+
         study = d[self.visit_columns.index('study')]
         pid = self.disp_model['pid']
         fullname = self.disp_model['fullname']
@@ -545,7 +549,10 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
         self.checkin_what_data['pid'] = pid
         self.checkin_what_data['fullname'] = fullname
-        self.checkin_what_data['vid'] = vid
+        try:
+            self.checkin_what_data['vid'] = vid
+        except UnboundLocalError:
+            print('local variable vid referenced before assignment')
         self.checkin_what_data['study'] = study
         self.checkin_what_data['vtype'] = d[self.visit_columns.index('vtype')]
         self.checkin_what_data['datetime'] = d[self.visit_columns.index('day')]
@@ -807,7 +814,16 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
     #Method that queries the database for the specific visits
     def visits_from_database(self):
-       self.VisitsCards.setup(self.disp_model['pid'], self.sql)
+       self.visit_table_data = self.VisitsCards.setup(self.disp_model['pid'], self.sql)
+       #Upload the data to the table 
+       self.visit_table.setRowCount(len(self.visit_table_data))
+       # seems like we need to fill each item individually
+       # loop across rows (each result) and then into columns (each value)
+       for row_i, row in enumerate(self.visit_table_data):
+           for col_i, value in enumerate(row):
+               item = QtWidgets.QTableWidgetItem(str(value))
+               self.visit_table.setItem(row_i, col_i, item)
+
 
     # Method for record push --Waiting for later implementation
     def record_contact_push(self):
