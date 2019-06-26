@@ -9,8 +9,11 @@ lint:
 test:
 	python3 -m pytest
 
+img/schedule.ico:
+	convert img/schedule_icon.png img/schedule.ico
+
 dist/schedule/schedule:
 	rm build -r
-	pyinstaller --add-data 'config.ini;.' --add-data 'LunaIntraDB-c4b5278b4e6c.p12;.' --add-data 'queries.sql;.' --add-data 'ui/;ui/' schedule.py  -y -i img/schedule.ico
+	pyinstaller --add-data 'config.ini;.' --add-data 'LunaIntraDB-c4b5278b4e6c.p12;.' --add-data 'queries.sql;.' --add-data 'ui/;ui/'  -y -i img/schedule.ico schedule.py 
 	cp -r build/schedule/ /l/bea_res/Applications/
 	
