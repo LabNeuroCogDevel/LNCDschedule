@@ -743,8 +743,9 @@ class ScheduleApp(QtWidgets.QMainWindow):
         """ person to db """
         print(self.AddPerson.persondata)
         # pop up window and return if not valid
-        if not self.AddPerson.isvalid():
-            mkmsg("Person: nothing to add")
+        (valid, msg) = self.AddPerson.isvalid()
+        if not valid:
+            mkmsg("Person info not valid?! %s" % msg)
             return
 
         self.fullname.setText('%(fname)s %(lname)s' %

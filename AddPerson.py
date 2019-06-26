@@ -56,17 +56,16 @@ class AddPersonWindow(QtWidgets.QDialog):
         if(key in ['source','all']):
             self.persondata['source']= self.source_text_edit.text()
         
-
-    """
-    do we have good data? just check that no key is null
-    """
     def isvalid(self):
+        """ do we have good data? just check that no key is null """
         self.allvals('all')
-        print("add person is valid?\n%s"%str(self.persondata))
-        #print("close?: %s; checking if %s is valid"%(self._want_to_close,str(self.persondata)))
+        print("add person is valid?\n%s" % str(self.persondata))
+        # print("close?: %s; checking if %s is valid"%(self._want_to_close,str(self.persondata)))
         for k in self.persondata.keys():
-            if self.persondata[k] == None or self.persondata[k] == '': return(False)
+            if self.persondata[k] is None or self.persondata[k] == '':
+                msg = "%s is empty" % k
+                return((False, msg))
         # TODO: check dob is not today
         self._want_to_close = True
-        return(True)
+        return((True, 'Valid!'))
     
