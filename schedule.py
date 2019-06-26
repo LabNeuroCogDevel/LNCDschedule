@@ -238,7 +238,8 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.EditPeople = EditPeople.EditPeopleWindow(self)
         self.EditPeople.accepted.connect(self.change_person_to_db)
         # ## add person ##
-        self.AddPerson = AddPerson.AddPersonWindow(self)
+        all_sources = [r[0] for r in self.sql.query.list_sources()]
+        self.AddPerson = AddPerson.AddPersonWindow(self, sources=all_sources)
         self.add_person_button.clicked.connect(self.add_person_pushed)
         self.AddPerson.accepted.connect(self.add_person_to_db)
 
