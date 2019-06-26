@@ -22,7 +22,7 @@ import VisitsCards
 # local tools
 from LNCDutils import (mkmsg, generic_fill_table, CMenuItem,
                        update_gcal, get_info_for_cal,
-                       caltodate)
+                       caltodate, comboval)
 
 
 # google reports UTC, we are EST or EDT. get the diff between google and us
