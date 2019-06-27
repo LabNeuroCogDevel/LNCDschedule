@@ -162,9 +162,9 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
         # ## cal_table ##
         # setup search calendar "cal_table"
-        cal_columns = ['date', 'time', 'what']
-        self.cal_table.setColumnCount(len(cal_columns))
-        self.cal_table.setHorizontalHeaderLabels(cal_columns)
+        self.cal_columns = ['date', 'time', 'what']
+        self.cal_table.setColumnCount(len(self.cal_columns))
+        self.cal_table.setHorizontalHeaderLabels(self.cal_columns)
         # Adjust the cal table width
         header = self.cal_table.horizontalHeader()
         header.setSectionResizeMode(0, QtWidgets.QHeaderView.Stretch)
@@ -916,31 +916,35 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # This res contains all the data for the week within
         self.fill_calendar_table(res)
         # Read the table information after its filled
-        self.fill_person_informaiton(dt.date(), res)
+        self.ra_calendar_count()
 
-    def fill_person_informaiton(self, date, information):
+    def ra_calendar_count(self):
         """
-        count number of RAs assigned to each visit
+        count number visits each RA has
+        that are on display in the calendar table
         """
         # Define the list
-        results = ''
         names = {}
+        # which column contains the description
+        j = self.cal_columns.index('what')
         # Loop Through the table to find people that were assigned.
         for i in range(self.cal_table.rowCount()):
-            for j in range(self.cal_table.columnCount()):
-                if '--' in self.cal_table.item(i, j).text():
-                    # Fill the drop_down box
-                    # Split the name form the events
-                    name = self.cal_table.item(i, j).text().split('--')[1]
-                    if name in names:
-                        # If the member duplicates, increments the data
-                        names[name] = names[name] + 1
-                    else:
-                        names.update({name: 1})
-        print(names)
-        for i in names:
-            results = results + i + '--' + str(names[i]) + '  '
-            # print(results)
+            if '--' in self.cal_table.item(i, j).text():
+                # Split the name form the events
+                name = self.cal_table.item(i, j).text().split('--')[1]
+                # add 1 to the count
+                names[name] = names.get(name, 0) + 1
+
+        # Alternative  -- use database
+        #  res = self.sql.query.visits_this_week(startdate, enddate)
+        #  for r in res:
+        #    name = r[3]
+        #    names[name] = names.get(name, 0) + 1
+
+        # combine names and counts into one long string
+        results = ", ".join(
+            ["%s: %d" % (n, names[n]) for n in sorted(names.keys())])
+        # update label
         self.ra_information_label.setText(results)
 
     def fill_calendar_table(self, calres):
