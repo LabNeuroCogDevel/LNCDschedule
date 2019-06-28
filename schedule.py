@@ -34,7 +34,16 @@ from LNCDutils import (mkmsg, generic_fill_table, CMenuItem,
 
 
 class ScheduleApp(QtWidgets.QMainWindow):
-    def __init__(self, config_file='config.ini'):
+    """
+    Qt Application class for running main window
+    """
+    def __init__(self, config_file='config.ini', sql_obj=None, cal_obj=None):
+        """
+        initialize application
+        :param config_file: contains calendar and postgres settings
+        :param sql_obj: lncdSql object (for testing). if None, created f/config
+        :param cal_obj: LNCDcal object (for testing). if None, created f/config
+        """
         super().__init__()
         # Defined for editing the contact_table
         self.contact_cid = 0
@@ -60,10 +69,19 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # get other modules for querying db and calendar
         try:
             print('initializing outside world: Calendar and DB')
-            self.cal = LNCDcal(config_file)
-            self.sql = lncdSql(config_file,
-                               gui=QtWidgets.QApplication.instance())
-            print(self.sql)
+
+            # setup calendar
+            if cal_obj:
+                self.cal = cal_obj
+            else:
+                self.cal = LNCDcal(config_file)
+
+            # setup database
+            if sql_obj:
+                self.sql = lncdSql(None, conn=sql_obj)
+            else:
+                self.sql = lncdSql(config_file,
+                                   gui=QtWidgets.QApplication.instance())
 
         except psycopg2.ProgrammingError as err:
             mkmsg("ERROR: DB permission issue!\n%s" %
@@ -74,10 +92,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
             return
 
         # ## who is using the app?
-        # TODO: self.RA should come from self.sql !
-        self.RA = subprocess.check_output("whoami").decode().\
-            replace('\n', '').replace('\r', '').\
-            replace('1upmc-acct/', '')  # remove upmc bit on win comps
+        self.RA = self.sql.db_user
         print("RA: %s" % self.RA)
 
         # AddStudies modal (accessed from menu)
@@ -115,7 +130,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         searchMenu.addAction(lonly)
         searchMenu.addAction(lno)
 
-        #Visit_table search settings
+        # Visit_table search settings
         visitsSearchMenu = menubar.addMenu('&Visit_table Search')
         CMenuItem("option", visitsSearchMenu, self.visit_table_queries)
 
