@@ -358,36 +358,45 @@ class ScheduleApp(QtWidgets.QMainWindow):
         return(True)
 
     def change_person(self):
-        # print('it is working')
-        #Pass in the year as well derived from the people_table
-        row_i = self.people_table.currentRow()
-        dob = self.people_table.item(row_i, 3).text()
+        """
+        edit person from person_table right click
+        use current row info stored in 'disp_model'
+        """
+        # TODO:
+        # if render_person is none: throw error message to click first
 
-        self.EditPeople.edit_person(self.disp_model['pid'], dob)
+        # add dob to render person -- because it has all the other info too
+        row_i = self.people_table.currentRow()
+        col_i = self.person_columns.index('dob')
+        dob = self.people_table.item(row_i, col_i).text()
+        self.disp_model['dob'] = dob
+        # launch module
+        self.EditPeople.edit_person(self.disp_model)
         self.EditPeople.show()
 
     def change_person_to_db(self):
-        # print(self.EditPeople.edit_model)
+        """
+        submitted edit from edit_person
+        send update to db and refresh display
+        """
         data = self.EditPeople.edit_model
-        row_i = self.people_table.currentRow()
-        fullname = self.people_table.item(row_i, 0).text()
-        self.sqlUpdateOrShowErr(
-            'person',
-            data['ctype'],
-            data['pid'],
-            data['changes'],
-            "pid")
-        print(data['ctype'])
-        if(data['ctype'] == 'fname'):
-            lname = fullname.split(' ')[1]
-            fullname = data['changes'] + ' ' + lname
-            print(fullname)
-        if(data['ctype'] == 'lname'):
-            fname = fullname.split(' ')[0]
-            fullname = fname + ' ' + data['changes']
-            print(fullname)
-        self.update_people_table(fullname)
 
+        # nothign to do if we have NULL combo box item selected
+        to_change = data['ctype']
+        if not to_change or to_change == 'NULL':
+            return
+
+        print("pid %(pid)d: updated %(ctype)s to %(changes)s" % data)
+
+        # run sql
+        self.sqlUpdateOrShowErr('person', data['ctype'],
+                                data['pid'], data['changes'], "pid")
+
+        # update display -- update any changes to recreate fullname
+        # update search based on full name
+        self.disp_model[to_change] = data['changes']
+        fullname = "%(fname)s %(lname)s" % self.disp_model
+        self.update_people_table(fullname)
 
     # #### PEOPLE #####
     def add_person_pushed(self):
@@ -554,6 +563,12 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.disp_model['age'] = age
         self.disp_model['sex'] = sex
         self.disp_model['lunaid'] = lunaid
+
+        # fname is all but the last name in fullname
+        names = fullname.split(' ')
+        self.disp_model['fname'] = " ".join(names[0:-1])
+        self.disp_model['lname'] = names[-1]
+
         # try to get a pid if we are calling from a place that doesn't have it
         if lunaid is None:
             res = self.sql.query.get_lunaid_from_pid(pid=pid)

@@ -89,15 +89,23 @@ class lncdSql():
     def mksearch(self, option):
         # Special casew for vtimestamp b/c
         # date is formatted differently from the database
-        if(option == 'vtimestamp'):
-            searchsql = "SELECT to_char(vtimestamp,'YYYY-MM-DD'), studys , vtype, vscore, age, notes, dvisit,dperson,vid FROM visit_person_view where pid = %s and to_char(vtimestamp,'YYYY-MM-DD')like %s"
+        if option == 'vtimestamp':
+            searchsql = """
+            SELECT
+                to_char(vtimestamp,'YYYY-MM-DD'), studys,
+                vtype, vscore, age, notes, dvisit, dperson, vid
+            FROM visit_person_view
+            where
+               pid = %s and
+               to_char(vtimestamp,'YYYY-MM-DD') like %s
+            """
         else:
             # General cases
             option = psycopg2.sql.Identifier(option)
             searchsql = psycopg2.sql.SQL("""
              SELECT
                to_char(vtimestamp,'YYYY-MM-DD'), study,
-               vtype, vscore, age, note, dvisit,dperson,vid
+               vtype, vscore, age, note, dvisit, dperson, vid
              FROM
                visit_summary
              where
@@ -105,7 +113,6 @@ class lncdSql():
              """).format(option)
 
         return searchsql
-
 
     def search(self, pid, table, option, value):
         sql = self.mksearch(option)

@@ -61,7 +61,8 @@ select id from enroll where pid = %(pid)s and etype like 'LunaID'
 --name: get_birthday
 select
  to_char(dob,'YYYY-MM-DD')
- from visit_person_view
+ from visit
+ natural join person
  where vid = %(vid)s
  
 --name: visit_by_uri
@@ -134,7 +135,7 @@ select dropcode from dropped
 
 --name: get_status
 select vstatus
-    from visit_person_view
+    from visit
     where pid = %(pid)s
     and to_char(vtimestamp,'YYYY-mm-dd') = %(vtimestamp)s
 

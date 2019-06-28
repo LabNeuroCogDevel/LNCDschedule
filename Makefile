@@ -9,7 +9,7 @@ lint:
 test:
 	python3 -m pytest
 
-img/schedule.ico:
+img/schedule.ico: img/schedule_icon.png
 	convert img/schedule_icon.png img/schedule.ico
 
 dist/schedule/schedule:
