@@ -34,6 +34,13 @@ class pyesql_helper:
         """
         return(self.results)
 
+    def fetchone(self):
+        """
+        return the work of execute for pattern:
+           conn.execute(); res=conn.fetchall()
+        """
+        return(self.results[0])
+
     def cursor(self):
         """
         Rathern than implement a fake conn that uses a fake cursor,
