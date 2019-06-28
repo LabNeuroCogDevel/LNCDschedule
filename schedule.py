@@ -189,10 +189,13 @@ class ScheduleApp(QtWidgets.QMainWindow):
             QtWidgets.QAbstractItemView.NoEditTriggers)
         self.cal_table.itemClicked.connect(self.cal_item_select)
         # and hook up the calendar date select widget to a query
-        self.calendarWidget.selectionChanged.connect(self.search_cal_by_date)
-        self.search_cal_by_date()  # update for current day
-        # TODO: eventually want to use DB instead of calendar. need to update
-        # backend!
+
+        # for the sake of running tests. only run calendar query if need to
+        if type(self.cal) is LNCDcal:
+            self.calendarWidget.selectionChanged.connect(self.search_cal_by_date)
+            self.search_cal_by_date()  # update for current day
+            # TODO: eventually want to use DB instead of calendar. need to update
+            # backend!
 
         # ## note table ##
         note_columns = [
