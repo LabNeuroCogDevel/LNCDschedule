@@ -115,7 +115,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         searchMenu.addAction(lonly)
         searchMenu.addAction(lno)
 
-        #Visit_table search settings
+        # Visit_table search settings
         visitsSearchMenu = menubar.addMenu('&Visit_table Search')
         CMenuItem("option", visitsSearchMenu, self.visit_table_queries)
 
@@ -137,11 +137,11 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
         # ## people_table ##
         #  setup search table "people_table"
-        pep_columns = [
+        self.person_columns = [
             'fullname', 'lunaid', 'age', 'dob',
             'sex', 'lastvisit', 'maxdrop', 'studies']
-        self.people_table.setColumnCount(len(pep_columns))
-        self.people_table.setHorizontalHeaderLabels(pep_columns)
+        self.people_table.setColumnCount(len(self.person_columns))
+        self.people_table.setHorizontalHeaderLabels(self.person_columns)
         self.people_table.setEditTriggers(
             QtWidgets.QAbstractItemView.NoEditTriggers)
         # wire up clicks
@@ -485,8 +485,12 @@ class ScheduleApp(QtWidgets.QMainWindow):
                 self.people_table.item(row_i, j).setBackground(drop_color)
 
     def people_item_select(self, thing=None):
-        #Whenever the people table subjects have been selected, grey out the checkin button
-        self.checkin_button.setEnabled(False)       
+        """
+        when person row is selected, update the person model
+        """
+        # Whenever the people table subjects have been selected
+        #  grey out the checkin button
+        self.checkin_button.setEnabled(False)
         row_i = self.people_table.currentRow()
         # Color row when clicked -- indicate action target for right click
         self.click_color(self.people_table, row_i)
@@ -496,6 +500,24 @@ class ScheduleApp(QtWidgets.QMainWindow):
         print('people table: subject selected: %s' % d[8])
         self.render_person(pid=d[8], fullname=d[0], age=d[2],
                            sex=d[4], lunaid=d[1])
+
+    def render_person_pid(self, pid):
+        """
+        update person model using only a pid
+        """
+        res = self.sql.query.person_by_pid(pid)
+        if res is None:
+            mkmsg('Error: no person with pid %d' % pid)
+            return
+
+        pers = res[0]
+        print(pers)
+        # columns are:
+        # pid, lunaid fullname fname lname dob sex hand addate
+        # source curage curagefloor lastvisit numvisits nstudies ndrops ids
+        # studies visittypes maxdrop
+        self.render_person(pid=pers[0], lunaid=pers[1], fullname=pers[2],
+                           sex=pers[6], age=pers[10])
 
     def render_person(self, pid, fullname, age, sex, lunaid=None):
         """
@@ -525,12 +547,13 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # TODO:
         # do we want to clear other models
         #  clear: checkin_what_data schedule_what_data
+
     def visit_table_queries(self):
-        #print('testing testing')
+        # print('testing testing')
         self.VisitsCards.show()
 
     def visit_item_select(self, thing=None):
-        #Enable the button in the first place
+        # Enable the button in the first place
         self.checkin_button.setEnabled(True)
 
         row_i = self.visit_table.currentRow()
@@ -974,14 +997,44 @@ class ScheduleApp(QtWidgets.QMainWindow):
         when we hit an item in the calendar table, update
          * potential checkin data and label
          * potental schedual data and srings
+        to get person:
+         - search database for calendar id
+         - if that fails try to search based on title
         """
         # First enable the button no matter what
         self.checkin_button.setEnabled(True)
         row_i = self.cal_table.currentRow()
-        cal_desc = self.cal_table.item(row_i, 2).text()
+        # googleuri should be in database
+        cal_id = self.cal_table_data[row_i].get('calid', None)
+        if cal_id is None:
+            mkmsg('Cal event does not have an id!? How?')
+            return
+
+        res = self.sql.query.visit_by_uri(googleuri=cal_id)
+        if res:
+            print(res)
+            pid = res[0][0]
+        else:
+            print("WARNING: cannot find eid %s in db! Search title" % cal_id)
+            pid = self.find_pid_by_cal_desc(row_i)
+
+        # cant do anything if we dont have a pid
+        if pid is None:
+            return
+
+        # update gui to to person
+        self.checkin_from_cal(pid)
+        self.render_person_pid(pid)
+
+    def find_pid_by_cal_desc(self, row_i):
+        """
+        Find a pid by the calendar title
+        :return: pid
+        """
         # Find if -- is in the string, if it is, then them this even is
         # assigned RA.
 
+        cal_desc = self.cal_table.item(row_i, 2).text()
         print(cal_desc)
         current_date = self.cal_table.item(row_i, 0).text()
         current_time = self.cal_table.item(row_i, 1).text()
@@ -992,14 +1045,14 @@ class ScheduleApp(QtWidgets.QMainWindow):
         if not title_regex:
             mkmsg("cannot parse calendar event title!\n" +
                   "expect 'study/type xX YYyo[m/f]' but have\n" + cal_desc)
-            return
+            return None
 
         current_age = title_regex.group(4)
         current_gender = title_regex.group(5)
 
         if current_age is None:
             print("No current age in google cal event title!")
-            return
+            return None
 
         res = self.sql.query.\
             get_pid_of_visit(vtimestamp=current_date_time,
@@ -1010,16 +1063,16 @@ class ScheduleApp(QtWidgets.QMainWindow):
         print(res)
 
         if not res:
-            return
+            return None
 
         pid = res[0][0]
-        self.checkin_check(pid)
-        full_name = self.sql.query.get_person(pid=pid)[0][0]
-        # update to this person
-        # TODO: lookup lunaid
-        self.render_person(pid, full_name, current_age, current_gender)
+        return pid
 
-    def checkin_check(self, pid):
+    def checkin_from_cal(self, pid):
+        """
+        set checkin model to match item clicked on calendar
+        requires taht we found a DB pid to match the google event
+        """
         row_i = self.cal_table.currentRow()
         self.scheduled_date = self.cal_table.item(row_i, 0).text()
         print(self.scheduled_date)

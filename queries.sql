@@ -64,6 +64,9 @@ select
  from visit_person_view
  where vid = %(vid)s
  
+--name: visit_by_uri
+select pid from visit where googleuri = %(googleuri)s
+
 --name: update_uri
 update visit
   set googleuri = %(googleuri)s
