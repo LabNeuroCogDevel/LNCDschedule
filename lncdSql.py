@@ -80,7 +80,7 @@ class lncdSql():
         
         #Special casew for vtimestamp because the date is formatted differently from the database 
         if(option == 'vtimestamp'):
-            searchsql = "SELECT to_char(vtimestamp,'YYYY-MM-DD'), study , vtype, vscore, age, note, dvisit,dperson,vid FROM visit_summary where pid = %s and to_char(vtimestamp,'YYYY-MM-DD')like %s "
+            searchsql = "SELECT to_char(vtimestamp,'YYYY-MM-DD'), studys , vtype, vscore, age, notes, dvisit,dperson,vid FROM visit_person_view where pid = %s and to_char(vtimestamp,'YYYY-MM-DD')like %s"
         else:
             #General cases
             option = psycopg2.sql.Identifier(option)

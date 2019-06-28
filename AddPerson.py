@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+import datetime
 from PyQt5 import uic, QtWidgets
 from LNCDutils import comboval, caltodate
+from LNCDutils import mkmsg
 
 
 class AddPersonWindow(QtWidgets.QDialog):
@@ -78,7 +79,7 @@ class AddPersonWindow(QtWidgets.QDialog):
         """
         print('updating %s' % key)
         if(key in ['dob', 'all']):
-            self.persondata['dob'] = caltodate(self.dob_edit).date()
+            self.persondata['dob'] = caltodate(self.dob_edit)
         print(self.persondata['dob'])
         if(key in ['hand', 'all']):
             self.persondata['hand'] = comboval(self.hand_edit)
@@ -103,5 +104,12 @@ class AddPersonWindow(QtWidgets.QDialog):
                 return((False, msg))
 
         # TODO: check dob is not today
+
+        print(self.persondata['dob'])
+        entered_year = str(self.persondata['dob']).split('-')[0]
+        #Error checking the age of created person
+        now = datetime.datetime.now()
+        if(int(entered_year) >= now.year):
+            return((False, 'this person seems to be extraordinarily immature(age <= 1)'))
         self._want_to_close = True
         return((True, 'Valid!'))

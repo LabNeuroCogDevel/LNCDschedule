@@ -19,6 +19,7 @@ import AddPerson
 import CheckinVisit
 import MoreInfo
 import VisitsCards
+import AddContactNotes
 # local tools
 from LNCDutils import (mkmsg, generic_fill_table, CMenuItem,
                        update_gcal, get_info_for_cal,
@@ -243,6 +244,9 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.add_person_button.clicked.connect(self.add_person_pushed)
         self.AddPerson.accepted.connect(self.add_person_to_db)
 
+        # ## add ContactNotes
+        self.AddContactNotes = AddContactNotes.AddContactNotesWindow(self)
+
         # ## add contact ##
         self.AddContact = AddContact.AddContactWindow(self)
         # autocomple stuffs
@@ -337,7 +341,11 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
     def change_person(self):
         # print('it is working')
-        self.EditPeople.edit_person(self.disp_model['pid'])
+        #Pass in the year as well derived from the people_table
+        row_i = self.people_table.currentRow()
+        dob = self.people_table.item(row_i, 3).text()
+
+        self.EditPeople.edit_person(self.disp_model['pid'], dob)
         self.EditPeople.show()
 
     def change_person_to_db(self):
@@ -829,7 +837,12 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
     # Method for record push --Waiting for later implementation
     def record_contact_push(self):
-        mkmsg("Still implementing")
+        self.AddContactNotes.show()
+        #Find the cid from the table
+        row_i = self.contact_table.currentRow()
+        cid = self.contact_table.item(row_i, 5).text()
+        #Pass in cid to the user intrface
+        self.AddContactNotes.set_contact_notes(cid)
 
     # ## checkin
     def checkin_button_pushed(self):
