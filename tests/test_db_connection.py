@@ -1,18 +1,21 @@
 # see also
 # https://technology.cloverhealth.com/better-postgresql-testing-with-python-announcing-pytest-pgsql-and-pgmock-d0c569d0602a
 import configparser
+import os.path
 import psycopg2
 import psycopg2.sql
+import pytest
 from lncdSql import lncdSql
 from pyesql_helper import check_column, pyesql_helper as ph
 
 
+@pytest.mark.skipif(not os.path.isfile('config.ini'),
+                    reason="need config.ini to test config.ini")
 def test_read_config_and_connect():
     """
     tests read db in config.ini
     useful to test where code will actually run
     """
-    # TODO: if cannot read config.ini: pass
     cfg = configparser.ConfigParser()
     cfg.read("config.ini")
     constr = 'dbname=%(dbname)s user=%(user)s ' + \

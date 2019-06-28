@@ -10,35 +10,45 @@ class lncdSql():
     """ database interface for lncddb """
 
     def __init__(self, config, gui=None, conn=None):
+        """
+        :param config: file used to configure connection
+        :param gui: pointer to QtApp. used for password prompt
+        :param conn: connection to use instead of config (for testing)
+        """
 
         # can only have one master QT app pointer
         # so record it in the class (or None/False if not using it)
 
-        if config is not None:
+        if conn is not None:
+            self.conn = conn
+        elif config is not None:
             constr = connstr_from_config(config, gui)
             print('connecting: ' +
                   re.sub('password=[^\\s]+', 'password=*censored*', constr))
             self.conn = psycopg2.connect(constr)
             self.conn.set_session(autocommit=True)
-        elif conn is not None:
-            self.conn = conn
         else:
             raise Exception("Bad arguments! need config or conn")
+
+        # define database user
+        self.db_user = cur_user(self.conn)
 
         sqls = pyesql.parse_file('./queries.sql')
         self.query = sqls(self.conn)
         # a=self.query.name_search(fullname='%Foran%')
 
-        # test connection permissions
+        # try connection permissions if we are using e.g. config.ini
+        #  (otherwise we are probably in a test and dont want this check)
         # query will error if user not given permission
         # see sql/04_add-RAs.sql
-        print('testing db connection')
-        # TODO: why do we need to rethrow error for it to stop the gui?!
-        try:
-            self.query.get_lunaid_from_pid(pid=1)
-        except Exception as err:
-            print('error! %s' % err)
-            raise Exception("No permissions on db: %s" % err)
+        if config:
+            print('testing db connection')
+            # TODO: why do we need to rethrow error for it to stop the gui?!
+            try:
+                self.query.get_lunaid_from_pid(pid=1)
+            except Exception as err:
+                print('error! %s' % err)
+                raise Exception("No permissions on db: %s" % err)
 
     def mkupdate(self, table, id_column, id, new_value, id_type):
         table = psycopg2.sql.Identifier(table)
@@ -57,7 +67,7 @@ class lncdSql():
     def insert(self, table, d):
         """ convience function to insert data into a table """
         sql = mkinsert(table, d.keys())
-        print(sql.as_string(self.conn) % d)
+        # print(sql.as_string(self.conn) % d)
         cur = self.conn.cursor()
         cur.execute(sql, d)
         cur.close()
@@ -77,17 +87,23 @@ class lncdSql():
         cur.close()
 
     def mksearch(self, option):
-        
-        #Special casew for vtimestamp because the date is formatted differently from the database 
+        # Special casew for vtimestamp b/c
+        # date is formatted differently from the database
         if(option == 'vtimestamp'):
             searchsql = "SELECT to_char(vtimestamp,'YYYY-MM-DD'), studys , vtype, vscore, age, notes, dvisit,dperson,vid FROM visit_person_view where pid = %s and to_char(vtimestamp,'YYYY-MM-DD')like %s"
         else:
-            #General cases
+            # General cases
             option = psycopg2.sql.Identifier(option)
-            searchsql = psycopg2.sql.SQL("SELECT to_char(vtimestamp,'YYYY-MM-DD'), study , vtype, vscore, age, note, dvisit,dperson,vid FROM visit_summary where pid = %s and {} like %s").format(option)
+            searchsql = psycopg2.sql.SQL("""
+             SELECT
+               to_char(vtimestamp,'YYYY-MM-DD'), study,
+               vtype, vscore, age, note, dvisit,dperson,vid
+             FROM
+               visit_summary
+             where
+               pid = %s and {} like %s
+             """).format(option)
 
-    
-        
         return searchsql
 
 
@@ -96,7 +112,7 @@ class lncdSql():
         print(option)
         print(sql)
         cur = self.conn.cursor()
-        #Differentiate between general case and special case
+        # Differentiate between general case and special case
         if(option == 'vtimestamp'):
             cur.execute(sql, (pid, value))
         else:
@@ -105,10 +121,9 @@ class lncdSql():
         return data
 
 
-
 def connstr_from_config(config, gui):
     """
-    return connection string after reading config file
+    return connection string and user after reading config file
     can use a gui to get user/pass if needed
     """
     # TODO: move to utils? does not depend on "self"
@@ -141,7 +156,7 @@ def connstr_from_config(config, gui):
         confline += " password=%(password)s"
 
     constr = confline % cfg._sections['SQL']
-    return(constr)
+    return constr
 
 
 def mkinsert(table, colnames):
@@ -160,3 +175,14 @@ def mkinsert(table, colnames):
     insertsql = psycopg2.sql.SQL("insert into {} ({}) values ({})").\
         format(table, col, valkey)
     return(insertsql)
+
+
+def cur_user(conn):
+    """
+    get current pgsql database user
+    :param conn: connection to query
+    """
+    cur = conn.cursor()
+    cur.execute("select current_user")
+    user = cur.fetchone()
+    return(user[0])

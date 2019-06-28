@@ -2,19 +2,31 @@
 # -*- coding: utf-8 -*-
 # test functions in lncdSql.py
 
-import lncdSql
 from datetime import datetime
+import pytest
+import lncdSql
+from pyesql_helper import pyesql_helper as ph
 
-# connect to our database
-sql = lncdSql.lncdSql('config.ini')
-# make temp table for testing
-cur = sql.conn.cursor()
-cur.execute("create temp table test_table(id int, time timestamp)")
+
+@pytest.fixture
+def sql(transacted_postgresql_db):
+    # connect to our database
+    lsql = lncdSql.lncdSql(config=None,
+                           conn=ph(transacted_postgresql_db.connection))
+    # make temp table for testing
+    # cur = lsql.conn.cursor()
+    # cur.execute("create temp table test_table(id int, time timestamp)")
+
+    # with fake db
+    transacted_postgresql_db.\
+        connection.execute("create table test_table(id int, time timestamp)")
+    return lsql
 
 
 # test that insert works
-def test_insert():
+def test_insert(sql):
     now = datetime.now()
+    # TODO: broke w/fakedb -- ObjectNotExecutableError
     sql.insert("test_table", {"id": 1, "time": now})
 
     cur = sql.conn.cursor()
@@ -25,7 +37,7 @@ def test_insert():
 
 
 # test that update works
-def test_update():
+def test_update(sql):
     id_to_update = 10
     # first insert two things - with junk times
     sql.insert("test_table", {"id": id_to_update, "time": datetime(1, 1, 1)})

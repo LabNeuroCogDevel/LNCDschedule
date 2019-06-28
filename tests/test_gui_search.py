@@ -11,33 +11,40 @@ import sys
 app = QApplication(sys.argv)
 
 
-# using pytest-qt
-def test_search_by_name(qtbot):
-    w = ScheduleApp()    # initialize widget
-    qtbot.add_widget(w)  # attach qt testing robot
+# using pytest-qt and pytest-pgsql
+# lncdapp is a fixuture defined in conftest.py
+def test_search_by_name(qtbot, lncdapp):
+    # load up fake info
+    lncdapp.pgtest.load_csv('sql/person.csv', 'person')
+
+    # attach tester to window
+    qtbot.add_widget(lncdapp)  # attach qt testing robot
     # search by name
     #   test assumes there is only one 'Foran', first name 'Will'
-    w.fullname.setText('% Foran')
-    res = w.people_table_data
+    lncdapp.fullname.setText('% Foran')
+    res = lncdapp.people_table_data
     # assert that we found
     assert len(res[0]) > 1
-    assert w.people_table.rowCount() >= 1
+    assert lncdapp.people_table.rowCount() >= 1
     assert res[0][0] == 'Will Foran'
 
 
-def test_search_by_id(qtbot):
-    w = ScheduleApp()    # initialize widget
-    qtbot.add_widget(w)  # attach qt testing robot
+def test_search_by_id(qtbot, lncdapp):
+    # load up info
+    lncdapp.pgtest.load_csv('sql/person.csv', 'person')
+    lncdapp.pgtest.load_csv('sql/enroll.csv', 'enroll')
+
+    qtbot.add_widget(lncdapp)  # attach qt testing robot
     # search by name
     #   test assumes there is only one 'Foran', first name 'Will'
-    w.subjid_search.setText('10931')
-    res = w.people_table_data
+    lncdapp.subjid_search.setText('10931')
+    res = lncdapp.people_table_data
     # assert that we found
-    assert w.people_table.rowCount() >= 1
+    assert lncdapp.people_table.rowCount() >= 1
     assert res[0][0] == 'Will Foran'
 
 
-def test_error_bad_age(qtbot, monkeypatch):
+def test_error_bad_age(qtbot, monkeypatch, lncdapp):
     """
     error when age is not a number.
     monkeypatch 'mkmsg' to capture error message
@@ -52,11 +59,11 @@ def test_error_bad_age(qtbot, monkeypatch):
     monkeypatch.setattr("schedule.mkmsg", set_actual_msg)
 
     # startup app
-    w = ScheduleApp()    # initialize widget
-    qtbot.add_widget(w)  # attach qt testing robot
+    # initialize widget
+    qtbot.add_widget(lncdapp)  # attach qt testing robot
 
     # make the error
-    w.max_age_search.setText("one")
+    lncdapp.max_age_search.setText("one")
     # pause here to see whats going on
     # qtbot.stopForInteraction()
 
