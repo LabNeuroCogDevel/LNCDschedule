@@ -1,0 +1,3 @@
+nid,pid,vid,dropcode,ra,ndate,note
+1,1,,,WF,2000-01-01 12:01,Test Note
+2,2,,LOWIQ,WF,2001-02-03 14:02,Low IQ Drop subj 2

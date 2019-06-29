@@ -161,7 +161,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.people_table.setEditTriggers(
             QtWidgets.QAbstractItemView.NoEditTriggers)
         # wire up clicks
-        self.people_table.itemClicked.connect(self.people_item_select)
+        self.people_table.itemSelectionChanged.connect(self.people_item_select)
         self.people_table.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)
 
         # ## people context menu
@@ -188,7 +188,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         header.setSectionResizeMode(2, QtWidgets.QHeaderView.ResizeToContents)
         self.cal_table.setEditTriggers(
             QtWidgets.QAbstractItemView.NoEditTriggers)
-        self.cal_table.itemClicked.connect(self.cal_item_select)
+        self.cal_table.itemSelectionChanged.connect(self.cal_item_select)
         # and hook up the calendar date select widget to a query
 
         # for the sake of running tests. only run calendar query if need to
@@ -199,11 +199,12 @@ class ScheduleApp(QtWidgets.QMainWindow):
             # backend!
 
         # ## note table ##
-        note_columns = [
+        self.note_columns = [
                 'note', 'dropcode', 'ndate',
                 'vtimestamp', 'ra', 'vid']
-        self.note_table.setColumnCount(len(note_columns))
-        self.note_table.setHorizontalHeaderLabels(note_columns)
+        self.note_table_data = None
+        self.note_table.setColumnCount(len(self.note_columns))
+        self.note_table.setHorizontalHeaderLabels(self.note_columns)
         # Make the note_table uneditable
         self.note_table.setEditTriggers(
             QtWidgets.QAbstractItemView.NoEditTriggers)
@@ -211,14 +212,14 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # ## visit table ##
         self.visit_columns = [
             'day', 'study', 'vstatus', 'vtype', 'vscore',
-            'age', 'note', 'dvisit', 'dperson', 'vid']
+            'age', 'notes', 'dvisit', 'dperson', 'vid']
         self.visit_table.setColumnCount(len(self.visit_columns))
         self.visit_table.setHorizontalHeaderLabels(self.visit_columns)
         # Make the visit table uneditable
         self.visit_table.setEditTriggers(
             QtWidgets.QAbstractItemView.NoEditTriggers)
-        # The thing must be clicked!!!!!!
-        self.visit_table.itemClicked.connect(self.visit_item_select)
+        # changes to make when selected visit changes
+        self.visit_table.itemSelectionChanged.connect(self.visit_item_select)
 
         # ## context menu + sub-menu for visits: adding RAs
         visit_menu = QtWidgets.QMenu("visit_menu", self.visit_table)
@@ -237,7 +238,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
         # contact table
         contact_columns = ['who', 'cvalue', 'relation',
-                           'nogood', 'added', 'cid']
+                           'status', 'added', 'cid']
         self.contact_table.setColumnCount(len(contact_columns))
         self.contact_table.setHorizontalHeaderLabels(contact_columns)
         # Make the contact_table uneditable
@@ -276,7 +277,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.AddContact.accepted.connect(self.add_contact_to_db)
 
         # Call to edit the contact table whenver the item is clicked
-        self.contact_table.itemClicked.connect(self.edit_contact_table)
+        self.contact_table.itemSelectionChanged.connect(self.edit_contact_table)
 
         # Menu bar for contact table
         contact_menu = QtWidgets.QMenu("contact_menu", self.contact_table)
@@ -294,7 +295,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # Edit contact
         self.EditContact = EditContact.EditContactWindow(self)
         # add the vid value into the interface
-        self.visit_table.itemClicked.connect(self.edit_visit_table)
+        self.visit_table.itemSelectionChanged.connect(self.edit_visit_table)
 
         self.VisitsCards = VisitsCards.VisitsCardsWindow(self)
 
@@ -747,7 +748,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         info['googleuri'] = self.sql.query.get_googleuri(vid=vid)
         info['googleuri'] = info['googleuri'][0][0]
         info['calid'] = info['googleuri']
-        
+
         try:
             # self.cal.delete_event(info['googleuri'])
             event = update_gcal(self.cal, info, assign=True)

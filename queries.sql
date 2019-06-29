@@ -90,13 +90,13 @@ where vid = %(vid)s
 
 -- name: visit_selected 
 select
- to_char(vtimestamp,'YYYY-MM-DD'), study, "action", vtype, vscore, age, note, dvisit,dperson,vid
+ to_char(vtimestamp,'YYYY-MM-DD'), study, "action", vtype, vscore, age, notes, dvisit,dperson,vid
  from visit_summary
   where pid = %(pid)s
 
 -- name: visit_by_pid
 select
- to_char(vtimestamp,'YYYY-MM-DD'), study, "action", vtype, vscore, age, note, dvisit,dperson,vid
+ to_char(vtimestamp,'YYYY-MM-DD'), study, "action", vtype, vscore, age, notes, dvisit,dperson,vid
  from visit_summary
   where pid = %(pid)s
   -- and "action" = 'checkedin'
@@ -122,10 +122,9 @@ select
  where vid = %(vid)s
 
 -- name: note_by_pid
-select note,dropcode, ndate, vtimestamp, note.ra, vid from note 
-   natural left  join visit_note natural left join visit
-   natural left  join visit_drop
-   left join dropped on dropped.did = visit_drop.did
+select note, dropcode, ndate, vtimestamp, note.ra, note.vid 
+   from note 
+   left join visit on note.vid = visit.vid
    where note.pid = %(pid)s
    order by vtimestamp desc, ndate desc 
 
@@ -140,9 +139,16 @@ select vstatus
     and to_char(vtimestamp,'YYYY-mm-dd') = %(vtimestamp)s
 
 -- name: contact_by_pid
+with last_cstatus as (
+ select distinct on (cid)
+ cid, cstatus
+ from contact_note 
+ order by cid, ctimestamp desc
+)
 select
-  who,cvalue, relation, nogood, added, cid
+  who, cvalue, relation, cstatus, added, cid
   from contact
+  natural left join last_cstatus
   where pid = %(pid)s
   order by relation = 'Subject' desc, relation, who
 

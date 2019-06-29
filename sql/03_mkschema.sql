@@ -229,8 +229,3 @@ INSERT into dropcode (dropcode,droplevel) values ('LOWIQ'     ,'subject');
 INSERT into dropcode (dropcode,droplevel) values ('EXCLDCRTRA','subject');
 
 INSERT into dropcode (dropcode,droplevel) values ('DEPRESSED' ,'family');
-
-
--- GRANT CONNECT ON DATABASE lncddb TO lncd;
--- GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO web;
-GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO lncd;

@@ -67,3 +67,24 @@ def check_column(col, res, expect, exact=True):
         assert x[col] in expect
     if exact:
         assert len(res) == len(expect)
+
+
+def csv_none(pg, csv_source, table):
+    """
+    load csv like pgtest.load_csv
+    but import empty strings as None
+    :param pg: likely lncdapp.pgtest (transacted_postgresql_db fixture obj)
+    :param csv_source: where data is stored
+    :param table: fake db table name to put the data in
+    """
+    import csv
+    table_obj = pg.get_table(table)
+    with open(csv_source, 'r') as fdesc:
+        data_rows = list(csv.DictReader(fdesc, dialect='excel'))
+    # make empty string None
+    data_rows = [
+        {key: None if row[key] == '' else row[key] for key in row}
+        for row in data_rows
+    ]
+    pg._conn.execute(table_obj.insert().values(data_rows))
+

@@ -105,7 +105,7 @@ class lncdSql():
             searchsql = psycopg2.sql.SQL("""
              SELECT
                to_char(vtimestamp,'YYYY-MM-DD'), study,
-               vtype, vscore, age, note, dvisit, dperson, vid
+               vtype, vscore, age, notes, dvisit, dperson, vid
              FROM
                visit_summary
              where
