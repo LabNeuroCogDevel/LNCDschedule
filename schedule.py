@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 import sys
 import datetime
-import subprocess
 import re  # for whoami
 import psycopg2
 from PyQt5 import uic, QtCore, QtGui, QtWidgets
 from LNCDcal import LNCDcal
+from googleapiclient.errors import HttpError
 
 # local files
 from lncdSql import lncdSql
@@ -499,14 +499,16 @@ class ScheduleApp(QtWidgets.QMainWindow):
             for col_i, value in enumerate(row):
                 item = QtWidgets.QTableWidgetItem(str(value))
                 self.people_table.setItem(row_i, col_i, item)
-        try:
+        if res:
             self.changing_color(row_i, res)
-        except UnboundLocalError:
-            print('weird error')
 
     def changing_color(self, row_i, res):
-        # Change the color after the textes have been successfully inserted.
-        # based on drop level
+        """
+        Change the color after the textes have been successfully inserted.
+        based on drop level
+        """
+        # drop_j = self.person_columns.index('maxdrop')
+        drop_j = 6
         drop_colors = {'subject': QtGui.QColor(249, 179, 139),
                        'visit': QtGui.QColor(240, 230, 140),
                        'future': QtGui.QColor(240, 240, 240),
@@ -514,7 +516,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
         # N.B. this could go in previous for loop. left here for clarity
         for row_i, row in enumerate(res):
-            droplevel = row[6]
+            droplevel = row[drop_j]
             # don't do anything if we don't have a color for this drop level
             if droplevel is None or droplevel == 'nodrop':
                 continue
@@ -534,6 +536,9 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # Color row when clicked -- indicate action target for right click
         self.click_color(self.people_table, row_i)
 
+        if(row_i == -1):
+            print("BUG: row_i is -1 -- nothing selected")
+            return
         d = self.people_table_data[row_i]
         # main model
         print('people table: subject selected: %s' % d[8])
@@ -545,7 +550,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         """
         update person model using only a pid
         """
-        res = self.sql.query.person_by_pid(pid)
+        res = self.sql.query.person_by_pid(pid=pid)
         if res is None:
             mkmsg('Error: no person with pid %d' % pid)
             return
@@ -600,6 +605,10 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.checkin_button.setEnabled(True)
 
         row_i = self.visit_table.currentRow()
+        if (row_i == -1):
+            print("DEBUG: visit_item_select but row_i is -1")
+            return
+
         d = self.visit_table_data[row_i]
         try:
             vid = d[self.visit_columns.index('vid')]
@@ -658,23 +667,34 @@ class ScheduleApp(QtWidgets.QMainWindow):
         vid_i = self.visit_columns.index('vid')
         vid = self.visit_table.item(row_i, vid_i).text()
         googleuri = self.sql.query.get_googleuri(vid=vid)
+        if not googleuri:
+            mkmsg('No google uri for vid %d' % vid)
+            return
+        googleuri = googleuri[0]
 
         # create a new visit first
         # successful ScheduleVisit modal removes googleuri using schedule_to_db
         self.schedule_button_pushed(googleuri)
         # check delete was succesfull
-        olduri_no_exist = self.cal.get_event(googleuri)
+        print("checking that we cannot find: %s" % googleuri)
+        try:
+            olduri_no_exist = self.cal.get_event(googleuri)
+        except HttpError as httperr:
+            print(httperr)
+            # TODO: check error is actually 404
+            olduri_no_exist = None
+
         if olduri_no_exist:
             mkmsg("Failed to update google calendar" +
-                  "Can't delete %s. delete on calendar by hand" % googleuri)
+                  "Can't delete %s. not removing from DB either" % googleuri)
             return
 
         # we also need to delete the origianl visit from the database
         try:
-            self.sql.query.delete_visit(vid=vid)
+            self.sql.remove_visit(vid)
         except Exception as err:
             mkmsg('Unexpected error deleting (reschedule) from DB!' +
-                  'Calendar and DB are now out of sync\n' +
+                  'Calendar (rm-ed) and DB (not rm-ed) are now out of sync\n' +
                   'remove vid=%s\n' % vid +
                   'Error: %s' % err)
             # TODO: remove newly added b/c new is probaly not in db!?
@@ -795,6 +815,9 @@ class ScheduleApp(QtWidgets.QMainWindow):
     def edit_visit_table(self):
         """ on item click: set visit as subject for actions """
         row_i = self.visit_table.currentRow()
+        if row_i == -1:
+            print("DEBUG: row is -1 in edit_visit_table, cannot set visit_id!")
+            return
         self.visit_id = self.visit_table.item(row_i, 9).text()
         self.name = self.visit_table.item(row_i, 0).text()
 
@@ -945,7 +968,11 @@ class ScheduleApp(QtWidgets.QMainWindow):
            self.ScheduleVisit.old_googleuri is not None and
            len(self.ScheduleVisit.old_googleuri) > 0):
             google_old_uri = self.ScheduleVisit.old_googleuri[0][0]
-            self.cal.delete_event(google_old_uri)
+            try:
+                self.cal.delete_event(google_old_uri)
+            except HttpError as httperr:
+                mkmsg('Failed to delete google event %s' % google_old_uri)
+                print(httperr)
 
         # need to refresh visits
         self.update_visit_table()
@@ -1132,6 +1159,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # update gui to to person
         self.checkin_from_cal(pid)
         self.render_person_pid(pid)
+        self.fullname.setText(self.disp_model['fullname'])
         # let schedule know we came from the calendar
         self.render_schedule(ScheduleFrom.CAL)
 

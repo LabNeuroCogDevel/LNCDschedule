@@ -199,11 +199,6 @@ select
     and note = %(note)s
     and ndate = %(ndate)s
 
--- name: delete_visit
-  delete from visit
-    where vid = %(vid)s
-
-
 --name: list_studies
 -- we want to sort studies by the last checkin
 -- but we need to left join incase we have a (new) study with no visits

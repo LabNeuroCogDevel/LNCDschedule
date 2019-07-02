@@ -1,5 +1,7 @@
-from PyQt5 import uic,QtCore, QtWidgets
 import datetime
+import re
+import json
+from PyQt5 import uic, QtCore, QtWidgets
 from LNCDutils import  *
 
 """
@@ -53,7 +55,15 @@ class ScheduleVisitWindow(QtWidgets.QDialog):
         if(isOrAll(key,'cohort')):     self.model['cohort']  = self.cohort_edit.text()
         if(isOrAll(key,'visitno')):    self.model['visitno'] = self.visitno_spin.value()
         if(isOrAll(key,'dur_hr')):     self.model['dur_hr']  = self.dur_hr_spin.value()
-        if(isOrAll(key,'notes')):       self.model['notes']    = self.note_edit.toPlainText()
+        # notes inserted as json array (via visit_summary view trigger)
+        if(isOrAll(key,'notes')):
+            notestr = self.note_edit.toPlainText()
+            if notestr:
+                notestr = json.dumps([notestr])
+                print(notestr)
+                self.model['notes'] = notestr
+            else:
+                self.model['notes'] = None
 
         #looks like: Thu Oct 26 14:00:00 2017
         if(isOrAll(key,'vtimestamp')): self.model['vtimestamp'] = self.vtimestamp_edit.dateTime().toString()

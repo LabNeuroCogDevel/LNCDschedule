@@ -9,4 +9,6 @@ __pycache__/
 .DS_Store
 *.pyc
 pgdump*
+pg_dump*
 *.ini*
+sql/roles.sql

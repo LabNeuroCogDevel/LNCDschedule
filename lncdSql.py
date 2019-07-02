@@ -87,6 +87,15 @@ class lncdSql():
         cur.execute(sql, (column_change, id))
         cur.close()
 
+    def remove_visit(self, vid):
+        """ remove visit by pid
+        :param vid: visit id to remove (integer)
+        """
+        sqlstr = "delete from visit where vid = %d" % int(vid)
+        cur = self.conn.cursor()
+        cur.execute(sqlstr)
+        cur.close()
+
     def mksearch(self, option):
         # Special casew for vtimestamp b/c
         # date is formatted differently from the database
