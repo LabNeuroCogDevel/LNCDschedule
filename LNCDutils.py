@@ -1,15 +1,28 @@
 import datetime, calendar
+from enum import Enum
 from PyQt5 import QtWidgets
+
+
+class ScheduleFrom(Enum):
+    """ enumerate where schedule data came from
+    could use str, but this gives pseudo type check
+    """
+    PERSON = 1
+    VISIT = 2
+    CAL = 3
+
 
 # get combobox value
 def comboval(cb):
     return(cb.itemText(cb.currentIndex()))
 
-# get date from qdate widge 
+
+# get date from qdate widge
 def caltodate(qdate_widget):
     ordinal = qdate_widget.selectedDate().toPyDate().toordinal()
     dt=datetime.datetime.fromordinal(ordinal)
     return(dt)
+
 
 # used in is_valid. does key match string or all
 def isOrAll(k,s): return(k in [s, 'all'])
@@ -28,11 +41,12 @@ def mkmsg(msg, icon=QtWidgets.QMessageBox.Critical):
     """
     dialog box to send an error or warning message
     """
-    # persitant to this function so not eaten by GC
+    # persistent to this function so not eaten by GC
     if not hasattr(mkmsg, 'win'):
         mkmsg.win = QtWidgets.QMessageBox()
     mkmsg.win.setIcon(icon)
     mkmsg.win.setText(msg)
+    print("mkmsg: " + msg)
     mkmsg.win.show()
 
 
@@ -53,7 +67,7 @@ def CMenuItem(text, widget,
 def make_calendar_event(cal, info, assign=False):
     """
     give a dictionary with all the visit info, get back a google event
-    study, vtype, visitno, age, sex, initials, dur_hr, vtimestamp, note, ra
+    study, vtype, visitno, age, sex, initials, dur_hr, vtimestamp, notes, ra
     """
     info['initials']="".join( map(lambda x:x[0], info['fullname'].split() )  )
     
@@ -69,7 +83,7 @@ def make_calendar_event(cal, info, assign=False):
     # format
     title = title % info
     # description
-    desc = "%(note)s\n-- %(ra)s on %(createwhen)s" % info
+    desc = "%(notes)s\n-- %(ra)s on %(createwhen)s" % info
     # from e.g. "Thu Oct 26 14:00:00 2017" to datetime object
     startdt = datetime.datetime.strptime(str(info['vtimestamp']),
                                          "%a %b %d %H:%M:%S %Y")
@@ -87,7 +101,7 @@ def get_info_for_cal(query, vid):
         mkmsg('Error finding vid %d' % vid)
         return()
     headers = ['study', 'vtype', 'visitno', 'age', 'sex', 'fullname',
-               'dur_hr', 'vtimestamp', 'note', 'ra', 'id']
+               'dur_hr', 'vtimestamp', 'notes', 'ra', 'id']
     info = dict(zip(headers, res[0]))
     return(info)
 

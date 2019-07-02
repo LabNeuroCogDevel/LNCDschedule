@@ -117,7 +117,7 @@ select
 
 -- name: cal_info_by_vid
 select
- study, vtype, visitno, age, sex, concat_ws(' ',fname,lname), dur_hr, vtimestamp, note, ra, googleuri
+ study, vtype, visitno, age, sex, concat_ws(' ',fname,lname), dur_hr, vtimestamp, notes, ra, googleuri
  from visit_summary natural join person
  where vid = %(vid)s
 

@@ -67,6 +67,7 @@ class lncdSql():
     def insert(self, table, d):
         """ convience function to insert data into a table """
         sql = mkinsert(table, d.keys())
+        print("inserting into %s values %s" % (table, d))
         # print(sql.as_string(self.conn) % d)
         cur = self.conn.cursor()
         cur.execute(sql, d)

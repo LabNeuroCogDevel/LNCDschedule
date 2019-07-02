@@ -15,7 +15,7 @@ class ScheduleVisitWindow(QtWidgets.QDialog):
 
         # what data do we need
         # action intentionally empty -- will be set to 'sched'
-        columns=['vtimestamp','study','vtype','visitno','ra','pid','cohort','dur_hr','note']
+        columns=['vtimestamp','study','vtype','visitno','ra','pid','cohort','dur_hr','notes']
         self.model = { k: None for k in columns }
 
         # change this to true when validation works
@@ -28,7 +28,7 @@ class ScheduleVisitWindow(QtWidgets.QDialog):
         self.visitno_spin.valueChanged.connect(lambda: self.allvals('visitno'))
         self.dur_hr_spin.valueChanged.connect(lambda: self.allvals('dur_hr'))
         self.cohort_edit.textChanged.connect(lambda: self.allvals('cohort'))
-        self.note_edit.textChanged.connect(lambda: self.allvals('note'))
+        self.note_edit.textChanged.connect(lambda: self.allvals('notes'))
 
     def add_vtypes(self,vals): self.vtype_box.addItems(vals)
     def add_studies(self,vals): self.study_box.addItems(vals)
@@ -53,7 +53,7 @@ class ScheduleVisitWindow(QtWidgets.QDialog):
         if(isOrAll(key,'cohort')):     self.model['cohort']  = self.cohort_edit.text()
         if(isOrAll(key,'visitno')):    self.model['visitno'] = self.visitno_spin.value()
         if(isOrAll(key,'dur_hr')):     self.model['dur_hr']  = self.dur_hr_spin.value()
-        if(isOrAll(key,'note')):       self.model['note']    = self.note_edit.toPlainText()
+        if(isOrAll(key,'notes')):       self.model['notes']    = self.note_edit.toPlainText()
 
         #looks like: Thu Oct 26 14:00:00 2017
         if(isOrAll(key,'vtimestamp')): self.model['vtimestamp'] = self.vtimestamp_edit.dateTime().toString()
@@ -78,7 +78,7 @@ class ScheduleVisitWindow(QtWidgets.QDialog):
         print("schedule visit is valid?\n%s"%str(self.model))
         #print("close?: %s; checking if %s is valid"%(self._want_to_close,str(self.persondata)))
         for k in self.model.keys():
-            if k == 'note': continue # allow note to be null
+            if k == 'notes': continue # allow note to be null
             if self.model[k] == None or self.model[k] == '':
                 return({'valid':False,'msg':'bad %s'%k})
         # TODO: check dob is not today
