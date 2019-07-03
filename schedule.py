@@ -1284,42 +1284,16 @@ class ScheduleApp(QtWidgets.QMainWindow):
         data = {**self.AddNotes.notes_model, 'ra': self.RA}
 
         # look at drop code and vid
+        # both could be None
         dropcode = self.AddNotes.get_drop()
         vid = self.AddNotes.get_vid()
-
-        # if we have a drop, insert with drops_view trigger
-        if dropcode is not None:
-            note_dict = {**data, 'vid': vid,
-                         'dropcode': self.AddNotes.get_drop()}
-            print(note_dict['vid'])
-            self.sqlInsertOrShowErr('drops_view', note_dict)
-        # no drop but do have visit, use trigger on visit_note_view
-        elif vid is not None:
-            note_dict = {**data, 'vid': vid}
-            self.sqlInsertOrShowErr('visit_note_view', note_dict)
-
-        # boring old note insert. no trigger for also insert to person
-        else:
-            self.sqlInsertOrShowErr('note', data)
-            nid = self.query_for_nid()
-            if nid is None:
-                self.update_note_table()
-                return
-            nid_pid = {'pid': self.AddNotes.notes_model['pid'], 'nid': nid}
-            self.sqlInsertOrShowErr('person_note', nid_pid)
+        # insert into note
+        note_dict = {**data, 'vid': vid,
+                     'dropcode': self.AddNotes.get_drop()}
+        self.sqlInsertOrShowErr('note', note_dict)
 
         # whatever we've done, we need to update the view
         self.update_note_table()
-
-    def query_for_nid(self):
-        data = self.AddNotes.notes_model
-        nid = self.sql.query.get_nid(pid=data['pid'],
-                                     note=data['note'],
-                                     ndate=data['ndate'])
-        if nid is None:
-            return(nid[0][0])
-        else:
-            return(None)
 
     def sqlInsertOrShowErr(self, table, d):
         try:
