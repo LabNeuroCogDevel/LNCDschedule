@@ -19,7 +19,7 @@ FROM pg_stat_activity
 WHERE pg_stat_activity.datname = '$remote_db'
   AND pid <> pg_backend_pid();
 drop database if exists $remote_db;create database $remote_db;" | psql -U postgres -h $remote_host
-cat $psql_file | psql -U postgres -h $remote_host -p $remote_port $remote_db 
+cat $dump_file | psql -U postgres -h $remote_host -p $remote_port $remote_db 
 cat sql/roles.sql | psql -U postgres -h $remote_host -p $remote_port $remote_db
 echo "EDIT ME: add trust line to config file: "
 psql -U postgres -h $remote_host -p $remote_port $remote_db -c "SHOW hba_file;"
