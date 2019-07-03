@@ -165,7 +165,7 @@ create type droplevels as enum('nodrop','future','sometasks','visit','somevisits
 
 -- its own table so we are consistant
 create table dropcode (
-  dropcode varchar(10) primary key,
+  dropcode varchar(15) primary key,
   droplevel droplevels not null
 );
 
@@ -174,7 +174,7 @@ create table note (
  nid serial primary key,
  pid int references person(pid) not null,
  vid int references visit(vid),
- dropcode varchar(10) references dropcode(dropcode),
+ dropcode varchar(15) references dropcode(dropcode),
  ra    varchar(50), -- not null,
  ndate timestamp, -- not null,
  note  text not null
@@ -187,7 +187,7 @@ create type cstatus as enum ('update_info','bad_info', 'realtime', 'sent_waiting
 create table contact_note (
   cnid        serial primary key,
   cid         int references contact(cid) not null,
-  cstatus     boolean default false not null, 
+  cstatus     cstatus, 
   ctimestamp  timestamp,
   detail      text
 );
@@ -201,6 +201,7 @@ create table visit_enroll (
 create table ra (
    ra varchar(50) not null,
    upmcid varchar(50),
+   abbr varchar(4),
    start_date timestamp,
    end_date timestamp,
    bday timestamp,
@@ -222,10 +223,26 @@ INSERT into dropcode (dropcode,droplevel) values ('TECH_ISSUE','visit');
 INSERT into dropcode (dropcode,droplevel) values ('EYE_ISSUE' ,'visit');
 INSERT into dropcode (dropcode,droplevel) values ('SUBJ_ISSUE','visit');
 
-INSERT into dropcode (dropcode,droplevel) values ('CLAUSTROPH','somevisits');
+INSERT into dropcode (dropcode,droplevel) values ('CLAUSTROPHOBIC','somevisits');
 INSERT into dropcode (dropcode,droplevel) values ('BAD_VEIN'  ,'somevisits');
 
 INSERT into dropcode (dropcode,droplevel) values ('LOWIQ'     ,'subject');
 INSERT into dropcode (dropcode,droplevel) values ('EXCLDCRTRA','subject');
 
 INSERT into dropcode (dropcode,droplevel) values ('DEPRESSED' ,'family');
+
+-- 20190702 from 7T sheet
+INSERT into dropcode (dropcode,droplevel) values ('MRI_UNCOMFY' ,'somevisits');
+INSERT into dropcode (dropcode,droplevel) values ('INATTENTIVE' ,'subject');
+INSERT into dropcode (dropcode,droplevel) values ('PSYCH_CLINICAL', 'subject');
+INSERT into dropcode (dropcode,droplevel) values ('METAL', 'somevisits');
+INSERT into dropcode (dropcode,droplevel) values ('MOVER', 'somevisits');
+INSERT into dropcode (dropcode,droplevel) values ('BADSUBJ', 'subject');
+INSERT into dropcode (dropcode,droplevel) values ('NO_ADULT', 'somevisits');
+
+
+
+
+-- GRANT CONNECT ON DATABASE lncddb TO lncd;
+-- GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO web;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO lncd;

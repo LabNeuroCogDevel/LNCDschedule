@@ -59,8 +59,9 @@ create view person_only_notes as
     pid,
     max(ndate) as lastnstamp,
     json_agg(distinct note)  as notes,
-    max(dropcode) as maxpdrop
+    max(droplevel) as maxpdrop
   from note
+  natural join dropcode
   where vid is null
   group by pid;
 
@@ -71,8 +72,9 @@ create view person_all_notes as
     pid,
     max(ndate) as lastnstamp,
     json_agg(distinct note)  as notes,
-    max(dropcode) as maxdrop
+    max(droplevel) as maxdrop
   from note
+  natural join dropcode
   group by pid;
 
 
