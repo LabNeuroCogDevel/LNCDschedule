@@ -9,15 +9,15 @@ from lncdSql import lncdSql
 from pyesql_helper import check_column, pyesql_helper as ph
 
 
-@pytest.mark.skipif(not os.path.isfile('config.ini'),
-                    reason="need config.ini to test config.ini")
+@pytest.mark.skipif(not os.path.isfile('config_dev.ini'),
+                    reason="need config_dev.ini to test config.ini")
 def test_read_config_and_connect():
     """
-    tests read db in config.ini
+    tests read db in config_dev.ini
     useful to test where code will actually run
     """
     cfg = configparser.ConfigParser()
-    cfg.read("config.ini")
+    cfg.read("config_dev.ini")
     constr = 'dbname=%(dbname)s user=%(user)s ' + \
              'host=%(host)s password=%(password)s'
     conn = psycopg2.connect(constr % cfg._sections['SQL'])

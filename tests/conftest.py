@@ -1,5 +1,4 @@
 import pytest
-import os.path
 # see also
 # https://stackoverflow.com/questions/46005796/reuse-pytest-fixtures
 # https://docs.pytest.org/en/2.7.3/plugins.html
@@ -7,6 +6,7 @@ import os.path
 # # no config.ini, no working database
 # # ignore files that depend on a working database
 # collect_ignore = []
+# import os.path
 # if not os.path.isfile('config.ini'):
 #     collect_ignore.append('tests/test_db_update.py')
 
@@ -19,6 +19,8 @@ def create_db(transacted_postgresql_db):
     returns transacted_postgresql_db so it doesn't also have to be included
     expects `sql/` directory to be available
     """
+    # add lncd user
+    transacted_postgresql_db.run_sql_file('sql/07_update_roles.sql')
     # create tables
     transacted_postgresql_db.run_sql_file('sql/03_mkschema.sql')
     # create views

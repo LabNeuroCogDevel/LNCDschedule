@@ -158,7 +158,7 @@ create view  visits_view as
  select
     max( (select e.id from (select e.id) as _  where e.etype like 'LunaID')) as lunaid,
     to_char(vtimestamp,'YYYYmmdd') as ymd,
-    max(dropcode.droplevel) as subjmaxdrop,
+    max(an.maxdrop) as subjmaxdrop,
    p.fname,p.lname,p.sex,p.dob,v.*,
   json_agg(distinct vn.maxvdrop) as visit_dropped,
   json_agg( distinct (select row_to_json(_) from (select vs.study, vs.cohort) as _)::jsonb ) as studies,
@@ -173,7 +173,6 @@ create view  visits_view as
    natural left join visit_action va
    left join visit_notes vn on vn.vid = v.vid
    left join person_all_notes an on an.pid = v.vid
-   left join dropcode on an.maxdrop = dropcode.dropcode
   group by p.pid,v.vid;
  
 
