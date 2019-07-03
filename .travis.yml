@@ -8,7 +8,7 @@ dist: trusty
 
 env:
    global:
-      DEPS="pytest pytest-qt psycopg2-binary pyesql pytest-pgsql git+https://github.com/LabNeuroCogDevel/LNCDcal.py"
+      DEPS="pytest pytest-qt psycopg2-binary pyesql pytest-pgsql git+https://github.com/LabNeuroCogDevel/LNCDcal.py pyqt5"
 
 install:
   - |
