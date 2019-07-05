@@ -33,7 +33,8 @@ use `make test`, same as `python3 -m pytest`
   * makes use of pytest autoloaded `conftest.py` to provided schema loading through shared test fixture `create_db`
 
 using git hooks
- `ln -s $(pwd)/hooks/pre-commit  .git/hooks/pre-commit`
+ * install: `ln -s $(pwd)/hooks/pre-commit  .git/hooks/pre-commit`
+ * ignore: `git commit --no-verify ...`
 
 ### Database
 
