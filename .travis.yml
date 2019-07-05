@@ -27,4 +27,8 @@ before_script:
  # - sleep 1
 
 script:
+  - pwd
+  - which python
+  - which pytest
+  - pytest tests/ui/test_gui_search.py -s
   - "pytest -v tests"
