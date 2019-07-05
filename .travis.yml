@@ -24,6 +24,7 @@ install:
     # > qt.qpa.plugin: Could not load the Qt platform plugin "xcb" in "" even though it was found.
     # https://github.com/travis-ci/travis-ci/issues/6747
     # https://stackoverflow.com/questions/17106315/failed-to-load-platform-plugin-xcb-while-launching-qt5-app-on-linux-without
+    # https://www.riverbankcomputing.com/pipermail/pyqt/2019-February/041363.html
     sudo apt-get install -qq libegl1-mesa libx11-xcb1 libxkbcommon-x11-0
     # > cannot load library /home/travis/virtualenv/python3.7.1/lib/python3.7/site-packages/PyQt5/Qt/plugins/platforms/libqxcb.so
     # Setup python
