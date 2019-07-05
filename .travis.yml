@@ -13,6 +13,7 @@ env:
       - DEPS="pytest pytest-qt psycopg2-binary pyesql pytest-pgsql git+https://github.com/LabNeuroCogDevel/LNCDcal.py pyqt5"
       - DISPLAY=":99"
       - QT_DEBUG_PLUGINS=1
+        #- QT_QPA_PLATFORM_PLUGIN_PATH=/usr/lib/x86_64-linux-gnu/qt5/plugins
 
 install:
   - |
@@ -23,7 +24,8 @@ install:
     # > qt.qpa.plugin: Could not load the Qt platform plugin "xcb" in "" even though it was found.
     # https://github.com/travis-ci/travis-ci/issues/6747
     # https://stackoverflow.com/questions/17106315/failed-to-load-platform-plugin-xcb-while-launching-qt5-app-on-linux-without
-    sudo apt-get install -qq libegl1-mesa libx11-xcb1
+    sudo apt-get install -qq libegl1-mesa libx11-xcb1 libxkbcommon-x11-0
+    # > cannot load library /home/travis/virtualenv/python3.7.1/lib/python3.7/site-packages/PyQt5/Qt/plugins/platforms/libqxcb.so
     # Setup python
     pip install -U pip pytest
     pip install ${DEPS}
@@ -40,6 +42,8 @@ script:
   # try testing qt and sql by themselves.
   - pwd
   - ls
+  - ls /home/travis/virtualenv/python3.7.1/lib/python3.7/site-packages/PyQt5/Qt/plugins/platforms/
+  - ls /usr/lib/x86_64-linux-gnu/qt5/plugins
   - which python
   - which pytest
   - pytest tests/ui/test_gui_search.py -s
