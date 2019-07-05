@@ -210,6 +210,8 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.note_table.setEditTriggers(
             QtWidgets.QAbstractItemView.NoEditTriggers)
 
+        self.note_table.clicked.connect(self.dropcode_coloring)
+
         # ## visit table ##
         self.visit_columns = [
             'day', 'study', 'vstatus', 'vtype', 'vscore',
@@ -501,6 +503,18 @@ class ScheduleApp(QtWidgets.QMainWindow):
                 self.people_table.setItem(row_i, col_i, item)
         if res:
             self.changing_color(row_i, res)
+    def dropcode_coloring(self):
+        #Coloring anyrow with the dropcode that doesn't equal to None
+        row_i = self.note_table.currentRow
+        for i in range(self.note_table.rowCount()):
+            for j in range(self.note_table.columnCount()):
+                try:
+                    print(self.note_table.itemAt(0,1)).text()
+                except AttributeError:
+                    print('it is None')
+                    return
+
+                self.note_table.item(row_i, j).setBackground(QtGui.QColor(250, 231, 163))
 
     def changing_color(self, row_i, res):
         """
@@ -658,6 +672,8 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # get what we clicked on
         row_i = self.visit_table.currentRow()
         status_i = self.visit_columns.index('vstatus')
+        if row_i == -1:
+            return
         vstatus = self.visit_table.item(row_i, status_i).text()
         if vstatus != 'sched':
             mkmsg("Can only reschedule 'sched' status, not '%s'" % vstatus)
@@ -953,6 +969,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
         try:
             self.ScheduleVisit.add_to_calendar(self.cal, self.disp_model)
+            print(self.disp_model)
         except Exception as err:
             mkmsg('Failed to add to google calendar; not adding. %s' % str(err))
             return()
@@ -1261,8 +1278,14 @@ class ScheduleApp(QtWidgets.QMainWindow):
         """ on row click: update what contact is used for actions """
         row_i = self.contact_table.currentRow()
         self.click_color(self.contact_table, row_i)
-        self.contact_cid = self.contact_table.item(row_i, 5).text()
-        self.name = self.contact_table.item(row_i, 0).text()
+        try:
+            self.contact_cid = self.contact_table.item(row_i, 5).text()
+        except AttributeError:
+            print('weird error')
+        try:
+            self.name = self.contact_table.item(row_i, 0).text()
+        except AttributeError:
+            print('weird error')
         # print(contact_cid)
 
     # ## Notes

@@ -16,6 +16,7 @@ class EditContactWindow(QtWidgets.QDialog):
         self.setWindowTitle('Edit Contact')
 
         ## wire up buttons and boxes
+        self.ctype_box.activated.connect(self.formatter)
         self.ctype_box.activated.connect(lambda: self.allvals('ctype'))
         self.value_box.textChanged.connect(lambda: self.allvals('value'))
 
@@ -24,4 +25,9 @@ class EditContactWindow(QtWidgets.QDialog):
         if(key in ['value'    ,'all']): self.edit_model['changes']=self.value_box.text()
     def edit_contact(self,cid):
         self.value_box_2.setText(str(cid))
+        self.value_box_2.setDisabled(True)
         self.edit_model['cid'] = cid
+    def formatter(self):
+        want_edit = str(self.ctype_box.currentText())
+        default_value = self.edit_model.get(want_edit, '')
+        self.value_box.setText(default_value)
