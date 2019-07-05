@@ -12,13 +12,15 @@ env:
    global:
       - DEPS="pytest pytest-qt psycopg2-binary pyesql pytest-pgsql git+https://github.com/LabNeuroCogDevel/LNCDcal.py pyqt5"
       - DISPLAY=":99"
+      - QT_DEBUG_PLUGINS=1
 
 install:
   - |
     # Xvfb / window manager
     sudo apt-get update
     sudo apt-get install -y xvfb # herbstluftwm
-    # 
+    
+    # > qt.qpa.plugin: Could not load the Qt platform plugin "xcb" in "" even though it was found.
     # https://github.com/travis-ci/travis-ci/issues/6747
     # https://stackoverflow.com/questions/17106315/failed-to-load-platform-plugin-xcb-while-launching-qt5-app-on-linux-without
     sudo apt-get install -qq libegl1-mesa libx11-xcb1
@@ -29,9 +31,9 @@ install:
 
 before_script:
  - "export PYTHONPATH=$PYTHONPATH:$(pwd)"
+ # useful for testing the X11 display
+ - "herbstluftwm &"
  - sleep 1
- # - "herbstluftwm &"
- # - sleep 1
 
 script:
   # for debugging see current loc and settings
