@@ -32,6 +32,10 @@ use `make test`, same as `python3 -m pytest`
   * within `tests` directory, but expects to be run at root directory (`./sql/` and `./*py` files)
   * makes use of pytest autoloaded `conftest.py` to provided schema loading through shared test fixture `create_db`
 
+using git hooks
+ * install: `ln -s $(pwd)/hooks/pre-commit  .git/hooks/pre-commit`
+ * ignore: `git commit --no-verify ...`
+
 ### Database
 
 Explore with `DBeaver`.

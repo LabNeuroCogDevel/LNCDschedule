@@ -13,39 +13,29 @@ env:
       - DEPS="pytest pytest-qt psycopg2-binary pyesql pytest-pgsql git+https://github.com/LabNeuroCogDevel/LNCDcal.py pyqt5"
       - DISPLAY=":99"
       - QT_DEBUG_PLUGINS=1
-        #- QT_QPA_PLATFORM_PLUGIN_PATH=/usr/lib/x86_64-linux-gnu/qt5/plugins
 
 install:
   - |
     # Xvfb / window manager
     sudo apt-get update
-    sudo apt-get install -y xvfb # herbstluftwm
+    sudo apt-get install -y xvfb libqt5gui5 # herbstluftwm
     
     # > qt.qpa.plugin: Could not load the Qt platform plugin "xcb" in "" even though it was found.
-    # https://github.com/travis-ci/travis-ci/issues/6747
-    # https://stackoverflow.com/questions/17106315/failed-to-load-platform-plugin-xcb-while-launching-qt5-app-on-linux-without
-    sudo apt-get install -qq libegl1-mesa libx11-xcb1 libxkbcommon-x11-0
+    # QT_DEBUG_PLUGINS=1
     # > cannot load library /home/travis/virtualenv/python3.7.1/lib/python3.7/site-packages/PyQt5/Qt/plugins/platforms/libqxcb.so
+    # 20190705 -- local system
+    #  apt-file search /usr/lib/x86_64-linux-gnu/qt5/plugins/platforms/libqxcb.so
+    #  libqt5gui5: /usr/lib/x86_64-linux-gnu/qt5/plugins/platforms/libqxc.so
+
     # Setup python
     pip install -U pip pytest
     pip install ${DEPS}
     /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1920x1200x24 -ac +extension GLX +render -noreset
 
 before_script:
+ # needed so tests can find code
  - "export PYTHONPATH=$PYTHONPATH:$(pwd)"
- # useful for testing the X11 display
- - "herbstluftwm &"
  - sleep 1
 
 script:
-  # for debugging see current loc and settings
-  # try testing qt and sql by themselves.
-  - pwd
-  - ls
-  - ls /home/travis/virtualenv/python3.7.1/lib/python3.7/site-packages/PyQt5/Qt/plugins/platforms/
-  - ls /usr/lib/x86_64-linux-gnu/qt5/plugins
-  - which python
-  - which pytest
-  - pytest tests/ui/test_gui_search.py -s
-  - pytest tests/db/test_cur_user.py -s
   - pytest -v tests
