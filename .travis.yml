@@ -2,7 +2,7 @@
 # headless x11: https://docs.travis-ci.com/user/gui-and-headless-browsers/
 
 language: python
-python: "3.6"
+python: "3.7"
 sudo: required
 dist: trusty
 
@@ -17,7 +17,7 @@ install:
     sudo apt-get update
     sudo apt-get install -y xvfb # herbstluftwm
     # Setup python
-    pip install -U pip
+    pip install -U pip pytest
     pip install ${DEPS}
 
 before_script:
@@ -27,8 +27,12 @@ before_script:
  # - sleep 1
 
 script:
+  # for debugging see current loc and settings
+  # try testing qt and sql by themselves.
   - pwd
+  - ls
   - which python
   - which pytest
   - pytest tests/ui/test_gui_search.py -s
-  - "pytest -v tests"
+  - pytest tests/db/test_cur_user.py 
+  - pytest -v tests
