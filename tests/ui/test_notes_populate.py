@@ -17,10 +17,6 @@ def test_notes_populate(qtbot, lncdapp):
       lncdapp is a fixuture defined in conftest.py
     """
 
-    # load up fake info: 'Will Foran' -> 'Test Note'
-    lncdapp.pgtest.load_csv('sql/person.csv', 'person')
-    csv_none(lncdapp.pgtest, 'sql/note.csv', 'note')
-
     # attach tester to window
     qtbot.add_widget(lncdapp)  # attach qt testing robot
     # search by name - defined in person.csv and matching note.csv

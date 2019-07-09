@@ -14,9 +14,6 @@ app = QApplication(sys.argv)
 # using pytest-qt and pytest-pgsql
 # lncdapp is a fixuture defined in conftest.py
 def test_search_by_name(qtbot, lncdapp):
-    # load up fake info
-    lncdapp.pgtest.load_csv('sql/person.csv', 'person')
-
     # attach tester to window
     qtbot.add_widget(lncdapp)  # attach qt testing robot
     # search by name
@@ -30,10 +27,6 @@ def test_search_by_name(qtbot, lncdapp):
 
 
 def test_search_by_id(qtbot, lncdapp):
-    # load up info
-    lncdapp.pgtest.load_csv('sql/person.csv', 'person')
-    lncdapp.pgtest.load_csv('sql/enroll.csv', 'enroll')
-
     qtbot.add_widget(lncdapp)  # attach qt testing robot
     # search by name
     #   test assumes there is only one 'Foran', first name 'Will'

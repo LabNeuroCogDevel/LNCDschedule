@@ -36,7 +36,16 @@ def lncdapp(create_db):
     expects `sql/` directory to be available
     """
     from schedule import ScheduleApp
-    from pyesql_helper import pyesql_helper as ph
+    from pyesql_helper import pyesql_helper as ph, csv_none
     win = ScheduleApp(sql_obj=ph(create_db.connection), cal_obj='Not Used')
     win.pgtest = create_db
+
+    # load up default data
+    csv_none(create_db, 'sql/person.csv', 'person')
+    csv_none(create_db, 'sql/enroll.csv', 'enroll')
+    csv_none(create_db, 'sql/note.csv', 'note')
+    csv_none(create_db, 'sql/contact.csv', 'contact')
+    csv_none(create_db, 'sql/study.csv', 'study')
+
+    # give back the window
     return win
