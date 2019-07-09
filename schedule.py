@@ -957,9 +957,10 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.ScheduleVisit.setup(pid, fullname, self.RA, dt, old_google_uri)
         self.ScheduleVisit.show()
 
-    def schedule_to_db(self):
-        # valid?
-        if not self.useisvalid(self.ScheduleVisit, "Cannot schedule visit"):
+    def schedule_to_db(self, refresh_model=True):
+        # valid? -- refresh_model only False if running tests
+        if refresh_model and \
+           not self.useisvalid(self.ScheduleVisit, "Cannot schedule visit"):
             return
         # todo: add to calendar or msgerr
         # makw the note index None so that the sql can recongnize it.
@@ -967,12 +968,16 @@ class ScheduleApp(QtWidgets.QMainWindow):
             self.ScheduleVisit.model['notes'] = None
             print("updated note to none")
 
-        try:
-            self.ScheduleVisit.add_to_calendar(self.cal, self.disp_model)
-            print(self.disp_model)
-        except Exception as err:
-            mkmsg('Failed to add to google calendar; not adding. %s' % str(err))
-            return()
+        # if we have LNCDcal -- use it to insert a googleuri
+        if type(self.cal) is LNCDcal:
+            try:
+                self.ScheduleVisit.add_to_calendar(self.cal, self.disp_model)
+                print(self.disp_model)
+            except Exception as err:
+                mkmsg('Failed to add to google calendar; not adding. %s' %
+                      str(err))
+                return()
+
         # catch sql error
         # N.B. action(vstatus) intentionally empty -- will be set to 'sched'
         if not self.sqlInsertOrShowErr(
@@ -981,6 +986,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
             return()
 
         # we have a valid old_googleuri -> remove it
+        # TODO: check that old_googleuri isn't in database?
         if(self.ScheduleVisit.old_googleuri and
            self.ScheduleVisit.old_googleuri is not None and
            len(self.ScheduleVisit.old_googleuri) > 0):
@@ -1321,7 +1327,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
     def sqlInsertOrShowErr(self, table, d):
         try:
             # self.sql.query.insert_person(**(self.AddPerson.persondata))
-            print('insering into %s: %s' % (table, d))
+            # print('insering into %s: %s' % (table, d)) # sql.insert does this
             self.sql.insert(table, d)
             return(True)
         except Exception as err:
@@ -1329,9 +1335,12 @@ class ScheduleApp(QtWidgets.QMainWindow):
             return(False)
 
     # Later better map all the data into one variable so that it's easy to see.
-    def sqlUpdateOrShowErr(self, table, id_column, id, new_value, id_type):
+    def sqlUpdateOrShowErr(self, *kargs):
+        """
+        wrap sql.update in mkmsg
+        """
         try:
-            self.sql.update(table, id_column, id, new_value, id_type)
+            self.sql.update(*kargs)
             return(True)
         except Exception as err:
             mkmsg(str(err))

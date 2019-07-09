@@ -1,5 +1,7 @@
 # LNCD scheduler (DB management)
 
+[![Build Status](https://travis-ci.com/LabNeuroCogDevel/LNCDschedule.svg?branch=master)](https://travis-ci.com/LabNeuroCogDevel/LNCDschedule)
+
 ## Run without install
  - Mobaxterm/ssh: rhea
  - `schedule.py`
