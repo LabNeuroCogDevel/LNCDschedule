@@ -4,6 +4,7 @@ import pyesql
 import configparser
 import PasswordDialog
 import re  # just for censoring password
+import sqlalchemy as sqla
 
 
 class lncdSql():
@@ -33,9 +34,14 @@ class lncdSql():
         # define database user
         self.db_user = cur_user(self.conn)
 
+        # sqlalchemy: reuse psql connection
+        self.engine = sqla.create_engine('postgresql+psycopg2://',
+                                         creator=lambda: self.conn)
+        self.sqlmeta = sqla.MetaData(self.engine)
+
+        # load up predefine sql queries
         sqls = pyesql.parse_file('./queries.sql')
         self.query = sqls(self.conn)
-        # a=self.query.name_search(fullname='%Foran%')
 
         # try connection permissions if we are using e.g. config.ini
         #  (otherwise we are probably in a test and dont want this check)
@@ -50,42 +56,40 @@ class lncdSql():
                 print('error! %s' % err)
                 raise Exception("No permissions on db: %s" % err)
 
-    def mkupdate(self, table, id_column, id, new_value, id_type):
-        table = psycopg2.sql.Identifier(table)
-        id_column = psycopg2.sql.Identifier(id_column)
-        id_type = psycopg2.sql.Identifier(id_type)
-        # TODO: something is funny here!! new_value/id is never used?!
-        # new_value = psycopg2.sql.Placeholder(new_value)
-        # new_value = psycopg2.sql.SQL(",").join(new_value)
-        id = psycopg2.sql.Placeholder(new_value)
-
-        updatesql = psycopg2.sql.SQL("UPDATE {} SET {} = %s where {} = %s").\
-            format(table, id_column, id_type)
-        print(updatesql.as_string(self.conn))
-        return updatesql
-
-    def insert(self, table, d):
+    def insert(self, table_name, data):
         """ convience function to insert data into a table """
-        sql = mkinsert(table, d.keys())
-        print("inserting into %s values %s" % (table, d))
-        # print(sql.as_string(self.conn) % d)
-        cur = self.conn.cursor()
-        cur.execute(sql, d)
-        cur.close()
+        print("insert: %s values %s" % (table_name, data))
+        # probably inefficent to generate the table every time!
+        tbl = sqla.Table(table_name, self.sqlmeta, autoload=True,
+                         autoload_with=self.engine)
+        ins = tbl.insert(data)
+        self.engine.execute(ins)
+        return True
 
-    def update(self, table_name, id_column, id, column_change, id_type):
+    def update(self, table_name, new_column, id_value, new_value, id_column):
         """
         update a table with given data
-        :param table_name: eg contact
-        :param id_column: like cid
-        :param id:  whatever cid to change for value
-        :param column_change: like cvalue
-        :param id_type:  like new phone number entered at gui
+        N.B should change new_* to dict to support >1 column at a time
+        :param table_name: table to update
+        :param new_value: new value to use
+        :param id_value: value of id to look up
+        :param new_column: column where value will change
+        :param id_column: column that stores row identifier
+        used like
+          'contact',data['ctype'], data['cid'], data['changes'], "cid"
+          'person',data['ctype'], data['pid'], data['changes'], "pid"
         """
-        sql = self.mkupdate(table_name, id_column, id, column_change, id_type)
-        cur = self.conn.cursor()
-        cur.execute(sql, (column_change, id))
-        cur.close()
+        print("update: %s %s=%s " % (table_name, new_column, new_value))
+
+        # same issue as insert -- we create a table each time
+        tbl = sqla.Table(table_name, self.sqlmeta, autoload=True,
+                         autoload_with=self.engine)
+        # build sql
+        update_sql = tbl.update().\
+            where(getattr(tbl.c, id_column) == id_value).\
+            values({new_column: new_value})
+        # execute it
+        self.engine.execute(update_sql)
 
     def remove_visit(self, vid):
         """ remove visit by pid
@@ -174,24 +178,6 @@ def connstr_from_config(config, gui):
 
     constr = confline % cfg._sections['SQL']
     return constr
-
-
-def mkinsert(table, colnames):
-    """
-    make a table and a list of names (dict key) and
-    create a psycopg2 sql object that can be executed
-    """
-    table = psycopg2.sql.Identifier(table)
-    # are keys and values order always stable??
-    cols = map(psycopg2.sql.Identifier, colnames)
-    vals = map(psycopg2.sql.Placeholder, colnames)
-
-    col = psycopg2.sql.SQL(",").join(cols)
-    valkey = psycopg2.sql.SQL(",").join(vals)
-
-    insertsql = psycopg2.sql.SQL("insert into {} ({}) values ({})").\
-        format(table, col, valkey)
-    return(insertsql)
 
 
 def cur_user(conn):
