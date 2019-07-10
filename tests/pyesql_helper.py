@@ -1,8 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import re
+import psycopg2.sql
+import sqlalchemy.engine.base
 
 
-class pyesql_helper:
+class pyesql_helper():
     """
     fake cursor structure needed by pyesql
     resolve:
@@ -18,14 +21,28 @@ class pyesql_helper:
         self.connection = conn
         self.results = None
 
+    @property
+    def __class__(self):
+        """ get around a check in insert """
+        return sqlalchemy.engine.base.Connection
+
     def execute(self, *kargs):
         """
         make list of SQL query results (*kargs: query string)
         return list and store to return with `fetchall()`
         """
+        if isinstance(kargs[0], psycopg2.sql.Composed):
+            print("i'm not going do what you want")
+
         ex = self.connection.execute(*kargs)
-        self.results = [r for r in ex]
-        return(self.results)
+
+        # TODO/UGLY: trying to iterate over ex fails if insert
+        try:
+            self.results = [r for r in ex]
+        except:
+            pass
+
+        return self.results
 
     def fetchall(self):
         """
@@ -39,7 +56,10 @@ class pyesql_helper:
         return the work of execute for pattern:
            conn.execute(); res=conn.fetchall()
         """
-        return(self.results[0])
+        if self.results:
+            return self.results[0]
+        else:
+            return None
 
     def cursor(self):
         """
@@ -48,6 +68,10 @@ class pyesql_helper:
         so all the needed methods are in this one class: pyesql_helper
         """
         return(self)
+
+    def close(self):
+        """ do nothing? """
+        return self
 
 
 def check_column(col, res, expect, exact=True):
