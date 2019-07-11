@@ -33,6 +33,7 @@ def create_db(transacted_postgresql_db):
     csv_none(transacted_postgresql_db, 'sql/note.csv', 'note')
     csv_none(transacted_postgresql_db, 'sql/contact.csv', 'contact')
     csv_none(transacted_postgresql_db, 'sql/study.csv', 'study')
+    csv_none(transacted_postgresql_db, 'sql/ra.txt', 'ra')
     return(transacted_postgresql_db)
 
 

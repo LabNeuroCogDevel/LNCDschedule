@@ -31,7 +31,6 @@ def test_list_ras(create_db):
      -- by itself, not that useful. But guide for testing other sql tests
     (create_db in conftest.py, autoloaded by pytest)
     """
-    create_db.load_csv('sql/ra.txt', 'ra')  # contains rows for 'ra1' and 'ra2'
     ras = lncdSql(None, conn=ph(create_db.connection)).\
         query.list_ras()
     check_column(0, ras, ['ra1', 'ra2'])
