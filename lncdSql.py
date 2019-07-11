@@ -5,6 +5,7 @@ import configparser
 import PasswordDialog
 import re  # just for censoring password
 import sqlalchemy as sqla
+from sqlalchemy.dialects.postgresql import JSON
 
 
 class lncdSql():
@@ -67,14 +68,20 @@ class lncdSql():
         # maybe add to dict
         # N.B. for testing w/pytest-pgsql + transacted + pyesql-helper
         # engine might be somewhere else
-        tbl = sqla.Table(table_name, self.sqlmeta, autoload=True,
+        fix_columns = ()
+        if table_name == 'visit_summary':
+            fix_columns = (sqla.Column('notes', JSON(none_as_null=True)),)
+        
+        tbl = sqla.Table(table_name, self.sqlmeta, *fix_columns,
+                         extend_existing=True, autoload=True,
                          autoload_with=self.engine)
         return(tbl)
 
     def insert(self, table_name, data):
         """ convience function to insert data into a table """
         print("insert: %s values %s" % (table_name, data))
-        ins = self.getTable(table_name).insert(data)
+        tbl = self.getTable(table_name)
+        ins = tbl.insert(data)
         self.engine.execute(ins)
         return True
 

@@ -34,7 +34,12 @@ def create_db(transacted_postgresql_db):
     csv_none(transacted_postgresql_db, 'sql/contact.csv', 'contact')
     csv_none(transacted_postgresql_db, 'sql/study.csv', 'study')
     csv_none(transacted_postgresql_db, 'sql/ra.txt', 'ra')
-    return(transacted_postgresql_db)
+
+    # adding vid/pid/nid from above leaves sequence counters behind
+    # catch up e.g. person_pid_seq = max(pid)
+    transacted_postgresql_db.run_sql_file('sql/06_update_seq.sql')
+
+    return transacted_postgresql_db
 
 
 @pytest.fixture
