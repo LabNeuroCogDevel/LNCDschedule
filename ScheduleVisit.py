@@ -20,6 +20,9 @@ class ScheduleVisitWindow(QtWidgets.QDialog):
         columns=['vtimestamp','study','vtype','visitno','ra','pid','cohort','dur_hr','notes']
         self.model = { k: None for k in columns }
 
+        # used to update google (remove old)
+        self.old_googleuri = None
+
         # change this to true when validation works
         self._want_to_close = False
 
@@ -58,10 +61,14 @@ class ScheduleVisitWindow(QtWidgets.QDialog):
         # notes inserted as json array (via visit_summary view trigger)
         if(isOrAll(key,'notes')):
             notestr = self.note_edit.toPlainText()
+            print(notestr)
             if notestr:
-                notestr = json.dumps([notestr])
-                print(notestr)
-                self.model['notes'] = notestr
+                # sqlalchemy handles objects directly
+                self.model['notes'] = [notestr]
+                print(self.model['notes'])
+                # if we use pgsql directly
+                # notestr = json.dumps([notestr])
+                # print(notestr)
             else:
                 self.model['notes'] = None
 
