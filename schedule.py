@@ -210,7 +210,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.note_table.setEditTriggers(
             QtWidgets.QAbstractItemView.NoEditTriggers)
 
-        self.note_table.clicked.connect(self.dropcode_coloring)
+        self.people_table.itemSelectionChanged.connect(self.dropcode_coloring)
 
         # ## visit table ##
         self.visit_columns = [
