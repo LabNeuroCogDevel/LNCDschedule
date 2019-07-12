@@ -1,11 +1,11 @@
+import configparser
 import psycopg2
 import psycopg2.sql
 import pyesql
-import configparser
-import PasswordDialog
 import re  # just for censoring password
 import sqlalchemy as sqla
 from sqlalchemy.dialects.postgresql import JSON
+import PasswordDialog
 
 
 class lncdSql():
@@ -108,6 +108,24 @@ class lncdSql():
         # execute it
         self.engine.execute(update_sql)
 
+    def update_columns(self, table_name, id_column, id_value, update_dict):
+        """
+        update a table with given data. use a dictionary for many values
+        :param table_name: table to update
+        :param new_value: new value to use
+        :param id_value: value of id to look up
+        :param update_dict: {'column': 'new_value', ...}
+        """
+        print("update: %s %s=%s " % (table_name, id_value, update_dict))
+
+        tbl = self.getTable(table_name)
+        # build sql
+        update_sql = tbl.update().\
+            where(getattr(tbl.c, id_column) == id_value).\
+            values(update_dict)
+        # execute it
+        self.engine.execute(update_sql)
+
     def remove_visit(self, vid):
         """ remove visit by pid
         :param vid: visit id to remove (integer)
@@ -147,8 +165,8 @@ class lncdSql():
 
     def search(self, pid, table, option, value):
         sql = self.mksearch(option)
-        print(option)
-        print(sql)
+        print('search\n\toption: %s' % option)
+        print('\tsql: %s' % sql)
         cur = self.conn.cursor()
         # Differentiate between general case and special case
         if(option == 'vtimestamp'):
