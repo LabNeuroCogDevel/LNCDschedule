@@ -18,6 +18,9 @@
  - app: 
     - anaconda navigator -> projects -> import -> from folder
 
+20190712 - pyqt5 update issue, current fix `pip install pyqt5==5.12.2`
+https://github.com/pyinstaller/pyinstaller/issues/4293
+
 ### Not tracked (copy)
  * `config.ini` configuration settings (db info, cal info)
  * `*.p12` gcal cred file for service account
