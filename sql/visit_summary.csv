@@ -1,0 +1,2 @@
+pid,vtimestamp,study,vtype,visitno,ra,cohort,dur_hr
+2,2000-01-01 12:34,AStudy,Scan,1,ra1,control,2

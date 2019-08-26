@@ -58,6 +58,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
                                   'datetime': None, 'pid': None,
                                   'vtype': None, 'study': None,
                                   'lunaid': None, 'next_luna': None}
+        self.visit_table_data = None
 
         # load gui (created with qtcreator)
         uic.loadUi('./ui/mainwindow.ui', self)
@@ -229,7 +230,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         CMenuItem("no show", visit_menu)
         # Jump to reschedule visit function whenever the reschdule button is
         # clicked.
-        CMenuItem("reschedule", visit_menu, lambda: self.reschedule_all())
+        CMenuItem("reschedule", visit_menu, self.reschedule_visit)
         # find all RAs and add to context menu
         assignRA = visit_menu.addMenu("&Assign RA")
         for ra in self.sql.query.list_ras():
@@ -349,7 +350,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
     def add_study_to_db(self):
         study_data = self.AddStudy.study_data
         self.sql.insert('study', study_data)
-        print(study_data)
+        print("adding studies: %s" % study_data)
 
     def add_studies(self):
         self.AddStudy.show()
@@ -392,7 +393,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         if not to_change or to_change == 'NULL':
             return
 
-        print("pid %(pid)d: updated %(ctype)s to %(changes)s" % data)
+        print("person2db: pid %(pid)d: updated %(ctype)s->%(changes)s" % data)
 
         # run sql
         self.sqlUpdateOrShowErr('person', data['ctype'],
@@ -407,7 +408,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
     # #### PEOPLE #####
     def add_person_pushed(self):
         name = self.fullname.text().title().split(' ')
-        print('spliting name at len %d' % len(name))
+        print('add person: spliting name at len %d' % len(name))
         fname = name[0] if len(name) >= 1 else ''
         lname = " ".join(name[1:]) if len(name) >= 2 else ''
         d = {'fname': fname, 'lname': lname}
@@ -487,7 +488,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
              'sex': comboval(self.sex_search),
              'minage': self.min_age_search.text(),
              'maxage': self.max_age_search.text()}
-        print(d)
+        print("search attr: %s" % d)
         res = self.sql.query.att_search(**d)
         #res = self.sql.query.att_search(sex=d['sex'],study=d['study'], minage=d['minage'],maxage=d['maxage'])
         self.fill_search_table(res)
@@ -503,18 +504,16 @@ class ScheduleApp(QtWidgets.QMainWindow):
                 self.people_table.setItem(row_i, col_i, item)
         if res:
             self.changing_color(row_i, res)
-    def dropcode_coloring(self):
-        #Coloring anyrow with the dropcode that doesn't equal to None
-        row_i = self.note_table.currentRow
-        for i in range(self.note_table.rowCount()):
-            for j in range(self.note_table.columnCount()):
-                try:
-                    print(self.note_table.itemAt(0,1)).text()
-                except AttributeError:
-                    print('it is None')
-                    return
 
-                self.note_table.item(row_i, j).setBackground(QtGui.QColor(250, 231, 163))
+    def dropcode_coloring(self):
+        """ Coloring anyrow with the dropcode that doesn't equal to None """
+        for i in range(self.note_table.rowCount()):
+            dropcode = self.note_table.item(i, 1).text()
+            if not dropcode or dropcode == "None":
+                continue
+            print("coloring drop '%s'" % dropcode)
+            for j in range(self.note_table.columnCount()):
+                self.note_table.item(i, j).setBackground(QtGui.QColor(250, 231, 163))
 
     def changing_color(self, row_i, res):
         """
@@ -551,7 +550,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.click_color(self.people_table, row_i)
 
         if(row_i == -1):
-            print("BUG: row_i is -1 -- nothing selected")
+            print("DEBUG: people_item_select: nothing selected (row_i=-1)")
             return
         d = self.people_table_data[row_i]
         # main model
@@ -570,6 +569,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
             return
 
         pers = res[0]
+        print("render_person_pid:\n\t")
         print(pers)
         # columns are:
         # pid, lunaid fullname fname lname dob sex hand addate
@@ -627,7 +627,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         try:
             vid = d[self.visit_columns.index('vid')]
         except IndexError:
-            print('tuple index out of range')
+            print('visit_item_select: tuple index out of range')
 
         study = d[self.visit_columns.index('study')]
         pid = self.disp_model['pid']
@@ -642,7 +642,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         try:
             self.checkin_what_data['vid'] = vid
         except UnboundLocalError:
-            print('local variable vid referenced before assignment')
+            print('visit_item_select: local variable vid referenced before assignment')
         self.checkin_what_data['study'] = study
         self.checkin_what_data['vtype'] = d[self.visit_columns.index('vtype')]
         self.checkin_what_data['datetime'] = d[self.visit_columns.index('day')]
@@ -664,57 +664,35 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.MoreInfo.setup(vid, self.sql)
         self.MoreInfo.show()
 
-    def reschedule_all(self):
+    def reschedule_visit(self):
         """
-        right click visit item -> reschedule
-         need to remove from calendar and reinsert
+        reschedule button click or right click visit item -> reschedule
+        1. check reschedule is reasonable
+        2. get old vid
+        3. push to normal schedule
         """
         # get what we clicked on
         row_i = self.visit_table.currentRow()
-        status_i = self.visit_columns.index('vstatus')
         if row_i == -1:
+            print('DEBUG: reschedule visit but no visit selected!')
             return
+
+        status_i = self.visit_columns.index('vstatus')
         vstatus = self.visit_table.item(row_i, status_i).text()
-        if vstatus != 'sched':
-            mkmsg("Can only reschedule 'sched' status, not '%s'" % vstatus)
+        if vstatus not in ['sched', 'resched', 'assigned']:
+            mkmsg("Can only reschedule '(re)sched/assigned', not " + vstatus)
             return
+
+        # TODO: stop from rescheduling something in the distant past?
+        # shouldn't be an issue, but db pull has sched where it shouldnt
 
         # get old info. we will remove this after successful rescheduleing
         vid_i = self.visit_columns.index('vid')
         vid = self.visit_table.item(row_i, vid_i).text()
-        googleuri = self.sql.query.get_googleuri(vid=vid)
-        if not googleuri:
-            mkmsg('No google uri for vid %d' % vid)
-            return
-        googleuri = googleuri[0]
 
         # create a new visit first
         # successful ScheduleVisit modal removes googleuri using schedule_to_db
-        self.schedule_button_pushed(googleuri)
-        # check delete was succesfull
-        print("checking that we cannot find: %s" % googleuri)
-        try:
-            olduri_no_exist = self.cal.get_event(googleuri)
-        except HttpError as httperr:
-            print(httperr)
-            # TODO: check error is actually 404
-            olduri_no_exist = None
-
-        if olduri_no_exist:
-            mkmsg("Failed to update google calendar" +
-                  "Can't delete %s. not removing from DB either" % googleuri)
-            return
-
-        # we also need to delete the origianl visit from the database
-        try:
-            self.sql.remove_visit(vid)
-        except Exception as err:
-            mkmsg('Unexpected error deleting (reschedule) from DB!' +
-                  'Calendar (rm-ed) and DB (not rm-ed) are now out of sync\n' +
-                  'remove vid=%s\n' % vid +
-                  'Error: %s' % err)
-            # TODO: remove newly added b/c new is probaly not in db!?
-            return
+        self.schedule_button_pushed(vid)
 
         # finally update visit table
         self.update_visit_table()
@@ -730,7 +708,8 @@ class ScheduleApp(QtWidgets.QMainWindow):
                     try:
                         self.table_background(table, i, j)
                     except AttributeError:
-                        print('NonType')
+                        print('click color: bad i j (%d,%d@%s)' %
+                              (i, j, table))
                 else:
                     table.item(i, j).setBackground(QtGui.QColor(255, 255, 255))
 
@@ -771,7 +750,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
                     try:
                         self.table_background(table, i, j)
                     except AttributeError:
-                        print('NonType')
+                        print('refresh_blank: NoneType')
                 else:
                     table.item(i, j).setBackground(QtGui.QColor(255, 255, 255))
 
@@ -795,13 +774,14 @@ class ScheduleApp(QtWidgets.QMainWindow):
         info['ra'] = ra
         try:
             self.sql.query.update_RA(ra=info['ra'], vid=vid)
-        except psycopg2.ProgrammingError:
-            print('Error that does not make sense')
+        except psycopg2.ProgrammingError as err:
+            print('updateVisitRA: bad sql? %s' % err)
 
-        print(info)
+        print("updateVisitRA: %s" % info)
         #  1. update google calendar title
         info['googleuri'] = self.sql.query.get_googleuri(vid=vid)
         info['googleuri'] = info['googleuri'][0][0]
+        # TODO: calid is not googleuri!?
         info['calid'] = info['googleuri']
 
         try:
@@ -813,8 +793,8 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # Update the event(e) in the database
         try:
             self.sql.query.update_uri(googleuri=event['id'], vid=vid)
-        except psycopg2.ProgrammingError:
-            print('Error that does not make sense')
+        except psycopg2.ProgrammingError as err:
+            print('updateVisitRA sql err: %s' % err)
 
         # For this, sched is origionally assigned. Changed it to sche so that the data base will  accept the vstatus.
         # //////////////////////////////////////////////
@@ -832,7 +812,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         """ on item click: set visit as subject for actions """
         row_i = self.visit_table.currentRow()
         if row_i == -1:
-            print("DEBUG: row is -1 in edit_visit_table, cannot set visit_id!")
+            print("DEBUG: row=-1 in edit_visit_table, cannot set visit_id!")
             return
         self.visit_id = self.visit_table.item(row_i, 9).text()
         self.name = self.visit_table.item(row_i, 0).text()
@@ -841,7 +821,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         """ update visit table display"""
         pid = self.disp_model['pid']
         self.visit_table_data = self.sql.query.visit_by_pid(pid=pid)
-        print(self.visit_table_data)
+        print("update_visit_table table data\n\t%s" % self.visit_table_data)
         generic_fill_table(self.visit_table, self.visit_table_data)
 
     def update_contact_table(self):
@@ -853,7 +833,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
     def update_note_table(self):
         """ update note table display"""
         # pid=self.disp_model['pid']
-        print(self.disp_model['pid'])
+        print("update_note_table pid: %s" % self.disp_model['pid'])
         self.note_table_data = self.sql.query.note_by_pid(
             pid=self.disp_model['pid'])
         generic_fill_table(self.note_table, self.note_table_data)
@@ -865,7 +845,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
     def add_person_to_db(self):
         """ person to db """
-        print(self.AddPerson.persondata)
+        print("add persont to db persondata: %s" % self.AddPerson.persondata)
         # pop up window and return if not valid
         (valid, msg) = self.AddPerson.isvalid()
         if not valid:
@@ -892,6 +872,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         """
         handle setting up scheduling middle area
         """
+        # print('render schedule: %s' % self.schedule_what_data)
         # only changes when we click on a different table
         if schedule_from:
             self.schedule_what_data['whichCntr'] = schedule_from
@@ -922,7 +903,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # is the button for scheduling or rescheduling
         if self.schedule_what_data['whichCntr'] == ScheduleFrom.VISIT:
             self.schedule_button.setText('Reschedule')
-            self.schedule_button.clicked.connect(self.reschedule_all)
+            self.schedule_button.clicked.connect(self.reschedule_visit)
             # TODO: fetching vstatus happens twice. make function?
             row_i = self.visit_table.currentRow()
             status_i = self.visit_columns.index('vstatus')
@@ -936,12 +917,15 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
         # TODO: indicate schedule_from
         #  with e.g. an arrow icon
-
-        print('render schedule: %s' % self.schedule_what_data)
+        # print('render schedule: %s' % self.schedule_what_data)
 
     # #### VISIT #####
     # see generic_fill_table
-    def schedule_button_pushed(self, old_google_uri=False):
+    def schedule_button_pushed(self, vid=None):
+        """
+        grab widget values and pop up a scheduler
+        if popup dialog is okay, add to db
+        """
         d = self.schedule_what_data['date']
         t = self.schedule_what_data['time']
         # Got the pid ID for the person who scheduled.
@@ -953,49 +937,92 @@ class ScheduleApp(QtWidgets.QMainWindow):
         if pid is None or fullname is None:
             mkmsg('select a person before trying to schedule')
             return()
+
         dt = datetime.datetime.combine(d, t)
-        self.ScheduleVisit.setup(pid, fullname, self.RA, dt, old_google_uri)
+
+        googleuri = None
+        if vid:
+            googleuri = self.sql.query.get_googleuri(vid=vid)
+            if not googleuri:
+                mkmsg('No google uri for vid %d' % vid)
+                return
+            googleuri = googleuri[0][0]
+
+        self.ScheduleVisit.setup(pid, fullname, self.RA, dt, googleuri, vid)
         self.ScheduleVisit.show()
 
     def schedule_to_db(self, refresh_model=True):
-        # valid? -- refresh_model only False if running tests
+        """after successfully filling out ScheduleVisit
+        can be first or reschedule: depeonds on vid/old_googleuri
+        :param refresh_model: should we use the gui to update the model
+          1. create new calendar (or error)
+          2. insert/update       (or error and remove new cal)
+          3. move old calendar id to backup id (or warn)
+        """
+        # valid? has side effect of putting gui widget values to model
+        # dont do that if we are testing (refresh_model=False)
         if refresh_model and \
            not self.useisvalid(self.ScheduleVisit, "Cannot schedule visit"):
             return
-        # todo: add to calendar or msgerr
-        # makw the note index None so that the sql can recongnize it.
-        if(self.ScheduleVisit.model['notes'] == ''):
-            self.ScheduleVisit.model['notes'] = None
-            print("updated note to none")
+
+        # make the note index None so that the sql can recongnize it.
 
         # if we have LNCDcal -- use it to insert a googleuri
-        if type(self.cal) is LNCDcal:
+        # we don't upload credentials, so not avaiable during travis CI tests
+        old_googleuri = None
+        new_googleuri = None
+        vid = self.ScheduleVisit.vid
+        have_cal = isinstance(self.cal, LNCDcal)
+        if have_cal:
+            print('add to cal\n\tdisp: %s' % self.disp_model)
+            print('\twhat: %s' % self.schedule_what_data)
+            print('\tmodel: %s' % self.ScheduleVisit.model)
+            print('\told uri: %s' % self.ScheduleVisit.old_googleuri)
             try:
-                self.ScheduleVisit.add_to_calendar(self.cal, self.disp_model)
-                print(self.disp_model)
+                # can be None if not new
+                old_googleuri = self.ScheduleVisit.old_googleuri
+                # -> model['googleuri'], will go into db same as rest of model
+                new_googleuri = self.ScheduleVisit.\
+                    add_to_calendar(self.cal, self.disp_model)
             except Exception as err:
                 mkmsg('Failed to add to google calendar; not adding. %s' %
                       str(err))
-                return()
+                return
 
-        # catch sql error
-        # N.B. action(vstatus) intentionally empty -- will be set to 'sched'
-        if not self.sqlInsertOrShowErr(
-                'visit_summary', self.ScheduleVisit.model):
-            # TODO/FIXME: remove from calendar if sql failed
-            return()
+        # set status: have vid -> reschedule (update)
+        # no vid -> schedule (insert)
+        if vid:
+            print("updating visit (%s) and rm'ing old uri (%s) from calendar" %
+                  (vid, old_googleuri))
+            self.ScheduleVisit.model['action'] = 'resched'
+            added = self.\
+                catch_to_mkmsg(self.sql.update_columns, 'visit_summary',
+                               'vid', vid, self.ScheduleVisit.model)
+        else:
+            self.ScheduleVisit.model['action'] = 'sched'
+            added = self.\
+                sqlInsertOrShowErr('visit_summary', self.ScheduleVisit.model)
 
-        # we have a valid old_googleuri -> remove it
-        # TODO: check that old_googleuri isn't in database?
-        if(self.ScheduleVisit.old_googleuri and
-           self.ScheduleVisit.old_googleuri is not None and
-           len(self.ScheduleVisit.old_googleuri) > 0):
-            google_old_uri = self.ScheduleVisit.old_googleuri[0][0]
+        # db insert error checking
+        if not added and have_cal:
+            print("removing new gcalevent %s" %
+                  self.ScheduleVisit.model['googleuri'])
+            self.cal.delete_event(new_googleuri)
+            return
+
+        # # check if old is still around (TOOD: add find_googleuri to queries)
+        # if self.queries.find_googleuri(uri=old_googleuri):
+        #     mkmsg('Still have old calendar event referenced in DB!')
+
+        if old_googleuri and have_cal:
             try:
-                self.cal.delete_event(google_old_uri)
+                # TODO: change to move_event
+                self.cal.move_event(old_googleuri)
+
             except HttpError as httperr:
-                mkmsg('Failed to delete google event %s' % google_old_uri)
-                print(httperr)
+                mkmsg("Google event not deleted!" +
+                      "Do it yourself? (calid: %s, err: %s)" %
+                      (old_googleuri, httperr))
 
         # need to refresh visits
         self.update_visit_table()
@@ -1039,8 +1066,8 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # que up a new lunaid
         # N.B. we never undo this, but check is always for lunaid first
         if self.checkin_what_data.get('lunaid') is None:
-            print('have no luna in checkin data! getting next')
-            print(self.checkin_what_data)
+            print('have no luna in checkin data! getting next:\n\t%s' &
+                  self.checkin_what_data)
             nextluna_res = self.sql.query.next_luna()
             nxln = nextluna_res[0][0]
             self.checkin_what_data['next_luna'] = nxln + 1
@@ -1063,7 +1090,6 @@ class ScheduleApp(QtWidgets.QMainWindow):
         try:
             self.update_visit_table()
         except Exception as err:
-            print(err)
             mkmsg('checkin failed!\n%s' % err)
         self.CheckinVisit.checkin_to_db(self.sql)
         # todo: update person search to get lunaid if updated
@@ -1081,7 +1107,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # selectedQdate=self.calendarWidget.selectedDate().toPyDate()
         # dt=datetime.datetime.fromordinal( selectedQdate.toordinal() )
         dt = caltodate(self.calendarWidget)
-        print(dt)
+        print("cal search update date: %s" % dt)
         # update calendar table
         # now=datetime.datetime.now()
         delta = datetime.timedelta(days=5)
@@ -1169,7 +1195,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
         res = self.sql.query.visit_by_uri(googleuri=cal_id)
         if res:
-            print(res)
+            print("cal item select: %s" % res)
             pid = res[0][0]
         else:
             print("WARNING: cannot find eid %s in db! Search title" % cal_id)
@@ -1195,7 +1221,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # assigned RA.
 
         cal_desc = self.cal_table.item(row_i, 2).text()
-        print(cal_desc)
+        print("find by cal cal_desc %s" % cal_desc)
         current_date = self.cal_table.item(row_i, 0).text()
         current_time = self.cal_table.item(row_i, 1).text()
         current_date_time = current_date + ' ' + current_time + ':00'
@@ -1220,7 +1246,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
                              age=int(current_age))
 
         # Debuging, see results
-        print(res)
+        print("cal find by pid: %s" % res)
 
         if not res:
             return None
@@ -1235,10 +1261,10 @@ class ScheduleApp(QtWidgets.QMainWindow):
         """
         row_i = self.cal_table.currentRow()
         self.scheduled_date = self.cal_table.item(row_i, 0).text()
-        print(self.scheduled_date)
+        print("cal checkin\n\tdate: %s" % self.scheduled_date)
         self.checkin_status = self.sql.query.get_status(
             pid=pid, vtimestamp=self.scheduled_date)[0][0]
-        print(self.checkin_status)
+        print("\tstatus: %s" % self.checkin_status)
 
         if self.checkin_status == 'checkedin':
             self.checkin_button.setEnabled(False)
@@ -1284,16 +1310,16 @@ class ScheduleApp(QtWidgets.QMainWindow):
     def edit_contact_table(self):
         """ on row click: update what contact is used for actions """
         row_i = self.contact_table.currentRow()
+        if row_i < 0:
+            print("DEBUG: neg row index in edit_contact_table")
+            return
+
         self.click_color(self.contact_table, row_i)
         try:
             self.contact_cid = self.contact_table.item(row_i, 5).text()
-        except AttributeError:
-            print('weird error')
-        try:
             self.name = self.contact_table.item(row_i, 0).text()
         except AttributeError:
-            print('weird error')
-        # print(contact_cid)
+            print('edit contact: attribute error setting row %d' % row_i)
 
     # ## Notes
     def add_notes_pushed(self):
@@ -1324,6 +1350,15 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
         # whatever we've done, we need to update the view
         self.update_note_table()
+
+    def catch_to_mkmsg(self, func, *kargs):
+        """generic wrapper to send excpetions to mkmsg"""
+        try:
+            func(*kargs)
+            return True
+        except Exception as err:
+            mkmsg(str(err))
+            return False
 
     def sqlInsertOrShowErr(self, table, d):
         try:
