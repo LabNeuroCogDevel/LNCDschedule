@@ -72,7 +72,6 @@ select pid from visit where googleuri = %(googleuri)s
 update visit
   set googleuri = %(googleuri)s
   where vid = %(vid)s
-
 --name: update_age
 update visit
   set age = %(age)s

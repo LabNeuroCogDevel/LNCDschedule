@@ -1335,7 +1335,6 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # Error check
         if not self.useisvalid(self.AddNotes, "Cannot add note"):
             return
-
         # add ra to model
         data = {**self.AddNotes.notes_model, 'ra': self.RA}
 
@@ -1348,8 +1347,13 @@ class ScheduleApp(QtWidgets.QMainWindow):
                      'dropcode': self.AddNotes.get_drop()}
         self.sqlInsertOrShowErr('note', note_dict)
 
+        #Update the maxdrop on people table
+        row_i = self.people_table.currentRow()
+        lunaid = self.people_table.item(row_i, 1).text()
+
         # whatever we've done, we need to update the view
         self.update_note_table()
+        self.search_people_by_name()
 
     def catch_to_mkmsg(self, func, *kargs):
         """generic wrapper to send excpetions to mkmsg"""
