@@ -1256,7 +1256,8 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
     def edit_contact_pushed(self):
         """ show edit modal when button is pushed """
-        self.EditContact.edit_contact(self.contact_cid)
+        #row_i = self.contact_table.currentRow()
+        self.EditContact.edit_contact(self.contact_cid, self.contact_table)
         self.EditContact.show()
 
     def update_contact_to_db(self):
