@@ -64,7 +64,11 @@ select
  from visit
  natural join person
  where vid = %(vid)s
- 
+
+--name: remove_visit
+delete from visit_summary
+  where vid = %(vid)s
+
 --name: visit_by_uri
 select pid from visit where googleuri = %(googleuri)s
 

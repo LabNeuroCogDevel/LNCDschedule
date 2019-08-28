@@ -231,6 +231,8 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # Jump to reschedule visit function whenever the reschdule button is
         # clicked.
         CMenuItem("reschedule", visit_menu, self.reschedule_visit)
+    	#Option to delete the schedule
+        CMenuItem("Delete", visit_menu, self.delete_visit)
         # find all RAs and add to context menu
         assignRA = visit_menu.addMenu("&Assign RA")
         for ra in self.sql.query.list_ras():
@@ -664,6 +666,18 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.MoreInfo.setup(vid, self.sql)
         self.MoreInfo.show()
 
+    def delete_visit(self):
+        row_i = self.visit_table.currentRow()
+        if row_i == -1:
+            print('DEBUG: reschedule visit but no visit selected!')
+            return
+
+        vid_i = self.visit_columns.index('vid')
+        vid = self.visit_table.item(row_i, vid_i).text()
+        self.sql.query.remove_visit(vid=vid)
+        #print(vid)
+
+
     def reschedule_visit(self):
         """
         reschedule button click or right click visit item -> reschedule
@@ -1066,8 +1080,8 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # que up a new lunaid
         # N.B. we never undo this, but check is always for lunaid first
         if self.checkin_what_data.get('lunaid') is None:
-            print('have no luna in checkin data! getting next:\n\t%s' &
-                  self.checkin_what_data)
+
+            print('have no luna in checkin data! getting next:\n\t%s' % self.checkin_what_data)
             nextluna_res = self.sql.query.next_luna()
             nxln = nextluna_res[0][0]
             self.checkin_what_data['next_luna'] = nxln + 1
@@ -1353,6 +1367,8 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
         # whatever we've done, we need to update the view
         self.update_note_table()
+
+        #Refresh the people_table
         self.search_people_by_name()
 
     def catch_to_mkmsg(self, func, *kargs):
