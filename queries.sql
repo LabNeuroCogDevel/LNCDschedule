@@ -65,10 +65,6 @@ select
  natural join person
  where vid = %(vid)s
 
---name: remove_visit
-delete from visit_summary
-  where vid = %(vid)s
-
 --name: visit_by_uri
 select pid from visit where googleuri = %(googleuri)s
 
@@ -76,6 +72,7 @@ select pid from visit where googleuri = %(googleuri)s
 update visit
   set googleuri = %(googleuri)s
   where vid = %(vid)s
+  
 --name: update_age
 update visit
   set age = %(age)s
@@ -247,6 +244,10 @@ select distinct(task) from study_task
  natural join task
  where study ilike %(study)s
  and (  modes ? %(vtype)s or modes ? 'Questionnaire' ) 
+
+--name: get_abbr
+select abbr from ra
+where ra = %(ra)s
 
 -- name: list_ras
 select distinct ra from ra;

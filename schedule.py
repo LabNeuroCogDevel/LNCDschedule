@@ -674,7 +674,11 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
         vid_i = self.visit_columns.index('vid')
         vid = self.visit_table.item(row_i, vid_i).text()
-        self.sql.query.remove_visit(vid=vid)
+
+        #self.sql.removal_insert(vid)
+        
+        #self.sql.query.remove_visit(vid=vid)
+        mkmsg('still implementing')
         #print(vid)
 
 
@@ -716,7 +720,10 @@ class ScheduleApp(QtWidgets.QMainWindow):
         for i in range(table.rowCount()):
             for j in range(table.columnCount()):
                 if i == row_i:
-                    table.item(i, j).setBackground(QtGui.QColor(191, 243, 228))
+                    try:
+                        table.item(i, j).setBackground(QtGui.QColor(191, 243, 228))
+                    except AttributeError:
+                        print('Affordable to ignore')
                     continue
                 if(table is self.people_table):
                     try:
@@ -725,8 +732,10 @@ class ScheduleApp(QtWidgets.QMainWindow):
                         print('click color: bad i j (%d,%d@%s)' %
                               (i, j, table))
                 else:
-                    table.item(i, j).setBackground(QtGui.QColor(255, 255, 255))
-
+                    try:
+                        table.item(i, j).setBackground(QtGui.QColor(255, 255, 255))
+                    except AttributeError:
+                        print('Affordable to ignore')
         # Get rid of the color in other tables
         if table == self.visit_table:
             self.refresh_blank(self.contact_table)
@@ -785,7 +794,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # pid = self.disp_model['pid']
         info = get_info_for_cal(self.sql.query, vid)
         # Update the database for RA
-        info['ra'] = ra
+        info['ra'] =  self.sql.query.get_abbr(ra=ra)[0][0]
         try:
             self.sql.query.update_RA(ra=info['ra'], vid=vid)
         except psycopg2.ProgrammingError as err:
