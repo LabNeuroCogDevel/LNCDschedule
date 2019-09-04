@@ -94,6 +94,10 @@ select
  from visit_summary
   where pid = %(pid)s
 
+-- name: remove_visit
+delete from visit_summary
+  where vid = %(vid)s
+
 -- name: visit_by_pid
 select
  to_char(vtimestamp,'YYYY-MM-DD'), study, "action", vtype, vscore, age, notes, dvisit,dperson,vid

@@ -102,9 +102,9 @@
    <widget class="QPushButton" name="schedule_button">
     <property name="geometry">
      <rect>
-      <x>390</x>
+      <x>380</x>
       <y>490</y>
-      <width>80</width>
+      <width>101</width>
       <height>41</height>
      </rect>
     </property>
@@ -115,9 +115,9 @@
    <widget class="QPushButton" name="checkin_button">
     <property name="geometry">
      <rect>
-      <x>390</x>
+      <x>380</x>
       <y>550</y>
-      <width>80</width>
+      <width>101</width>
       <height>41</height>
      </rect>
     </property>
