@@ -1210,13 +1210,21 @@ class ScheduleApp(QtWidgets.QMainWindow):
         if row_i > len(self.cal_table_data):
             mkmsg('Undiagnosed error: cal row clicked > table data!')
             return
-        # googleuri should be in database
-        cal_id = self.cal_table_data[row_i].get('calid', None)
-        if cal_id is None:
-            mkmsg('Cal event does not have an id!? How?')
-            return
-
-        res = self.sql.query.visit_by_uri(googleuri=cal_id)
+        try:
+            # googleuri should be in database
+            cal_id = self.cal_table_data[row_i].get('calid', None)
+            if cal_id is None:
+                print('Cal event does not have an id!? How?')
+                return
+        except IndexError:
+                print('the calid cannot be gotten from the list')
+                return
+        try:
+            res = self.sql.query.visit_by_uri(googleuri=cal_id)
+        except UnboundLocalError: 
+        	    #There is no calid existed in the list
+        	    mkmsg('calid does not exit')
+        	    return
         if res:
             print("cal item select: %s" % res)
             pid = res[0][0]
@@ -1285,8 +1293,12 @@ class ScheduleApp(QtWidgets.QMainWindow):
         row_i = self.cal_table.currentRow()
         self.scheduled_date = self.cal_table.item(row_i, 0).text()
         print("cal checkin\n\tdate: %s" % self.scheduled_date)
-        self.checkin_status = self.sql.query.get_status(
-            pid=pid, vtimestamp=self.scheduled_date)[0][0]
+        try:
+            self.checkin_status = self.sql.query.get_status(
+                pid=pid, vtimestamp=self.scheduled_date)[0][0]
+        except IndexError:
+        	print('The object might not be existed in some cases')
+
         print("\tstatus: %s" % self.checkin_status)
 
         if self.checkin_status == 'checkedin':
