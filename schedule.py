@@ -233,11 +233,16 @@ class ScheduleApp(QtWidgets.QMainWindow):
         CMenuItem("reschedule", visit_menu, self.reschedule_visit)
     	#Option to delete the schedule
         CMenuItem("Delete", visit_menu, self.delete_visit)
+        #Option to add multiple RAs
+        CMenuItem("Multiple RA", visit_menu, self.assignmul_RA)
         # find all RAs and add to context menu
         assignRA = visit_menu.addMenu("&Assign RA")
+
+        #ra in this for loop can be implemented in the multiRA implementation
         for ra in self.sql.query.list_ras():
             CMenuItem(ra[0], assignRA,
                       lambda x, ra_=ra[0]: self.updateVisitRA(ra_))
+
         self.visit_table.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.visit_table.customContextMenuRequested.connect(
             lambda pos: visit_menu.exec_(self.visit_table.mapToGlobal(pos)))
@@ -676,11 +681,17 @@ class ScheduleApp(QtWidgets.QMainWindow):
         vid = self.visit_table.item(row_i, vid_i).text()
 
         #self.sql.removal_insert(vid)
-        
-        #self.sql.query.remove_visit(vid=vid)
+        try:
+            self.sql.query.remove_visit(vid=vid)
+        except psycopg2.ProgrammingError:
+        	print('trivial error')
+        	print('Remove successfully')
+        except psycopg2.InternalError:
+        	mkmsg('Cannot remove visit 2130 b/c status is not sched or have enrolled or have tasks')
+
         # finally update visit table
-        #self.update_visit_table()
-        mkmsg('still implementing')
+        self.update_visit_table()
+        #mkmsg('still implementing')
         #print(vid)
 
 
@@ -780,6 +791,9 @@ class ScheduleApp(QtWidgets.QMainWindow):
                     table.item(i, j).setBackground(QtGui.QColor(255, 255, 255))
 
                 # table.item(i, j).setBackground(QtGui.QColor(255, 255, 255))
+
+    def assignmul_RA(self):
+    	mkmsg('Implementing')
 
     def updateVisitRA(self, ra):
         """ add or change visit RA assignment """
