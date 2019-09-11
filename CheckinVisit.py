@@ -234,18 +234,20 @@ class CheckinVisitWindow(QtWidgets.QDialog):
         # actually do it
 
 #----------------------------------------------------------------
-        mkmsg('Crashed, fixing')
-        return
+        #mkmsg('Crashed, fixing')
+        #return
 #----------------------------------------------
 
 
 
-        try:
-            sql.insert('visit_checkin_view', d)
-        except IntegrityError as e:
-            mkmsg("Please do not add duplicated keys")
-            return
+        # try:
+        #     sql.insert('visit_checkin_view', d)
+        # except IntegrityError as e:
+        #     mkmsg("Please do not add duplicated keys")
+        #     return
         sql.update('visit', 'vstatus', self.model['vid'], 'checkedin', 'vid')
+        sql.insert('visit_action', {'vid': self.model['vid'], 'ra': self.model['ra'], 'action': 
+        'checkedin'})
 
 
 # usage:  python3 CheckinVisit.py 3952

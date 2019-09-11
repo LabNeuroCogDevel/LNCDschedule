@@ -678,6 +678,8 @@ class ScheduleApp(QtWidgets.QMainWindow):
         #self.sql.removal_insert(vid)
         
         #self.sql.query.remove_visit(vid=vid)
+        # finally update visit table
+        #self.update_visit_table()
         mkmsg('still implementing')
         #print(vid)
 

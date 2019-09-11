@@ -95,7 +95,7 @@ select
   where pid = %(pid)s
 
 -- name: remove_visit
-delete from visit_summary
+delete from visit
   where vid = %(vid)s
 
 -- name: visit_by_pid
