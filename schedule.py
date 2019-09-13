@@ -9,6 +9,7 @@ from googleapiclient.errors import HttpError
 
 # local files
 from lncdSql import lncdSql
+import MultiRA
 import AddNotes
 import EditPeople
 import AddContact
@@ -227,14 +228,18 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
         # ## context menu + sub-menu for visits: adding RAs
         visit_menu = QtWidgets.QMenu("visit_menu", self.visit_table)
+            #Option to delete the schedule
+        CMenuItem("Delete", visit_menu, self.delete_visit)
+
         CMenuItem("no show", visit_menu)
         # Jump to reschedule visit function whenever the reschdule button is
         # clicked.
         CMenuItem("reschedule", visit_menu, self.reschedule_visit)
-    	#Option to delete the schedule
-        CMenuItem("Delete", visit_menu, self.delete_visit)
         #Option to add multiple RAs
         CMenuItem("Multiple RA", visit_menu, self.assignmul_RA)
+        
+        self.MultiRA = MultiRA.ChosenMultipleRAWindow(self)
+
         # find all RAs and add to context menu
         assignRA = visit_menu.addMenu("&Assign RA")
 
@@ -319,6 +324,11 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # Must make sure it's clicked
         # self.edit_contact_button.clicked.connect(self.edit_contact_pushed)
         self.EditContact.accepted.connect(self.update_contact_to_db)
+
+        #Menu bar for note table
+        # note_menu = QtWidgets.QMenu("note_menu", self.note_table)
+        # CMenuItem("edit_notes", note_menu, 
+        #           lambda: self.edit_note_pushed())
 
         # ## add notes ##
         # and query for pid from visit_summary
@@ -799,7 +809,16 @@ class ScheduleApp(QtWidgets.QMainWindow):
                 # table.item(i, j).setBackground(QtGui.QColor(255, 255, 255))
 
     def assignmul_RA(self):
-    	mkmsg('Implementing')
+        #Create a list to store all the ras
+        ra_list = []
+    	#mkmsg('Implementing')
+        self.MultiRA.show()
+        #Loop thorugh the RAs and append them to the list
+        for ra in self.sql.query.list_ras():
+            ra_list.append(ra[0])
+        self.MultiRA.setup(ra_list)
+            
+
 
     def updateVisitRA(self, ra):
         """ add or change visit RA assignment """
@@ -861,6 +880,9 @@ class ScheduleApp(QtWidgets.QMainWindow):
             return
         self.visit_id = self.visit_table.item(row_i, 9).text()
         self.name = self.visit_table.item(row_i, 0).text()
+
+    # def edit_note_pushed(self):
+    #     print('still implementing')
 
     def update_visit_table(self):
         """ update visit table display"""
