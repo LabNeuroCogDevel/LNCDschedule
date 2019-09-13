@@ -680,6 +680,12 @@ class ScheduleApp(QtWidgets.QMainWindow):
         vid_i = self.visit_columns.index('vid')
         vid = self.visit_table.item(row_i, vid_i).text()
 
+        #Process to search for and remove google url
+        uri = self.sql.query.get_googleuri(vid = vid)
+        uri = uri[0][0]
+        #Move the event from calendar
+        self.cal.move_event(uri)
+
         #self.sql.removal_insert(vid)
         try:
             self.sql.query.remove_visit(vid=vid)
@@ -688,7 +694,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         	print('Remove successfully')
         except psycopg2.InternalError:
         	mkmsg('Cannot remove visit 2130 b/c status is not sched or have enrolled or have tasks')
-
+         
         # finally update visit table
         self.update_visit_table()
         #mkmsg('still implementing')
