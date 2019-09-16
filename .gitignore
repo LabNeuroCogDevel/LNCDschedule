@@ -12,3 +12,4 @@ pgdump*
 pg_dump*
 *.ini*
 sql/roles.sql
+*zip
