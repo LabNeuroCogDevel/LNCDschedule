@@ -239,6 +239,11 @@ class ScheduleApp(QtWidgets.QMainWindow):
         CMenuItem("Multiple RA", visit_menu, self.assignmul_RA)
         
         self.MultiRA = MultiRA.ChosenMultipleRAWindow(self)
+        #self.MultiRA.button.clicked.connect(self.multira_to_db)
+        self.MultiRA.buttonBox.accepted.connect(self.multira_to_db)
+        #When the bottonbox is cancel
+        self.MultiRA.buttonBox.rejected.connect(self.turn_off)
+
 
         # find all RAs and add to context menu
         assignRA = visit_menu.addMenu("&Assign RA")
@@ -807,6 +812,66 @@ class ScheduleApp(QtWidgets.QMainWindow):
                     table.item(i, j).setBackground(QtGui.QColor(255, 255, 255))
 
                 # table.item(i, j).setBackground(QtGui.QColor(255, 255, 255))
+    
+    #Function to simplt turn off the window and do nothing
+    def turn_off(self):
+        self.MultiRA.close()
+
+    def multira_to_db(self):
+        #Get all the data from the function
+        #mkmsg('working')
+        #get the list of all the ra chosen
+        RA_selection = self.MultiRA.get_data()
+
+        #print(len(RA_selection))
+
+        #First clear all the assigned ra to avoid overlap
+        row_i = self.visit_table.currentRow()
+        d = self.visit_table_data[row_i]
+        vid = d[self.visit_columns.index('vid')]
+        
+        # do not assign a checked in visit
+        vstatus = d[self.visit_columns.index('vstatus')]
+        if vstatus == 'checkedin':
+            mkmsg("Cannot reassign a checked in visit!")
+            return
+
+        #Warning!!!!!! Remove the previous asigned RA that is in the database
+        #Remove RA
+        try:
+            self.sql.query.remove_RA(vid = vid)
+        except:
+            print('No need to worry about this')
+
+        #Delete from google calendar(Could just use update)
+        googleuri =  self.sql.query.get_googleuri(vid=vid)[0][0]
+
+        #Assign the new multi_RA to visit_action 
+        for ra in RA_selection:
+            # ra = self.sql.query.get_abbr(ra=ra)[0][0]
+            # print(ra)
+            # print(vid)
+            new_node = {'ra': ra, 'action': 'assigned', 'vid': vid}
+            self.sql.insert('visit_action', new_node)
+        #Always remember to clear the list
+        RA_selection.clear()
+
+        #Get the big info of that visit
+        info = get_info_for_cal(self.sql.query, vid)
+
+
+
+
+        #---------------------------------------------------
+            #Hard part
+        #---------------------------------------------------
+
+
+
+        self.MultiRA.close()
+
+        #Store the data into database
+
 
     def assignmul_RA(self):
         #Create a list to store all the ras
@@ -817,6 +882,10 @@ class ScheduleApp(QtWidgets.QMainWindow):
         for ra in self.sql.query.list_ras():
             ra_list.append(ra[0])
         self.MultiRA.setup(ra_list)
+
+        ra_choices = self.MultiRA.get_data()
+
+        print(ra_choices)
             
 
 

@@ -3,16 +3,18 @@ select * from enroll natural join person where etype like 'LunaID'
 
 -- name: name_search
 select
- fullname,lunaid,curagefloor,dob,sex,lastvisit,maxdrop,studies,pid
- from person_search_view
- where fullname ilike %(fullname)s and
+ fullname,lunaid,curagefloor,dob,sex,lastvisit,maxdrop,studies,person_search_view.pid
+ from person_search_view left join
+(select string_agg(who,' ') as all_contacts, pid from contact
+group by pid ) as who on who.pid = person_search_view.pid
+ where fullname ilike %(fullname)s and all_contacts ilike %(fullname)s and
  -- make null drop 'nodrop', for all default to search max(droplevels)=='family'
  coalesce(maxdrop,'nodrop'::droplevels) <= %(maxdrop)s and
  -- view makes no lunaid a lunaid of 0, for all search lunaid > -1
  coalesce(lunaid,0) > %(minlunaid)s and
  coalesce(lunaid,0) < %(maxlunaid)s
- limit 50
-
+ limit 50 ;
+ 
 -- name: lunaid_search
 select
  fullname,lunaid,curagefloor,dob,sex,lastvisit,maxdrop,studies,pid
@@ -77,6 +79,11 @@ update visit
 update visit
   set age = %(age)s
   where vid = %(vid)s
+
+--name: remove_RA
+delete from visit_action
+  where vid = %(vid)s
+  and action = 'assigned'
 
 --name: update_RA
 update visit_action

@@ -7,7 +7,7 @@ data in conact_model
 """
 class ChosenMultipleRAWindow(QtWidgets.QDialog):
 
-    def __init__(self,parent=None):
+    def __init__(self,parent = None):
         
         super(ChosenMultipleRAWindow, self).__init__(parent)
         uic.loadUi('./ui/multi_RA.ui',self)
@@ -15,9 +15,17 @@ class ChosenMultipleRAWindow(QtWidgets.QDialog):
 
         self.ras.itemActivated.connect(self.itemActivated_event)
         self.choices.itemActivated.connect(self.undo_adding)
+        
+        #Create a list to add all the items in the list
+        self.item_list = []
 
 
     def setup(self, ra):
+
+         #Refresh
+        self.ras.clear()
+        self.choices.clear()
+
         #Set the ra to the list widget
         for a in ra:
            self.ras.addItem(a)
@@ -28,9 +36,15 @@ class ChosenMultipleRAWindow(QtWidgets.QDialog):
         self.ras.takeItem(self.ras.row(item))
         self.choices.addItem(item.text())
 
+
     def undo_adding(self, item):
         #Remove items from the second list and add to the fist list
         self.choices.takeItem(self.choices.row(item))
         self.ras.addItem(item.text())
+
+    def get_data(self):
+          for index in range(self.choices.count()):
+            self.item_list.append(self.choices.item(index).text())
+          return self.item_list
 
 
