@@ -106,7 +106,8 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # ## menu
         menubar = self.menuBar()
         fileMenu = menubar.addMenu('&New')
-        CMenuItem("RA", fileMenu)
+        #CMenuItem("RA", fileMenu) # Commented out for addRA
+        addRA = CMenuItem("RA", fileMenu, self.add_studies)
         addStudy = CMenuItem("Study", fileMenu, self.add_studies)
         CMenuItem("Task", fileMenu)
         CMenuItem("Visit Type", fileMenu)
@@ -237,7 +238,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         CMenuItem("reschedule", visit_menu, self.reschedule_visit)
         #Option to add multiple RAs
         CMenuItem("Multiple RA", visit_menu, self.assignmul_RA)
-        
+
         self.MultiRA = MultiRA.ChosenMultipleRAWindow(self)
         #self.MultiRA.button.clicked.connect(self.multira_to_db)
         self.MultiRA.buttonBox.accepted.connect(self.multira_to_db)
@@ -332,7 +333,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
         #Menu bar for note table
         # note_menu = QtWidgets.QMenu("note_menu", self.note_table)
-        # CMenuItem("edit_notes", note_menu, 
+        # CMenuItem("edit_notes", note_menu,
         #           lambda: self.edit_note_pushed())
 
         # ## add notes ##
@@ -709,7 +710,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         	print('Remove successfully')
         except psycopg2.InternalError:
         	mkmsg('Cannot remove visit 2130 b/c status is not sched or have enrolled or have tasks')
-         
+
         # finally update visit table
         self.update_visit_table()
         #mkmsg('still implementing')
@@ -812,7 +813,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
                     table.item(i, j).setBackground(QtGui.QColor(255, 255, 255))
 
                 # table.item(i, j).setBackground(QtGui.QColor(255, 255, 255))
-    
+
     #Function to simplt turn off the window and do nothing
     def turn_off(self):
         self.MultiRA.close()
@@ -829,7 +830,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         row_i = self.visit_table.currentRow()
         d = self.visit_table_data[row_i]
         vid = d[self.visit_columns.index('vid')]
-        
+
         # do not assign a checked in visit
         vstatus = d[self.visit_columns.index('vstatus')]
         if vstatus == 'checkedin':
@@ -846,7 +847,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         #Delete from google calendar(Could just use update)
         googleuri =  self.sql.query.get_googleuri(vid=vid)[0][0]
 
-        #Assign the new multi_RA to visit_action 
+        #Assign the new multi_RA to visit_action
         for ra in RA_selection:
             # ra = self.sql.query.get_abbr(ra=ra)[0][0]
             # print(ra)
@@ -886,7 +887,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         ra_choices = self.MultiRA.get_data()
 
         print(ra_choices)
-            
+
 
 
     def updateVisitRA(self, ra):
@@ -1167,7 +1168,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
     def visits_from_database(self):
         """Method that queries the database for the specific visits"""
         self.visit_table_data = self.VisitsCards.setup(self.disp_model['pid'], self.sql)
-        # Upload the data to the table 
+        # Upload the data to the table
         self.visit_table.setRowCount(len(self.visit_table_data))
         # seems like we need to fill each item individually
         # loop across rows (each result) and then into columns (each value)
@@ -1334,7 +1335,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
                 return
         try:
             res = self.sql.query.visit_by_uri(googleuri=cal_id)
-        except UnboundLocalError: 
+        except UnboundLocalError:
         	    #There is no calid existed in the list
         	    mkmsg('calid does not exit')
         	    return
