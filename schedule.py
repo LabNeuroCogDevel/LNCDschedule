@@ -820,6 +820,8 @@ class ScheduleApp(QtWidgets.QMainWindow):
     def multira_to_db(self):
         #Get all the data from the function
         #mkmsg('working')
+        #Define a list to add in the ra abbreviation
+        RA_abbr = []
         #get the list of all the ra chosen
         RA_selection = self.MultiRA.get_data()
 
@@ -843,7 +845,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         except:
             print('No need to worry about this')
 
-        #Delete from google calendar(Could just use update)
+        #Get the current uri
         googleuri =  self.sql.query.get_googleuri(vid=vid)[0][0]
 
         #Assign the new multi_RA to visit_action 
@@ -853,20 +855,34 @@ class ScheduleApp(QtWidgets.QMainWindow):
             # print(vid)
             new_node = {'ra': ra, 'action': 'assigned', 'vid': vid}
             self.sql.insert('visit_action', new_node)
+            RA_abbr.append(self.sql.query.get_abbr(ra = ra)[0][0])
+        #Transform the RA_abbr list to a string
+        RA_abbr = ','.join(RA_abbr)
+        print(RA_abbr)
+
+        #Conmine the RA name in the RA_selection as a string
+        #RA_seleciton = ''.join(RA_selection)
         #Always remember to clear the list
         RA_selection.clear()
 
-        #Get the big info of that visit
+        #Get the big info of that visit from the calendar
         info = get_info_for_cal(self.sql.query, vid)
-
-
-
-
-        #---------------------------------------------------
-            #Hard part
-        #---------------------------------------------------
-
-
+        #print(info)
+        info['calid'] = self.sql.query.get_googleuri(vid=vid)[0][0]
+        #print(new_google_uri)
+        #Change the info['RA'] to the joined RA
+        info['ra'] = RA_abbr
+        try:
+            # self.cal.delete_event(info['googleuri'])
+            event = update_gcal(self.cal, info, assign=True)
+        except Exception as err:
+            mkmsg('update error! %s' % err)
+            return
+        # Update the event(e) in the database
+        try:
+            self.sql.query.update_uri(googleuri=event['id'], vid=vid)
+        except psycopg2.ProgrammingError as err:
+            print('updateVisitRA sql err: %s' % err)
 
         self.MultiRA.close()
 
@@ -1271,8 +1287,20 @@ class ScheduleApp(QtWidgets.QMainWindow):
             if '--' in self.cal_table.item(i, j).text():
                 # Split the name form the events
                 name = self.cal_table.item(i, j).text().split('--')[1]
-                # add 1 to the count
-                names[name] = names.get(name, 0) + 1
+                #Now check the multi_RA case
+                #If the ra is splited by comma
+                if(',' in name):
+                    #Split the list first
+                    name = name.split(',')
+                    for RA_names in name:
+                        #Fix the format
+                        RA_names = ' '+RA_names
+                        names[RA_names] = names.get(RA_names, 0) + 1
+
+                else:
+                    # add 1 to the count
+                    names[name] = names.get(name, 0) + 1
+
 
         # Alternative  -- use database
         #  res = self.sql.query.visits_this_week(startdate, enddate)

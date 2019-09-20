@@ -257,7 +257,7 @@ select distinct(task) from study_task
  and (  modes ? %(vtype)s or modes ? 'Questionnaire' ) 
 
 --name: get_abbr
-select abbr from ra
+select distinct abbr from ra
 where ra = %(ra)s
 
 -- name: list_ras
