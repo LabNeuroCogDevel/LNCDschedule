@@ -1,7 +1,9 @@
 import sys
 import pytest
-from pyesql_helper import csv_none
+import time
+from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication
+from pyesql_helper import csv_none
 
 # initialize QT
 # -- otherwise we get "Aborted" when running just this file
@@ -10,8 +12,39 @@ APP = QApplication(sys.argv)
 # N.B.
 #  run and get debugger shell when fails
 #   python3 -m pytest --pdb tests/db/test_multiRA_insertions.py
+#   python3 -m pip install pdbpp --user # for a better debugger
 # use qtbot.stop() to look at gui
 
+
+def test_multi_ra_gui(qtbot):
+    pytest.skip("keyboard doesn't follow 'selected'!")
+    # TODO: maybe don't care about going out of order
+    # just enter the first 2 and always go 1 then 2 ?
+
+    import MultiRA
+    win = MultiRA.ChosenMultipleRAWindow()
+    win.setup(['ra1', 'ra2', 'ra3'])
+    win.show()
+
+    # select one
+    assert False
+    qtbot.mouseDClick(win.choices, Qt.LeftButton)
+
+    win.ras.item(2).setSelected(True)
+    time.sleep(.100)
+    win.ras.setFocus()
+    qtbot.keyClick(win.ras, Qt.Key_Enter, delay=100)  # 100ms to let signal hit
+    assert win.get_data() == ['ra3']
+
+    # unselect it
+    win.ras.setFocus()
+    qtbot.keyClick(win.choices, Qt.Key_Enter, delay=100)  # 100ms to let signal hit
+    assert win.get_data() == []
+
+    # TODO: select more than one
+    print(win.get_data())
+
+    
 
 def test_db_multi_ra_insertion(lncdapp, qtbot):
     """ can we assign more than one RA to a visit? """
