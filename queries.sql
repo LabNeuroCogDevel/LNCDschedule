@@ -4,10 +4,13 @@ select * from enroll natural join person where etype like 'LunaID'
 -- name: name_search
 select
  fullname,lunaid,curagefloor,dob,sex,lastvisit,maxdrop,studies,person_search_view.pid
- from person_search_view left join
-(select string_agg(who,' ') as all_contacts, pid from contact
-group by pid ) as who on who.pid = person_search_view.pid
- where fullname ilike %(fullname)s and all_contacts ilike %(fullname)s and
+ from person_search_view 
+ left join (
+   select string_agg(who,' ') as all_contacts, pid
+   from contact
+   group by pid ) as who
+ on who.pid = person_search_view.pid
+ where (fullname ilike %(fullname)s or all_contacts ilike %(fullname)s) and
  -- make null drop 'nodrop', for all default to search max(droplevels)=='family'
  coalesce(maxdrop,'nodrop'::droplevels) <= %(maxdrop)s and
  -- view makes no lunaid a lunaid of 0, for all search lunaid > -1
