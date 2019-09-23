@@ -33,4 +33,4 @@ def test_list_ras(create_db):
     """
     ras = lncdSql(None, conn=ph(create_db.connection)).\
         query.list_ras()
-    check_column(0, ras, ['ra1', 'ra2'])
+    check_column(0, ras, ['ra1', 'ra2', 'ra3', 'ra4'])

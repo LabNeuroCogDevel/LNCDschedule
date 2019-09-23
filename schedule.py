@@ -836,16 +836,24 @@ class ScheduleApp(QtWidgets.QMainWindow):
         else:
             self.multira_to_db_operaiton(RA_selection, vid)
 
+        # Always remember to clear the list
+        RA_selection.clear()  # TODO: why -- does this clear the gui too?
+        self.MultiRA.close()
+
     def multira_to_db_operaiton(self, RA_selection, vid):
         #Warning!!!!!! Remove the previous asigned RA that is in the database
         #Remove RA
         try:
             self.sql.query.remove_RA(vid = vid)
         except:
-            print('No need to worry about this')
+            print('Failed to rm assigned RAs from vid %d, probably okay' % vid)
 
         #Get the current uri
-        googleuri =  self.sql.query.get_googleuri(vid=vid)[0][0]
+        visitcal = self.sql.query.get_googleuri(vid=vid)
+        print(visitcal)
+        if not visitcal:
+            mkmsg('Cannot find google uri for vid %s' % str(vid))
+            return None
         #List to add in RA abbreviation
         RA_abbr = []
         #Assign the new multi_RA to visit_action
@@ -855,18 +863,25 @@ class ScheduleApp(QtWidgets.QMainWindow):
             # print(vid)
             new_node = {'ra': ra, 'action': 'assigned', 'vid': vid}
             self.sql.insert('visit_action', new_node)
-            RA_abbr.append(self.sql.query.get_abbr(ra = ra)[0][0])
+            this_ra_abbr = self.sql.query.get_abbr(ra=ra)
+            if not this_ra_abbr:
+                mkmsg('No RA matching "%s". Not adding to vid %d!' % (ra, vid))
+            else:
+                RA_abbr.append(this_ra_abbr[0][0])
 
         #Transform the RA_abbr list to a string
         RA_abbr = ','.join(RA_abbr)
         print(RA_abbr)
-        #Always remember to clear the list
-        RA_selection.clear()
 
         #Get the big info of that visit from the calendar
         info = get_info_for_cal(self.sql.query, vid)
+        if visitcal is None:
+            mkmsg('Cannot find google uri for vid %d' % vid)
+            return None
+        print(visitcal)
+
         #print(info)
-        info['calid'] = self.sql.query.get_googleuri(vid=vid)[0][0]
+        info['calid'] = visitcal[0][0]
         #Change the info['RA'] to the joined RA
         info['ra'] = RA_abbr
 
@@ -883,7 +898,6 @@ class ScheduleApp(QtWidgets.QMainWindow):
         except psycopg2.ProgrammingError as err:
             print('updateVisitRA sql err: %s' % err)
 
-        self.MultiRA.close()
         #Store the data into database
 
         #Return vid for the testing

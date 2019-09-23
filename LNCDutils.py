@@ -113,9 +113,13 @@ def update_gcal(cal, info, assign=False):
        a visit in the db on google calendar
        using dictionary (see get_info_for_cal, then make some changes)
     """
+    if isinstance(cal, str) or not cal:
+        print('ASSUME TESTING! calendar object is "%s"' % cal)
+        return info
+
     print('updating gcal with %s' % info)
     cal.delete_event(info['calid'])
     # change from yyyy-mm-dd hh:mm to  mon ....
     info['vtimestamp'] = info['vtimestamp'].strftime("%a %b %d %H:%M:%S %Y")
     event = make_calendar_event(cal, info, assign)
-    return(event)
+    return event
