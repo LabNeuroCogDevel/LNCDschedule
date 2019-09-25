@@ -2,7 +2,7 @@ from PyQt5 import uic,QtCore, QtWidgets
 from LNCDutils import  *
 
 """
-This class provides a window for adding contact information
+This class provides a window for editing contact information
 data in conact_model
 """
 class EditContactWindow(QtWidgets.QDialog):
@@ -15,6 +15,7 @@ class EditContactWindow(QtWidgets.QDialog):
 
         columns=['ctype','changes','cid']
         self.edit_model = { k: None for k in columns }
+        
         super(EditContactWindow,self).__init__(parent)
         uic.loadUi('./ui/edit_contact.ui',self)
         self.setWindowTitle('Edit Contact')

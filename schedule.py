@@ -9,6 +9,7 @@ from googleapiclient.errors import HttpError
 
 # local files
 from lncdSql import lncdSql
+import EditNotes
 import MultiRA
 import AddNotes
 import EditPeople
@@ -201,6 +202,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
             self.search_cal_by_date()  # update for current day
             # TODO: eventually want to use DB instead of calendar. need to update
             # backend!
+        
 
         # ## note table ##
         self.note_columns = [
@@ -212,6 +214,10 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # Make the note_table uneditable
         self.note_table.setEditTriggers(
             QtWidgets.QAbstractItemView.NoEditTriggers)
+
+        self.note_table.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.note_table.customContextMenuRequested.connect(
+            lambda pos: note_menu.exec_(self.note_table.mapToGlobal(pos)))
 
         self.people_table.itemSelectionChanged.connect(self.dropcode_coloring)
 
@@ -331,18 +337,23 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # self.edit_contact_button.clicked.connect(self.edit_contact_pushed)
         self.EditContact.accepted.connect(self.update_contact_to_db)
 
-        #Menu bar for note table
-        # note_menu = QtWidgets.QMenu("note_menu", self.note_table)
-        # CMenuItem("edit_notes", note_menu,
-        #           lambda: self.edit_note_pushed())
-
         # ## add notes ##
         # and query for pid from visit_summary
         self.AddNotes = AddNotes.AddNoteWindow(self)
+
+        self.EditNotes = EditNotes.EditNotesWindow(self)
         # Do the autocomplete later
         self.add_notes_button.clicked.connect(self.add_notes_pushed)
         self.AddNotes.accepted.connect(self.add_notes_to_db)
-        # connect it up
+
+        self.note_table.itemSelectionChanged.connect(self.note_item_select)
+        
+        #Edit notes button
+        self.edit_notes_button.clicked.connect(self.edit_note_pushed)
+        #Menu bar for note table
+        note_menu = QtWidgets.QMenu("note_menu", self.note_table)
+        CMenuItem("edit_notes", note_menu,
+                  lambda: self.edit_note_pushed())
 
         # ## add visit ##
         #
@@ -527,6 +538,11 @@ class ScheduleApp(QtWidgets.QMainWindow):
                 self.people_table.setItem(row_i, col_i, item)
         if res:
             self.changing_color(row_i, res)
+    def note_item_select(self):
+        row_i = self.note_table.currentRow()
+        # Color row when clicked -- indicate action target for right click
+        self.click_color(self.note_table, row_i)
+
 
     def dropcode_coloring(self):
         """ Coloring anyrow with the dropcode that doesn't equal to None """
@@ -760,9 +776,15 @@ class ScheduleApp(QtWidgets.QMainWindow):
                     except AttributeError:
                         print('Affordable to ignore')
                     continue
-                if(table is self.people_table):
+                if table is self.people_table:
                     try:
                         self.table_background(table, i, j)
+                    except AttributeError:
+                        print('click color: bad i j (%d,%d@%s)' %
+                              (i, j, table))
+                elif table is self.note_table:
+                    try:
+                        self.note_table_background(table, i, j)
                     except AttributeError:
                         print('click color: bad i j (%d,%d@%s)' %
                               (i, j, table))
@@ -772,17 +794,31 @@ class ScheduleApp(QtWidgets.QMainWindow):
                     except AttributeError:
                         print('Affordable to ignore')
         # Get rid of the color in other tables
+        if table == self.note_table:
+            self.refresh_blank(self.contact_table)
+            self.refresh_blank(self.people_table)
+            self.refresh_blank(self.visit_table)
+
         if table == self.visit_table:
             self.refresh_blank(self.contact_table)
             self.refresh_blank(self.people_table)
+            self.refresh_blank(self.note_table)
 
         elif table == self.contact_table:
             self.refresh_blank(self.visit_table)
             self.refresh_blank(self.people_table)
+            self.refresh_blank(self.note_table)
 
         elif table == self.people_table:
             self.refresh_blank(self.visit_table)
             self.refresh_blank(self.contact_table)
+            self.refresh_blank(self.note_table)
+
+    def note_table_background(self, table, i, j):
+        if table.item(i, 1).text() != 'None':
+            self.note_table.item(i, j).setBackground(QtGui.QColor(250, 231, 163))
+        elif table.item(i, 1).text() == 'None':
+            table.item(i,j).setBackground(QtGui.QColor(255,255,255))
 
     def table_background(self, table, i, j):
 
@@ -980,8 +1016,9 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.visit_id = self.visit_table.item(row_i, 9).text()
         self.name = self.visit_table.item(row_i, 0).text()
 
-    # def edit_note_pushed(self):
-    #     print('still implementing')
+    def edit_note_pushed(self):
+        
+        self.EditNotes.show()
 
     def update_visit_table(self):
         """ update visit table display"""
