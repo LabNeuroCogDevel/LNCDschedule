@@ -1,5 +1,5 @@
 *~
-.*.swp
+.*.sw[p-z]
 __pycache__/
 *\#
 .\#*
@@ -13,3 +13,5 @@ pg_dump*
 *.ini*
 sql/roles.sql
 *zip
+.DS_Store
+**/.DS_Store
