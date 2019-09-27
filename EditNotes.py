@@ -6,8 +6,9 @@ class EditNotesWindow(QtWidgets.QDialog):
     def __init__(self,parent = None):
         
         super(EditNotesWindow,self).__init__(parent)
-
-        columns = ['ctype', 'changes', 'pid']
+        
+        #Contains what should be on the database
+        columns = ['ctype', 'changes', 'vid']
         self.edit_model = {k:None for k in columns}
 
         uic.loadUi('./ui/edit_note.ui',self)
@@ -29,15 +30,16 @@ class EditNotesWindow(QtWidgets.QDialog):
         if(key in ['value', 'all']):
             self.edit_model['changes'] = self.value_box.text()
 
-    def edit_note(self, data):
-
+    def set_up(self, vid, data):
         self.data = data
+        self.edit_model['vid'] = vid
+        self.value_box_2.setText(self.edit_model['vid'])
+        print(self.data)
         
-
-
+        
     def formatter(self):
         #Populate box with default (previous) value
-
         want_edit = str(self.ctype_box.currentText())
+        print(want_edit)
         default_value = self.data.get(want_edit, '')
         self.value_box.setText(default_value)

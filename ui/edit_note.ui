@@ -68,22 +68,17 @@
    </item>
    <item>
     <property name="text">
-     <string>Note</string>
+     <string>note</string>
     </property>
    </item>
    <item>
     <property name="text">
-     <string>Dropcode</string>
+     <string>dropcode</string>
     </property>
    </item>
    <item>
     <property name="text">
-     <string>Date</string>
-    </property>
-   </item>
-   <item>
-    <property name="text">
-     <string>Vtimestamp</string>
+     <string>ndate</string>
     </property>
    </item>
   </widget>

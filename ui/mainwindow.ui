@@ -443,7 +443,7 @@
    <widget class="QPushButton" name="add_notes_button">
     <property name="geometry">
      <rect>
-      <x>860</x>
+      <x>960</x>
       <y>210</y>
       <width>101</width>
       <height>22</height>
@@ -464,19 +464,6 @@
     </property>
     <property name="text">
      <string>Nothing to show</string>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="edit_notes_button">
-    <property name="geometry">
-     <rect>
-      <x>960</x>
-      <y>210</y>
-      <width>101</width>
-      <height>22</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Edit_notes</string>
     </property>
    </widget>
   </widget>

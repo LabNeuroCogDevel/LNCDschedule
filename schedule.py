@@ -336,7 +336,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # Must make sure it's clicked
         # self.edit_contact_button.clicked.connect(self.edit_contact_pushed)
         self.EditContact.accepted.connect(self.update_contact_to_db)
-
+     
         # ## add notes ##
         # and query for pid from visit_summary
         self.AddNotes = AddNotes.AddNoteWindow(self)
@@ -347,12 +347,13 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.AddNotes.accepted.connect(self.add_notes_to_db)
 
         self.note_table.itemSelectionChanged.connect(self.note_item_select)
-        
-        #Edit notes button
-        self.edit_notes_button.clicked.connect(self.edit_note_pushed)
+
+        self.MultiRA.accepted.connect(self.multira_to_db)
+       
+        self.EditNotes.accepted.connect(self.edit_notes_to_db)
         #Menu bar for note table
         note_menu = QtWidgets.QMenu("note_menu", self.note_table)
-        CMenuItem("edit_notes", note_menu,
+        CMenuItem("Edit_notes", note_menu,
                   lambda: self.edit_note_pushed())
 
         # ## add visit ##
@@ -722,10 +723,10 @@ class ScheduleApp(QtWidgets.QMainWindow):
         try:
             self.sql.query.remove_visit(vid=vid)
         except psycopg2.ProgrammingError:
-        	print('trivial error')
-        	print('Remove successfully')
+            print('trivial error')
+            print('Remove successfully')
         except psycopg2.InternalError:
-        	mkmsg('Cannot remove visit 2130 b/c status is not sched or have enrolled or have tasks')
+            mkmsg('Cannot remove visit 2130 b/c status is not sched or have enrolled or have tasks')
 
         # finally update visit table
         self.update_visit_table()
@@ -857,7 +858,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
 
     def multira_to_db(self):
-        #get thelist  of all the ra chosen
+        #get the list  of all the ra chosen
         RA_selection = self.MultiRA.get_data()
         
         #First clear all the assigned ra to avoid overlap
@@ -942,7 +943,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
     def assignmul_RA(self):
         #Create a list to store all the ras
         ra_list = []
-    	#mkmsg('Implementing')
+        #mkmsg('Implementing')
         self.MultiRA.show()
         #Loop thorugh the RAs and append them to the list
         for ra in self.sql.query.list_ras():
@@ -1017,8 +1018,25 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.name = self.visit_table.item(row_i, 0).text()
 
     def edit_note_pushed(self):
-        
+        #Parse the data to the editnote
+        #Get the vid
+        row_i = self.note_table.currentRow()
+        self.vid = self.note_table.item(row_i, 5).text()
+        #Data as default value
+        self.data = {'Note':None, 'Dropcode':None, 'Date':None}
+        self.data['note'] = self.note_table.item(row_i, 0).text()
+        self.data['dropcode'] = self.note_table.item(row_i, 1).text()
+        self.data['ndate'] = self.note_table.item(row_i, 2).text().split(' ')[0]
+
+        #Do we need to care about the case when the vid is None?
+        self.EditNotes.set_up(self.vid, self.data)
         self.EditNotes.show()
+    def edit_notes_to_db(self):
+        data = self.EditNotes.edit_model
+        self.sqlUpdateOrShowErr('note', data['ctype'], data['vid'],
+                                data['changes'], "vid")
+        self.update_note_table()
+
 
     def update_visit_table(self):
         """ update visit table display"""
@@ -1414,9 +1432,9 @@ class ScheduleApp(QtWidgets.QMainWindow):
         try:
             res = self.sql.query.visit_by_uri(googleuri=cal_id)
         except UnboundLocalError:
-        	    #There is no calid existed in the list
-        	    mkmsg('calid does not exit')
-        	    return
+                #There is no calid existed in the list
+                mkmsg('calid does not exit')
+                return
         if res:
             print("cal item select: %s" % res)
             pid = res[0][0]
@@ -1489,7 +1507,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
             self.checkin_status = self.sql.query.get_status(
                 pid=pid, vtimestamp=self.scheduled_date)[0][0]
         except IndexError:
-        	print('The object might not be existed in some cases')
+            print('The object might not be existed in some cases')
 
         print("\tstatus: %s" % self.checkin_status)
 
