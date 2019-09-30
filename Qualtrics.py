@@ -15,17 +15,19 @@ def exportSurvey(apiToken,surveyId, dataCenter, fileFormat):
     # Setting static parameters
     requestCheckProgress = 0.0
     progressStatus = "inProgress"
-    baseUrl = "https://{0}.qualtrics.com/API/v3/surveys/{1}/export-responses/".format(dataCenter, surveyId)
+    baseUrl = "{0}.qualtrics.com/API/v3/surveys/{1}".format(dataCenter, surveyId)
     headers = {
-    "content-type": "application/json",
-    "x-api-token": apiToken,
+    "Content-Type": "application/json",
+    "X-API-TOKEN": apiToken,
+    "Accept": "*/*",
+    "accept-encoding": "gzip, deflate"
     }
 
     # Step 1: Creating Data Export
     downloadRequestUrl = baseUrl
     downloadRequestPayload = '{"format":"' + fileFormat + '"}'
-    downloadRequestResponse = requests.request("POST", downloadRequestUrl, data=downloadRequestPayload, headers=headers)
-    progressId = downloadRequestResponse.json()["result"]["progressId"]
+    downloadRequestResponse = requests.request("GET", downloadRequestUrl, data=downloadRequestPayload, headers=headers)
+    progressId = downloadRequestResponse.json()["result"]#["progressId"]
     print(downloadRequestResponse.text)
 
     # Step 2: Checking on Data Export Progress and waiting until export is ready
@@ -65,27 +67,9 @@ def connstr_from_config():
 
 def main():
     
-    # try:
-    #   apiToken = os.environ['APIKEY']
-    #   dataCenter = os.environ['DATACENTER']
-    # except KeyError:
-    #   print("set environment variables APIKEY and DATACENTER")
-    #   sys.exit(2)
-
-    # try:
-    #     surveyId=sys.argv[1]
-    #     fileFormat=sys.argv[2]
-    # except IndexError:
-    #     print ("usage: surveyId fileFormat")
-    #     sys.exit(2)
-
-    # if fileFormat not in ["csv", "tsv", "spss"]:
-    #     print ('fileFormat must be either csv, tsv, or spss')
-    #     sys.exit(2)
- 
-    #Read in the data form config
-    apiToken, surveyID, dataCenter = connstr_from_config()
-    print(apiToken, surveyID, dataCenter)
+       #Read in the data form config
+    apiToken, surveyId, dataCenter = connstr_from_config()
+    print(apiToken, surveyId, dataCenter)
 
     # r = re.compile('^SV_.*')
     # m = r.match(surveyId)
@@ -93,7 +77,7 @@ def main():
     #    print ("survey Id must match ^SV_.*")
     #    sys.exit(2)
 
-    exportSurvey(apiToken, surveyID, dataCenter, "csv")
+    exportSurvey(apiToken, surveyId, dataCenter, "csv")
 if __name__== "__main__":
     main()
 
