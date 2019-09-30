@@ -30,9 +30,3 @@ class AddStudyWindow(QtWidgets.QDialog):
 
     def visit_type(self):
         self.study_data['visit_types'] = json.dumps(self.visit_type_text.text().split(','))
-
-
-
-        
-
-

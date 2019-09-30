@@ -15,6 +15,9 @@ import AddNotes
 import EditPeople
 import AddContact
 import AddStudy
+import AddRA
+import AddTask
+import AddVisitType
 import EditContact
 import ScheduleVisit
 import AddPerson
@@ -103,15 +106,21 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # AddStudies modal (accessed from menu)
         self.AddStudy = AddStudy.AddStudyWindow(self)
         self.AddStudy.accepted.connect(self.add_study_to_db)
+        self.AddRA = AddRA.AddRAWindow(self)
+        self.AddRA.accepted.connect(self.add_ra_to_db)
+        self.AddTask = AddTask.AddTaskWindow(self)
+        self.AddTask.accepted.connect(self.add_task_to_db)
+        self.AddVisitType = AddVisitType.AddVisitTypeWindow(self)
+        self.AddVisitType.accepted.connect(self.add_visit_type_to_db)
 
         # ## menu
         menubar = self.menuBar()
         fileMenu = menubar.addMenu('&New')
         #CMenuItem("RA", fileMenu) # Commented out for addRA
-        addRA = CMenuItem("RA", fileMenu, self.add_studies)
+        addRA = CMenuItem("RA", fileMenu, self.add_ra)
         addStudy = CMenuItem("Study", fileMenu, self.add_studies)
-        CMenuItem("Task", fileMenu)
-        CMenuItem("Visit Type", fileMenu)
+        CMenuItem("Task", fileMenu, self.add_task)
+        CMenuItem("Visit Type", fileMenu, self.add_visit_type)
 
         # search settings
         searchMenu = menubar.addMenu('&Search')
@@ -202,7 +211,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
             self.search_cal_by_date()  # update for current day
             # TODO: eventually want to use DB instead of calendar. need to update
             # backend!
-        
+
 
         # ## note table ##
         self.note_columns = [
@@ -336,7 +345,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # Must make sure it's clicked
         # self.edit_contact_button.clicked.connect(self.edit_contact_pushed)
         self.EditContact.accepted.connect(self.update_contact_to_db)
-     
+
         # ## add notes ##
         # and query for pid from visit_summary
         self.AddNotes = AddNotes.AddNoteWindow(self)
@@ -349,7 +358,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.note_table.itemSelectionChanged.connect(self.note_item_select)
 
         self.MultiRA.accepted.connect(self.multira_to_db)
-       
+
         self.EditNotes.accepted.connect(self.edit_notes_to_db)
         #Menu bar for note table
         note_menu = QtWidgets.QMenu("note_menu", self.note_table)
@@ -390,6 +399,29 @@ class ScheduleApp(QtWidgets.QMainWindow):
     def add_studies(self):
         self.AddStudy.show()
 
+    def add_ra(self):
+        self.AddRA.show()
+
+    def add_ra_to_db(self):
+        ra_data = self.AddRA.ra_data
+        self.sql.insert('ra', ra_data)
+        print("adding ra: %s" % ra_data)
+
+    def add_task(self):
+        self.AddTask.show()
+
+    def add_task_to_db(self):
+        task_data = self.AddTask.task_data
+        self.sql.insert('task', task_data)
+        print("adding task: %s" % task_data)
+
+    def add_visit_type(self):
+        self.AddVisitType.show()
+
+    def add_visit_type_to_db(self):
+        visit_type_data = self.AddVisitType.visit_type_data
+        self.sql.insert('visit', visit_type_data)
+        print("adding visit type" % visit_type_data)
     # check with isvalid method
     # used for ScheduleVisit and AddContact
     def useisvalid(self, obj, msgdesc):
@@ -860,7 +892,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
     def multira_to_db(self):
         #get the list  of all the ra chosen
         RA_selection = self.MultiRA.get_data()
-        
+
         #First clear all the assigned ra to avoid overlap
         row_i = self.visit_table.currentRow()
         d = self.visit_table_data[row_i]

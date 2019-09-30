@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>397</width>
-    <height>217</height>
+    <width>392</width>
+    <height>182</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,7 +17,7 @@
    <property name="geometry">
     <rect>
      <x>40</x>
-     <y>180</y>
+     <y>140</y>
      <width>341</width>
      <height>32</height>
     </rect>
@@ -39,7 +39,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>Cohorts</string>
+    <string>Modes:</string>
    </property>
   </widget>
   <widget class="QLabel" name="relation_label_4">
@@ -52,7 +52,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>Study:</string>
+    <string>Task:</string>
    </property>
   </widget>
   <widget class="QLabel" name="relation_label_5">
@@ -65,10 +65,10 @@
     </rect>
    </property>
    <property name="text">
-    <string>Grantname:</string>
+    <string>Measures:</string>
    </property>
   </widget>
-  <widget class="QLineEdit" name="study_text">
+  <widget class="QLineEdit" name="task_text">
    <property name="geometry">
     <rect>
      <x>130</x>
@@ -78,20 +78,7 @@
     </rect>
    </property>
   </widget>
-  <widget class="QLabel" name="relation_label_6">
-   <property name="geometry">
-    <rect>
-     <x>20</x>
-     <y>140</y>
-     <width>101</width>
-     <height>20</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Visit_types</string>
-   </property>
-  </widget>
-  <widget class="QLineEdit" name="grantname_text">
+  <widget class="QLineEdit" name="measures_text">
    <property name="geometry">
     <rect>
      <x>130</x>
@@ -100,25 +87,15 @@
      <height>21</height>
     </rect>
    </property>
-  </widget>
-  <widget class="QLineEdit" name="cohort_text">
-   <property name="geometry">
-    <rect>
-     <x>130</x>
-     <y>100</y>
-     <width>251</width>
-     <height>21</height>
-    </rect>
-   </property>
    <property name="placeholderText">
     <string>Please separate names by comma</string>
    </property>
   </widget>
-  <widget class="QLineEdit" name="visit_type_text">
+  <widget class="QLineEdit" name="modes_text">
    <property name="geometry">
     <rect>
      <x>130</x>
-     <y>140</y>
+     <y>100</y>
      <width>251</width>
      <height>21</height>
     </rect>

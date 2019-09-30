@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>397</width>
-    <height>217</height>
+    <width>409</width>
+    <height>291</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -16,8 +16,8 @@
   <widget class="QDialogButtonBox" name="buttonBox">
    <property name="geometry">
     <rect>
-     <x>40</x>
-     <y>180</y>
+     <x>50</x>
+     <y>240</y>
      <width>341</width>
      <height>32</height>
     </rect>
@@ -27,19 +27,6 @@
    </property>
    <property name="standardButtons">
     <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
-   </property>
-  </widget>
-  <widget class="QLabel" name="relation_label_3">
-   <property name="geometry">
-    <rect>
-     <x>20</x>
-     <y>100</y>
-     <width>101</width>
-     <height>20</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Cohorts</string>
    </property>
   </widget>
   <widget class="QLabel" name="relation_label_4">
@@ -52,7 +39,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>Study:</string>
+    <string>VID:</string>
    </property>
   </widget>
   <widget class="QLabel" name="relation_label_5">
@@ -65,10 +52,10 @@
     </rect>
    </property>
    <property name="text">
-    <string>Grantname:</string>
+    <string>PID:</string>
    </property>
   </widget>
-  <widget class="QLineEdit" name="study_text">
+  <widget class="QLineEdit" name="vid_text">
    <property name="geometry">
     <rect>
      <x>130</x>
@@ -78,20 +65,7 @@
     </rect>
    </property>
   </widget>
-  <widget class="QLabel" name="relation_label_6">
-   <property name="geometry">
-    <rect>
-     <x>20</x>
-     <y>140</y>
-     <width>101</width>
-     <height>20</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Visit_types</string>
-   </property>
-  </widget>
-  <widget class="QLineEdit" name="grantname_text">
+  <widget class="QLineEdit" name="pid_text">
    <property name="geometry">
     <rect>
      <x>130</x>
@@ -101,30 +75,65 @@
     </rect>
    </property>
   </widget>
-  <widget class="QLineEdit" name="cohort_text">
+  <widget class="QCheckBox" name="checkBox">
    <property name="geometry">
     <rect>
      <x>130</x>
      <y>100</y>
-     <width>251</width>
+     <width>85</width>
      <height>21</height>
     </rect>
    </property>
-   <property name="placeholderText">
-    <string>Please separate names by comma</string>
+   <property name="text">
+    <string>Behavioral</string>
    </property>
+   <attribute name="buttonGroup">
+    <string notr="true">vtype_text</string>
+   </attribute>
   </widget>
-  <widget class="QLineEdit" name="visit_type_text">
+  <widget class="QCheckBox" name="checkBox_2">
    <property name="geometry">
     <rect>
      <x>130</x>
-     <y>140</y>
-     <width>251</width>
+     <y>130</y>
+     <width>85</width>
      <height>21</height>
     </rect>
    </property>
-   <property name="placeholderText">
-    <string>Please separate names by comma</string>
+   <property name="text">
+    <string>Scan</string>
+   </property>
+   <attribute name="buttonGroup">
+    <string notr="true">vtype_text</string>
+   </attribute>
+  </widget>
+  <widget class="QCheckBox" name="checkBox_3">
+   <property name="geometry">
+    <rect>
+     <x>130</x>
+     <y>160</y>
+     <width>85</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>MEG</string>
+   </property>
+   <attribute name="buttonGroup">
+    <string notr="true">vtype_text</string>
+   </attribute>
+  </widget>
+  <widget class="QLabel" name="relation_label_6">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>130</y>
+     <width>101</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Visit Type:</string>
    </property>
   </widget>
  </widget>
@@ -163,4 +172,11 @@
    </hints>
   </connection>
  </connections>
+ <buttongroups>
+  <buttongroup name="vtype_text">
+   <property name="exclusive">
+    <bool>false</bool>
+   </property>
+  </buttongroup>
+ </buttongroups>
 </ui>

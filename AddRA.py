@@ -1,5 +1,6 @@
 import json
 from PyQt5 import uic, QtWidgets
+from datetime import datetime
 # from LNCDutils import  *
 
 
@@ -10,23 +11,16 @@ class AddRAWindow(QtWidgets.QDialog):
 
     def __init__(self, parent=None):
         super(AddRAWindow, self).__init__(parent)
-        self.study_data = {}
-        uic.loadUi('./ui/add_RA.ui', self)
+        self.ra_data = {}
+        uic.loadUi('./ui/add_ra.ui', self)
         self.setWindowTitle('Add RA')
 
-        self.study_text.textChanged.connect(self.study)
-        self.grantname_text.textChanged.connect(self.grantname)
-        self.cohort_text.textChanged.connect(self.cohort)
-        self.visit_type_text.textChanged.connect(self.visit_type)
+        self.ra_text.textChanged.connect(self.ra)
+        self.abbr_text.textChanged.connect(self.abbr)
+        self.ra_data['start_date'] = datetime.now()
 
-    def study(self):
-        self.study_data['study'] = self.study_text.text()
+    def ra(self):
+        self.ra_data['ra'] = self.ra_text.text()
 
-    def grantname(self):
-        self.study_data['grantname'] = self.grantname_text.text()
-
-    def cohort(self):
-        self.study_data['cohorts'] = json.dumps(self.cohort_text.text().split(','))
-
-    def visit_type(self):
-        self.study_data['visit_types'] = json.dumps(self.visit_type_text.text().split(','))
+    def abbr(self):
+        self.ra_data['abbr'] = self.abbr_text.text()
