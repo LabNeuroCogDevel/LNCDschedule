@@ -116,9 +116,8 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # ## menu
         menubar = self.menuBar()
         fileMenu = menubar.addMenu('&New')
-        #CMenuItem("RA", fileMenu) # Commented out for addRA
-        addRA = CMenuItem("RA", fileMenu, self.add_ra)
-        addStudy = CMenuItem("Study", fileMenu, self.add_studies)
+        CMenuItem("RA", fileMenu, self.add_ra)
+        CMenuItem("Study", fileMenu, self.add_studies)
         CMenuItem("Task", fileMenu, self.add_task)
         CMenuItem("Visit Type", fileMenu, self.add_visit_type)
 
@@ -422,6 +421,9 @@ class ScheduleApp(QtWidgets.QMainWindow):
         visit_type_data = self.AddVisitType.visit_type_data
         self.sql.insert('visit', visit_type_data)
         print("adding visit type" % visit_type_data)
+
+
+
     # check with isvalid method
     # used for ScheduleVisit and AddContact
     def useisvalid(self, obj, msgdesc):

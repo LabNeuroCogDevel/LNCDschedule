@@ -1,6 +1,7 @@
 from PyQt5 import uic,QtCore, QtWidgets
 from LNCDutils import  *
-#import json
+from datetime import datetime
+import json
 
 """
 This class provides a window for adding a visit type
@@ -16,10 +17,8 @@ class AddVisitTypeWindow(QtWidgets.QDialog):
 
         self.vid_text.textChanged.connect(self.vid)
         self.pid_text.textChanged.connect(self.pid)
-        self.visit_type_data['vtype'] = self.vtype_text.connect(self.vtype) ###
-
-
-        # Be able to select multiple visit types, including 'Other' - if other is selected bring up a text box
+        self.vtype_text.textChanged.connect(self.vtype)
+        self.visit_type_data['vtimestamp'] = datetime.now()
 
     def vid(self):
         self.visit_type_data['vid'] = self.vid_text.text()
@@ -27,11 +26,14 @@ class AddVisitTypeWindow(QtWidgets.QDialog):
     def pid(self):
         self.visit_type_data['pid'] = self.pid_text.text()
 
+    # Alternatively
     def vtype(self):
-        self.visit_type_data['vtype'] = self.vtype_text.text()
+        self.visit_type_data['vtype'] = json.dumps(self.vtype_text.text().split(','))
+
 
 """
-    def vtype(self): # Trying to make this a radio button
-        self.visit_type_data['vtype'] = self.vtype_text.checkedButton().text()
-        # Button has .text() function - need to get selected button
+    # Ideally would like to involve a checkbox with the ability to add text if 'Other' option is selected
+    def vtype(self):
+        self.visit_type_data['vtype'] = self.vtype_text.buttonPressed()
+        print(self.visit_type_data['vtype'])
 """
