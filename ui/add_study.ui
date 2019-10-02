@@ -29,7 +29,7 @@
     <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
    </property>
   </widget>
-  <widget class="QLabel" name="relation_label_3">
+  <widget class="QLabel" name="cohort_label">
    <property name="geometry">
     <rect>
      <x>20</x>
@@ -42,7 +42,7 @@
     <string>Cohorts</string>
    </property>
   </widget>
-  <widget class="QLabel" name="relation_label_4">
+  <widget class="QLabel" name="study_label">
    <property name="geometry">
     <rect>
      <x>20</x>
@@ -55,7 +55,7 @@
     <string>Study:</string>
    </property>
   </widget>
-  <widget class="QLabel" name="relation_label_5">
+  <widget class="QLabel" name="grantname_label">
    <property name="geometry">
     <rect>
      <x>20</x>
@@ -78,7 +78,7 @@
     </rect>
    </property>
   </widget>
-  <widget class="QLabel" name="relation_label_6">
+  <widget class="QLabel" name="visit_type_label">
    <property name="geometry">
     <rect>
      <x>20</x>

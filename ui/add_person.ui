@@ -38,6 +38,9 @@
      <height>22</height>
     </rect>
    </property>
+   <property name="placeholderText">
+    <string>First Name</string>
+   </property>
   </widget>
   <widget class="QLineEdit" name="lname_edit">
    <property name="geometry">
@@ -47,6 +50,9 @@
      <width>101</width>
      <height>22</height>
     </rect>
+   </property>
+   <property name="placeholderText">
+    <string>Last Name</string>
    </property>
   </widget>
   <widget class="QCalendarWidget" name="dob_edit">

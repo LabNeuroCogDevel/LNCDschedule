@@ -29,20 +29,7 @@
     <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
    </property>
   </widget>
-  <widget class="QLabel" name="relation_label_3">
-   <property name="geometry">
-    <rect>
-     <x>20</x>
-     <y>100</y>
-     <width>101</width>
-     <height>20</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string/>
-   </property>
-  </widget>
-  <widget class="QLabel" name="relation_label_4">
+  <widget class="QLabel" name="ra_label">
    <property name="geometry">
     <rect>
      <x>20</x>
@@ -55,7 +42,7 @@
     <string>RA:</string>
    </property>
   </widget>
-  <widget class="QLabel" name="relation_label_5">
+  <widget class="QLabel" name="abbr_label">
    <property name="geometry">
     <rect>
      <x>20</x>

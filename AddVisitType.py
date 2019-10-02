@@ -26,14 +26,7 @@ class AddVisitTypeWindow(QtWidgets.QDialog):
     def pid(self):
         self.visit_type_data['pid'] = self.pid_text.text()
 
-    # Alternatively
+    # Ideally would have non-exclusive check box that, when 'Other' is selected, will take text entered
+    # Alternative approach to check box
     def vtype(self):
         self.visit_type_data['vtype'] = json.dumps(self.vtype_text.text().split(','))
-
-
-"""
-    # Ideally would like to involve a checkbox with the ability to add text if 'Other' option is selected
-    def vtype(self):
-        self.visit_type_data['vtype'] = self.vtype_text.buttonPressed()
-        print(self.visit_type_data['vtype'])
-"""

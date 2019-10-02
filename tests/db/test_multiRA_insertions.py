@@ -44,7 +44,7 @@ def test_multi_ra_gui(qtbot):
     # TODO: select more than one
     print(win.get_data())
 
-    
+
 
 def test_db_multi_ra_insertion(lncdapp, qtbot):
     """ can we assign more than one RA to a visit? """

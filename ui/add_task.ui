@@ -29,7 +29,7 @@
     <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
    </property>
   </widget>
-  <widget class="QLabel" name="relation_label_3">
+  <widget class="QLabel" name="modes_label">
    <property name="geometry">
     <rect>
      <x>20</x>
@@ -42,7 +42,7 @@
     <string>Modes:</string>
    </property>
   </widget>
-  <widget class="QLabel" name="relation_label_4">
+  <widget class="QLabel" name="task_label">
    <property name="geometry">
     <rect>
      <x>20</x>
@@ -55,7 +55,7 @@
     <string>Task:</string>
    </property>
   </widget>
-  <widget class="QLabel" name="relation_label_5">
+  <widget class="QLabel" name="measures_label">
    <property name="geometry">
     <rect>
      <x>20</x>
