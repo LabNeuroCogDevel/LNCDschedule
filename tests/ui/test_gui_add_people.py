@@ -3,7 +3,7 @@ import AddPerson
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtCore import Qt
 import sys
-from pyesql_helper import pyesql_helper as ph
+#from pyesql_helper import pyesql_helper as ph
 
 
 # initialize QT
