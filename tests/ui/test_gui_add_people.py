@@ -36,7 +36,7 @@ def test_add_people_launch(qtbot, monkeypatch, create_db):
     monkeypatch.setattr("schedule.ScheduleApp.add_person_pushed", set_name)
 
     # open app with fake db connection
-#    w = ScheduleApp(sql_obj=ph(create_db.connection), cal_obj='Not Used')
+    w = ScheduleApp(sql_obj=ph(create_db.connection), cal_obj='Not Used')
     qtbot.add_widget(w)  # attach at testing robot
 
     # change the text in the main window

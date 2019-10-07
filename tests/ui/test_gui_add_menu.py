@@ -6,9 +6,7 @@ import AddVisitType
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtCore import Qt
 import sys
-#from pyesql_helper import pyesql_helper as ph
-
-# Will probably split these into different files eventually
+#from pyesql_helper import pyesql_helper as phz
 
 # initialize QT
 app = QApplication(sys.argv)
@@ -38,7 +36,6 @@ def test_addstudy_returns(qtbot):
 
     w.visit_type_text.setText('Visit 1,      Visit 2')
     assert w.study_data['visit_types'] == '["Visit 1", "Visit 2"]'
-
 
 def test_addtask_returns(qtbot):
     """ check task data """
