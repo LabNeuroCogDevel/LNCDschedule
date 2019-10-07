@@ -14,7 +14,7 @@ def test_addperson_returns(qtbot):
     """ check setpersondata """
     # persondata={'fname': None, 'lname': None, 'dob': None, 'sex': None,'hand': None, 'source': None}
     w = AddPerson.AddPersonWindow()
-    # check we inheret fname
+    # check we inherit fname
     w.setpersondata({'fname': 'Test'})
     assert w.fname_edit.text() == 'Test'
 
@@ -36,7 +36,7 @@ def test_add_people_launch(qtbot, monkeypatch, create_db):
     monkeypatch.setattr("schedule.ScheduleApp.add_person_pushed", set_name)
 
     # open app with fake db connection
-    w = ScheduleApp(sql_obj=ph(create_db.connection), cal_obj='Not Used')
+#    w = ScheduleApp(sql_obj=ph(create_db.connection), cal_obj='Not Used')
     qtbot.add_widget(w)  # attach at testing robot
 
     # change the text in the main window
