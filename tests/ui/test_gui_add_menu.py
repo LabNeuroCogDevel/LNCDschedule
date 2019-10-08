@@ -6,15 +6,10 @@ import AddVisitType
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtCore import Qt
 import sys
-# from pyesql_helper import pyesql_helper as ph
-
+#from pyesql_helper import pyesql_helper as phz
 
 # initialize QT
 app = QApplication(sys.argv)
-
-
-# So far just testing that everything returns
-# Will next do similar to test_add_people_launch
 
 def test_addra_returns(qtbot):
     """ check ra_data """
@@ -26,7 +21,6 @@ def test_addra_returns(qtbot):
     w.abbr_text.setText('Abbr Test')
     assert w.ra_data['abbr'] == 'Abbr Test'
 
-
 def test_addstudy_returns(qtbot):
     """ check study data """
     w = AddStudy.AddStudyWindow()
@@ -37,6 +31,11 @@ def test_addstudy_returns(qtbot):
     w.grantname_text.setText('Grant Test')
     assert w.study_data['grantname'] == 'Grant Test'
 
+    w.cohort_text.setText('Cohort 1,         Cohort 2')
+    assert w.study_data['cohorts'] == '["Cohort 1", "Cohort 2"]'
+
+    w.visit_type_text.setText('Visit 1,      Visit 2')
+    assert w.study_data['visit_types'] == '["Visit 1", "Visit 2"]'
 
 def test_addtask_returns(qtbot):
     """ check task data """
@@ -44,3 +43,22 @@ def test_addtask_returns(qtbot):
 
     w.task_text.setText('Task Test')
     assert w.task_data['task'] == 'Task Test'
+
+    w.measures_text.setText('Measures 1,Measures 2')
+    assert w.task_data['measures'] == '["Measures 1", "Measures 2"]'
+
+    w.modes_text.setText('Mode 1, Mode 2')
+    assert w.task_data['modes'] == '["Mode 1", "Mode 2"]'
+
+def test_addvisittype_returns(qtbot):
+    """ check visit type data """
+    w = AddVisitType.AddVisitTypeWindow()
+
+    w.vid_text.setText("1")
+    assert w.visit_type_data['vid'] == '1'
+
+    w.pid_text.setText("2")
+    assert w.visit_type_data['pid'] == '2'
+
+    w.vtype_text.setText('Vtype 1,       Vtype 2')
+    assert w.visit_type_data['vtype'] == '["Vtype 1", "Vtype 2"]'

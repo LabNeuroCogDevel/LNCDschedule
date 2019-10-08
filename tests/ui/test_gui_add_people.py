@@ -14,7 +14,7 @@ def test_addperson_returns(qtbot):
     """ check setpersondata """
     # persondata={'fname': None, 'lname': None, 'dob': None, 'sex': None,'hand': None, 'source': None}
     w = AddPerson.AddPersonWindow()
-    # check we inheret fname
+    # check we inherit fname
     w.setpersondata({'fname': 'Test'})
     assert w.fname_edit.text() == 'Test'
 

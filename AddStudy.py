@@ -26,7 +26,9 @@ class AddStudyWindow(QtWidgets.QDialog):
         self.study_data['grantname'] = self.grantname_text.text()
 
     def cohort(self):
-        self.study_data['cohorts'] = json.dumps(self.cohort_text.text().split(','))
+        cohort_result = [x.strip() for x in self.cohort_text.text().split(',')]
+        self.study_data['cohorts'] = json.dumps(cohort_result)
 
     def visit_type(self):
-        self.study_data['visit_types'] = json.dumps(self.visit_type_text.text().split(','))
+        visit_type_result = [x.strip() for x in self.visit_type_text.text().split(',')]
+        self.study_data['visit_types'] = json.dumps(visit_type_result)

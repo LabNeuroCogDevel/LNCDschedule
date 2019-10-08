@@ -23,7 +23,9 @@ class AddTaskWindow(QtWidgets.QDialog):
         self.task_data['task'] = self.task_text.text()
 
     def measures(self):
-        self.task_data['measures'] = json.dumps(self.measures_text.text().split(','))
+        measures_result = [x.strip() for x in self.measures_text.text().split(',')]
+        self.task_data['measures'] = json.dumps(measures_result)
 
     def modes(self):
-        self.task_data['modes'] = json.dumps(self.modes_text.text().split(','))
+        modes_result = [x.strip() for x in self.modes_text.text().split(',')]
+        self.task_data['modes'] = json.dumps(modes_result)
