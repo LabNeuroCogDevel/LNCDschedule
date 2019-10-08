@@ -1,144 +1,165 @@
-# Python 3
-import requests
-import urllib.request as urllib2
+#!/usr/bin/env python3
+
+"""
+Functions for qualtrics survey list and downloading
+N.B. surveys are downloaded as zipped csv files
+     can query a url for qualtrics servers zip building percent
+API calls:
+   GET  /API/v3/surveys                 - get list of all surveys
+   POST /API/v3/responseexports/        - start qualtircs bulding zip
+   GET  /API/v3/responseexports/id      - get status of zip building
+   GET  /API/v3/responseexports/id/file - get zipped csv file
+
+TODO:
+ * Class Survey to include last modified, column data, and 'export' dataframe?
+ * single responses!  https://api.qualtrics.com/reference#getresponse-1
+   GET API/v3/surveys/surveyId/responses/responseId
+     maybe no way to get list of new responseIds?
+"""
+
+import warnings
 import zipfile
-import json
 import io
 import os
-import sys
-import re
 import configparser
-import pandas as pd
 import shutil
-import time
+import requests
+import pandas as pd
 
 
-def exportSurvey(baseUrl, headers, apiToken, surveyId, dataCenter, fileFormat):
-
-    # For Loop to print all the IDS
-    for ID in surveyId:
-        # Setting static parameters
-        requestCheckProgress = 0.0
-        progressStatus = "inProgress"
-        # Step 1: Creating Data Export
-        downloadRequestUrl = baseUrl
-        downloadRequestPayload = '{"format":"' + \
-            fileFormat + '","surveyId":"' + ID + '"}'
-        downloadRequestResponse = requests.request(
-            "POST", downloadRequestUrl, data=downloadRequestPayload, headers=headers)
-
-        progressId = downloadRequestResponse.json()["result"]["id"]
-        print(downloadRequestResponse.text)
-
-        # Step 2: Checking on Data Export Progress and waiting until export is
-        # ready
-        while progressStatus != "complete" and progressStatus != "failed":
-            print("progressStatus=", progressStatus)
-            requestCheckUrl = baseUrl + progressId
-            requestCheckResponse = requests.request(
-                "GET", requestCheckUrl, headers=headers)
-            requestCheckProgress = requestCheckResponse.json()[
-                "result"]["percentComplete"]
-            print("Download is " + str(requestCheckProgress) + " complete")
-            progressStatus = requestCheckResponse.json()["result"]["status"]
-
-        # step 2.1: Check for error
-        if progressStatus is "failed":
-            raise Exception("export failed")
-
-        requestId = downloadRequestResponse.json()["result"]["id"]
-       # Step 3: Downloading file
-        requestDownloadUrl = baseUrl + requestId + '/file'
-        requestDownload = requests.request(
-            "GET", requestDownloadUrl, headers=headers, stream=True)
-
-        for i in range(0, 200):
-            print(str(requestDownload))
-            if str(requestDownload) == '<Response [200]>':
-                # Step 4: Unziping file
-                with open("RequestFile.zip", "wb") as f:
-                    for chunk in requestDownload.iter_content(chunk_size=1024):
-                        f.write(chunk)
-                    f.close()
-                zipfile.ZipFile("RequestFile.zip").extractall('Exported')
-                print('Completed Export for {}')  # .format(key))
-                os.remove("./RequestFile.zip")
-                break
-            else:
-                time.sleep(10)
-                requestDownload = requests.request(
-                    "GET", requestDownloadUrl, headers=headers, stream=True)
-
-        for filename in os.listdir("Exported"):
-            print(filename)
-            os.rename(
-                './Exported/' +
-                filename,
-                './Exported/' +
-                filename.replace(
-                    " ",
-                    "_").replace(
-                    "-",
-                    "_").lower())
-
-        # Create directory for the Qualtrics download
-        create_dir("Qualtrics_test")
-        # Format the downloaded file
-        format_colnames("Qualtrics_test")
-
-# Getting a list of Ids
+def get_json_result(req):
+    """get 'result' from request response
+    return {} if error or missing"""
+    jsn = req.json()
+    if jsn is None:
+        warnings.warn('no json in request!')
+        return {}
+    return req.json().get('result', {})
 
 
-def get_surveyId(baseUrl, headers):
-    Id_list = {}
-    # Create a list that only contains id
-    Id = []
-    # Create a list that only contains name
-    name = []
-    # list of creation data incase
-    creationDate = []
-    # List of last_modified incase
-    lastModified = []
-    # List of owner id incase
-    ownerId = []
-
-    survey_Id = requests.request(
-        "GET",
-        baseUrl.replace(
-            "responseexports",
-            "surveys"),
-        headers=headers)
-    # It's a list of dictionary
-    Id_list = survey_Id.json()['result']['elements']
-
-    for i in Id_list:
-        Id.append(i.get('id'))
-        name.append(i.get('name'))
-        creationDate.append(i.get('creationData'))
-        lastModified.append(i.get('lastModified'))
-        ownerId.append(i.get('ownerId'))
-
-    print(len(Id))
-    return Id
-
-# Read data from the config file
-
-
-def connstr_from_config():
+def connstr_from_config(inifile='config.ini'):
+    """read from config like:
+    [Qualtrics]
+     api_token=
+     datacenter=https://yourorganizationid.yourdatacenterid (no .qualtrics.com)
+    """
     cfg = configparser.ConfigParser()
-    cfg.read('config.ini')
+    cfg.read(inifile)
 
     data = dict(cfg.items('Qualtrics'))
     token = data['api_token']
-    #ID = data['surveyid']
     center = data['datacenter']
-
     return token, center
 
+
+class DlStatus:
+    """parse qualtircs download status results
+    provide __bool__ to report "finished" (useful for while not loop)"""
+    __slots__ = ['done', 'status', 'percent', 'file']
+
+    def __init__(self, req):
+        # check we still have values
+        print(req.json())
+        res = get_json_result(req)
+        self.status = res.get('status', 'NoSurvey')
+        self.percent = res.get('percentComplete', 0)
+        self.file = res.get('file', None)
+        if self.status in ['NoSurvey', 'failed', 'complete']:
+            self.done = True
+        else:
+            self.done = False
+
+    def __bool__(self):
+        return self.done
+
+    def is_success(self):
+        """finished and complete, ready to download csv file"""
+        return self and self.status == 'complete'
+
+
+class Qualtrics:
+    """
+    fetch Qualtrics survey list and data
+    see `connstr_from_config` for api config setup (`config.ini`)
+    """
+    def __init__(self, cfgini="config.ini"):
+        token, center = connstr_from_config(cfgini)
+        self.apiurl = "{0}.qualtrics.com/API/v3/".format(center)
+        self.header = {
+            "Content-Type": "application/json",
+            "X-API-TOKEN": token,
+            "Accept": "*/*",
+            "accept-encoding": "gzip, deflate"
+        }
+
+    def apiget(self, url_part, **kargs):
+        """GET request on with stored qualtircs api settings"""
+        url = self.apiurl + url_part
+        print(url)
+        res = requests.request("GET", url, headers=self.header, **kargs)
+        return res
+
+    def apipost(self, url_part, data):
+        """POST request on with stored qualtircs api settings"""
+        url = self.apiurl + url_part
+        res = requests.request("POST", url, headers=self.header, data=data)
+        return res
+
+    def extract_survey(self, fileid):
+        """download and extract a zipped csv file
+        returns pandas dataframe"""
+        file_url = "responseexports/" + fileid + "/file"
+        # N.B. file url is also returned by "responseexports/" + fileid
+
+        res = self.apiget(file_url)
+        # read zip
+        unzip = zipfile.ZipFile(io.BytesIO(res.content))
+        files = unzip.infolist()
+        if len(files) != 1:
+            warnings.warn('qualtircs zip: not one file: %s' % files)
+            return pd.DataFrame()
+        content = unzip.open(files[0])
+        df = pd.read_csv(content, encoding='utf-8')
+        # TODO: clean up columns a la format_colnames
+        # consider making survey class to store info in discared rows
+        return df
+
+    def all_surveys(self):
+        """return json list of all surveys"""
+        req = self.apiget('surveys')
+        res = get_json_result(req)
+        return res.get('elements', None)
+        # TOOD: next page
+        # https://github.com/ropensci/qualtRics/blob/master/R/all_surveys.R#L63
+
+    def get_survey(self, sid):
+        """retrieve single survey
+        qualtircs give zipped csv. extract as temp file"""
+        data = '{"format":"csv", "surveyId":"%s"}' % sid
+
+        # tell qualtrics to start making the zip file of the survey
+        req = self.apipost('responseexports/', data)
+        info = get_json_result(req)
+        print("first pass: %s" % info)
+
+        # look up % comlete until download is finished building on their side
+        export_id = info.get('id')
+        checkurl = 'responseexports/' + export_id
+        dlstatus = False
+        while not dlstatus:
+            dlstatus = DlStatus(self.apiget(checkurl))
+
+        if not dlstatus.is_success():
+            warnings.warn('download status reports failure')
+            return pd.DataFrame()
+
+        return self.extract_survey(export_id)
+
+
 # Create a folder
-
-
-def create_dir(target_date):
+def create_fresh_dir(target_date):
+    """ removes current directory and recreates
+    """
     direc = "./" + target_date
 
     if not os.path.exists(direc):
@@ -149,69 +170,55 @@ def create_dir(target_date):
         os.makedirs(direc)
         print('New directory %s has been created' % (target_date))
 
-# put file in the right folder
 
-
-def format_colnames(output_dir):
+def format_colnames(infile, outfile):
     '''This function takes the file and rename its columns with the right format,
     and generate csv file with the right column names'''
+    # TODO: do this without needing to read from a file
 
-    for filename in os.listdir("./Exported"):
-        # (1) Read csv file
-        df = pd.read_csv(
-            "./Exported/" +
-            filename,
-            skiprows=[
-                0,
-                1],
-            low_memory=False)
+    df = pd.read_csv(infile, skiprows=[0, 1], low_memory=False)
 
-        columns = df.columns
-        new_cols = []
+    columns = df.columns
+    new_cols = []
 
-        # (2) Reformat the column names
-        for name in columns:
-            new_name = name.replace('{', '').replace('}', '').split(':')[1].replace('\'', '').\
-                replace('-', '_').replace(' ', '')
-            new_cols.append(new_name)
-        # print new_cols
-        df.columns = new_cols
-        # (3) Create CSV file into the output directory
-        df.to_csv(
-            './' +
-            output_dir +
-            '/' +
-            filename,
-            doublequote=True,
-            sep='|',
-            index=False)
-        print('Reformateed and moved %s' % (filename))
+    # (2) Reformat the column names
+    for name in columns:
+        new_name = name.replace('{', '').replace('}', '').\
+                   split(':')[1].\
+                   replace('\'', '').\
+                   replace('-', '_').replace(' ', '')
+        new_cols.append(new_name)
+    # print new_cols
+    df.columns = new_cols
+    # (3) Create CSV file into the output directory
+    df.to_csv(outfile, doublequote=True, sep='|', index=False)
+    print('Reformateed and moved %s' % (outfile))
 
 
-def main():
-    # Read in the data form config
-    apiToken, dataCenter = connstr_from_config()
-
-    # Define the header
-    headers = {
-        "Content-Type": "application/json",
-        "X-API-TOKEN": apiToken,
-        "Accept": "*/*",
-        "accept-encoding": "gzip, deflate"
-    }
-
-    # Define the URL
-    baseUrl = "{0}.qualtrics.com/API/v3/responseexports/".format(dataCenter)
-
-    #print(apiToken, surveyId, dataCenter)
-    # Survey as a list
-    surveyId = get_surveyId(baseUrl, headers)
-
-    try:
-        exportSurvey(baseUrl, headers, apiToken, surveyId, dataCenter, "csv")
-    except Exception as e:
-        print("something went wrong in the Qualtrics")
+def download_all():
+    """ get all surveys and download them (Orig)
+    resave with first two rows removed (Export)
+    N.B. REMOVES directories: 'Qaultrics/Orig' and 'Qualtrics/Export'
+         before re-creating
+    """
+    import re
+    q_api = Qualtrics()
+    surveys = q_api.all_surveys()
+    # remove old folders if they exist, create again
+    create_fresh_dir('Qualtrics/Orig')
+    create_fresh_dir('Qualtrics/Export')
+    for survey in surveys:
+        s_df = q_api.get_survey(survey['id'])
+        if not s_df.empty:
+            # orig has original data
+            # export has junk rows removed
+            name = re.sub(r'[/ \t\\]+', '_', survey['name'])
+            origfile = "./Qualtrics/Orig/%s.csv" % name
+            exportfile = "./Qualtrics/Export/%s.csv" % name
+            # save files
+            s_df.to_csv(origfile)
+            format_colnames(origfile, exportfile)
 
 
 if __name__ == "__main__":
-    main()
+    download_all()
