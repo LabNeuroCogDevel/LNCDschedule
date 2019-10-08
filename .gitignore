@@ -16,3 +16,7 @@ sql/roles.sql
 .DS_Store
 **/.DS_Store
 *csv
+Qualtrics/
+*dist/
+*build/
+*spec

@@ -2,6 +2,16 @@
 
 [![Build Status](https://travis-ci.com/LabNeuroCogDevel/LNCDschedule.svg?branch=master)](https://travis-ci.com/LabNeuroCogDevel/LNCDschedule)
 
+Schedule and record visits to the Laboratory of NeuroCognitive Development.
+
+This is unlikely to be too useful to the world at large.
+Integrations are specific to the lab's tools (gcal, qualtrics) and firewall. The database schema is tied to internal organization of multimodal experiments with human participates.
+
+Instead see components:
+ * google calendar: https://github.com/LabNeuroCogDevel/LNCDcal.py
+ * qualtrics - `Qualtrics.py`
+
+
 ## Run without install
  - Mobaxterm/ssh: rhea
  - `schedule.py`
