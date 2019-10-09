@@ -21,6 +21,7 @@ def test_addra_returns(qtbot):
     w.abbr_text.setText('Abbr Test')
     assert w.ra_data['abbr'] == 'Abbr Test'
 
+
 def test_addstudy_returns(qtbot):
     """ check study data """
     w = AddStudy.AddStudyWindow()
@@ -37,6 +38,7 @@ def test_addstudy_returns(qtbot):
     w.visit_type_text.setText('Visit 1,      Visit 2')
     assert w.study_data['visit_types'] == '["Visit 1", "Visit 2"]'
 
+
 def test_addtask_returns(qtbot):
     """ check task data """
     w = AddTask.AddTaskWindow()
@@ -49,6 +51,7 @@ def test_addtask_returns(qtbot):
 
     w.modes_text.setText('Mode 1, Mode 2')
     assert w.task_data['modes'] == '["Mode 1", "Mode 2"]'
+    
 
 def test_addvisittype_returns(qtbot):
     """ check visit type data """
