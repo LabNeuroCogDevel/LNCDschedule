@@ -34,7 +34,7 @@ def get_json_result(req):
     if jsn is None:
         warnings.warn('no json in request!')
         return {}
-    return req.json().get('result', {})
+    return jsn.get('result', {})
 
 
 def connstr_from_config(inifile='config.ini'):
@@ -75,6 +75,31 @@ class DlStatus:
     def is_success(self):
         """finished and complete, ready to download csv file"""
         return self and self.status == 'complete'
+
+class Survey:
+#Survey class
+#class with data, modified time, column breakdown(Tasks in battery)
+    def __init__(self):
+        #list that contains stuffs
+        self.collection = []
+        #Dict that contains individual stuffs
+        self.dictionary = {}
+    
+    #Get data form the survey dowmloaded
+    def get_survey(self, surveys):
+        for survey in surveys:
+            modified_time = survey["lastModified"]
+            dictionary['modified_time'] = modified_time
+            
+            #Append to the list
+            collection.append(dictionary)
+
+
+
+
+
+
+
 
 
 class Qualtrics:
@@ -183,11 +208,16 @@ def format_colnames(infile, outfile):
 
     # (2) Reformat the column names
     for name in columns:
-        new_name = name.replace('{', '').replace('}', '').\
-                   split(':')[1].\
-                   replace('\'', '').\
-                   replace('-', '_').replace(' ', '')
-        new_cols.append(new_name)
+        try:
+            new_name = name.replace('{', '').replace('}', '').\
+                       split(':')[1].\
+                       replace('\'', '').\
+                       replace('-', '_').replace(' ', '')
+            new_cols.append(new_name)
+        except IndexError:
+            print("Outliers, name = 1")
+            new_cols.append(1)
+            continue
     # print new_cols
     df.columns = new_cols
     # (3) Create CSV file into the output directory
@@ -208,7 +238,10 @@ def download_all():
     create_fresh_dir('Qualtrics/Orig')
     create_fresh_dir('Qualtrics/Export')
     for survey in surveys:
+        #Get the whole survey from id
         s_df = q_api.get_survey(survey['id'])
+
+        #Pass  the surveys to 
         if not s_df.empty:
             # orig has original data
             # export has junk rows removed
@@ -216,7 +249,7 @@ def download_all():
             origfile = "./Qualtrics/Orig/%s.csv" % name
             exportfile = "./Qualtrics/Export/%s.csv" % name
             # save files
-            s_df.to_csv(origfile)
+            s_df.to_csv(origfile, index = False, header = False)
             format_colnames(origfile, exportfile)
 
 
