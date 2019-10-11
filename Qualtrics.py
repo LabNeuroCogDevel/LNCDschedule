@@ -25,6 +25,8 @@ import configparser
 import shutil
 import requests
 import pandas as pd
+from anytree import Node, RenderTree
+
 
 
 def get_json_result(req):
@@ -79,20 +81,39 @@ class DlStatus:
 class Survey:
 #Survey class
 #class with data, modified time, column breakdown(Tasks in battery)
-    def __init__(self):
+    def __init__(self, modified_time = None, survey_id = None):
         #list that contains stuffs
         self.collection = []
+        self.responseID = []
+        self.name = []
+        self.email = []
+
+
         #Dict that contains individual stuffs
-        self.dictionary = {}
+
+        self.modified_time = modified_time
+        self.survey_id = survey_id
+
+        self.q_api = Qualtrics()
+
     
     #Get data form the survey dowmloaded
-    def get_survey(self, surveys):
-        for survey in surveys:
-            modified_time = survey["lastModified"]
-            dictionary['modified_time'] = modified_time
-            
-            #Append to the list
-            collection.append(dictionary)
+    def set_data(self, survey):
+        #First extract modified time and ID from the surveys
+        self.modified_time = survey['lastModified']
+        self.survey_id = survey['id']
+
+    def fetch_data(self):
+        #Fetch_data based on the id chose
+        s_df = self.q_api.get_survey(survey['id'])
+        #Get all personal data and put them into a dictionary
+        self.ResponseID = s_df['ResponseID']
+        self.name = s_df['RecipientLastName']+' '+s_df['RecipientFirstName']      
+        self.email = s_df['RecipientEmail']   
+
+        survey_id = Node("survey_id") 
+        for n in name:
+            n = Node(n, parent = survey_id)
 
 
 
@@ -224,6 +245,10 @@ def format_colnames(infile, outfile):
     df.to_csv(outfile, doublequote=True, sep='|', index=False)
     print('Reformateed and moved %s' % (outfile))
 
+def filtering(survey):
+    for s in survey:
+        if 'Screening' not in s['name'] or 'Battery' not in s['name']:
+            survey.remove(s)
 
 def download_all():
     """ get all surveys and download them (Orig)
@@ -233,13 +258,21 @@ def download_all():
     """
     import re
     q_api = Qualtrics()
+
+    #This function get all the surveys
     surveys = q_api.all_surveys()
+   
+    #Filtering out the survey without screening or barrtey
+    surveys = filtering(surveys)
     # remove old folders if they exist, create again
     create_fresh_dir('Qualtrics/Orig')
     create_fresh_dir('Qualtrics/Export')
     for survey in surveys:
         #Get the whole survey from id
         s_df = q_api.get_survey(survey['id'])
+
+        print(s_df)
+        exit()
 
         #Pass  the surveys to 
         if not s_df.empty:
