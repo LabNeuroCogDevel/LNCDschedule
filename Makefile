@@ -1,7 +1,7 @@
 .PHONY: test lint
 
 Pipfile:
-	pipenv install PyQt5 pyesql psycopg2 'git+https://github.com/LabNeuroCogDevel/LNCDcal.py#egg=9592386' pyOpenSSL pytest-qt
+	pipenv install PyQt5 pyesql psycopg2 'git+https://github.com/LabNeuroCogDevel/LNCDcal.py#egg=9592386' pyOpenSSL pytest-qt pytest-pgsql sqlalchemy
 
 lint:
 	pylint schedule.py --extension-pkg-whitelist=PyQt5
