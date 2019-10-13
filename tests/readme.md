@@ -39,6 +39,9 @@ Also see `Makefile` test section and `.travis.yml` script section
 
 pytests `--pdb` option drops into an interactive python shell when an assert fails.
 
+qtbot cannot see dialog/modal windows! https://pytest-qt.readthedocs.io/en/latest/note_dialogs.html. These have to be tested separately. 
+
+
 useful fixtures:
 * `create_db` wires up a mock database. see `tests/db/test_00_insert_update.py`
   * `from pyesql_helper import csv_none` to read a csv with null values into a table . see `tests/db/test_multiRA_insertions.py`

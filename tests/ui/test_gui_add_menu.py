@@ -1,4 +1,3 @@
-from schedule import ScheduleApp
 import AddRA
 import AddStudy
 import AddTask

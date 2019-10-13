@@ -3,7 +3,6 @@
 # to run tests without silengly capturing output:
 #   python3 -m pytest test_gui_search.py -s
 
-from schedule import ScheduleApp
 from PyQt5.QtWidgets import QApplication
 import sys
 
