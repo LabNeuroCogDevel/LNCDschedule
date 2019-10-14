@@ -7,7 +7,7 @@ MAKEFLAGS += --no-builtin-rules
 # debian is still default python2
 PYTHONAPP = python3 -m 
 # files that, if changed, would need to rerun coverage/test/compile
-PYTHONCODE = $(wildcard *.py)
+PYTHONCODE = $(wildcard *.py table/*.py)
 CODEFILES = $(PYTHONCODE) $(wildcard ui/*.ui)
 
 # files behind non-file targets
@@ -33,10 +33,6 @@ endif
 	$(PYTHONAPP) pip install -r requirements.txt
 	mkdir .QA
 
-clean:
-	@echo 'cleaning'
-	rm -rf .coverage htmlcov/
-
 .QA/lint-res.txt: $(PYTHONCODE)
 	$(PYTHONAPP) pylint $(PYTHONCODE) --extension-pkg-whitelist=PyQt5 | tee $@
 
@@ -44,10 +40,11 @@ clean:
 	$(PYTHONAPP) pytest tests -v | tee $@
 
 .coverage: $(CODEFILES) 
-	make clean
-	find . -name '*.py' -not -path './env/*' -not -path './tests/*' -exec $(PYTHONAPP) coverage run {} +
+	$(PYTHONAPP) coverage erase
+	- $(PYTHONAPP) coverage run --omit='env/*,tests/*' -m pytest 
 	$(PYTHONAPP) coverage report
 
+# used from Windows (with `/l` mnt point) to provide .exe
 img/schedule.ico: img/schedule_icon.png
 	convert img/schedule_icon.png img/schedule.ico
 
