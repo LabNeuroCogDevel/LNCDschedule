@@ -14,43 +14,43 @@ def test_addra_returns(qtbot):
     """ check ra_data """
     w = AddRA.AddRAWindow()
 
-    w.ra_text.setText('RA Test')
-    assert w.ra_data['ra'] == 'RA Test'
+    w.ra_text.setText('Test RA')
+    assert w.ra_data['ra'] == 'Test RA'
 
-    w.abbr_text.setText('Abbr Test')
-    assert w.ra_data['abbr'] == 'Abbr Test'
+    w.abbr_text.setText('Test Abbr')
+    assert w.ra_data['abbr'] == 'Test Abbr'
 
 
 def test_addstudy_returns(qtbot):
     """ check study data """
     w = AddStudy.AddStudyWindow()
 
-    w.study_text.setText('Study Test')
-    assert w.study_data['study'] == 'Study Test'
+    w.study_text.setText('Test Study')
+    assert w.study_data['study'] == 'Test Study'
 
-    w.grantname_text.setText('Grant Test')
-    assert w.study_data['grantname'] == 'Grant Test'
+    w.grantname_text.setText('Test Grant')
+    assert w.study_data['grantname'] == 'Test Grant'
 
-    w.cohort_text.setText('Cohort 1,         Cohort 2')
-    assert w.study_data['cohorts'] == '["Cohort 1", "Cohort 2"]'
+    w.cohort_text.setText('Test Cohort 1    ,         Test Cohort 2')
+    assert w.study_data['cohorts'] == '["Test Cohort 1", "Test Cohort 2"]'
 
-    w.visit_type_text.setText('Visit 1,      Visit 2')
-    assert w.study_data['visit_types'] == '["Visit 1", "Visit 2"]'
+    w.visit_type_text.setText('Test Visit 1   ,      Test Visit 2')
+    assert w.study_data['visit_types'] == '["Test Visit 1", "Test Visit 2"]'
 
 
 def test_addtask_returns(qtbot):
     """ check task data """
     w = AddTask.AddTaskWindow()
 
-    w.task_text.setText('Task Test')
-    assert w.task_data['task'] == 'Task Test'
+    w.task_text.setText('Test Task')
+    assert w.task_data['task'] == 'Test Task'
 
-    w.measures_text.setText('Measures 1,Measures 2')
-    assert w.task_data['measures'] == '["Measures 1", "Measures 2"]'
+    w.measures_text.setText('Test Measures 1,Test Measures 2')
+    assert w.task_data['measures'] == '["Test Measures 1", "Test Measures 2"]'
 
-    w.modes_text.setText('Mode 1, Mode 2')
-    assert w.task_data['modes'] == '["Mode 1", "Mode 2"]'
-    
+    w.modes_text.setText('Test Mode 1, Test Mode 2')
+    assert w.task_data['modes'] == '["Test Mode 1", "Test Mode 2"]'
+
 
 def test_addvisittype_returns(qtbot):
     """ check visit type data """
@@ -62,5 +62,5 @@ def test_addvisittype_returns(qtbot):
     w.pid_text.setText("2")
     assert w.visit_type_data['pid'] == '2'
 
-    w.vtype_text.setText('Vtype 1,       Vtype 2')
+    w.vtype_text.setText('Test Vtype 1,      Test Vtype 2')
     assert w.visit_type_data['vtype'] == '["Vtype 1", "Vtype 2"]'
