@@ -22,6 +22,7 @@ Qualtrics/
 *spec
 
 .coverage
+.QA
 
 # Environments
 .env
@@ -35,3 +36,4 @@ venv.bak/
 # IDEs
 .vscode
 .idea
+
