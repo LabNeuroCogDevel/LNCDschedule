@@ -3,11 +3,11 @@ import AddPerson
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtCore import Qt
 import sys
-#from pyesql_helper import pyesql_helper as ph
+from pyesql_helper import pyesql_helper as ph
 
 
 # initialize QT
-app = QApplication(sys.argv)
+APP = QApplication(sys.argv)
 
 
 def test_addperson_returns(qtbot):
@@ -35,14 +35,16 @@ def test_add_people_launch(qtbot, monkeypatch, create_db):
     # override default add_person_pushed function with our dummy version
     monkeypatch.setattr("schedule.ScheduleApp.add_person_pushed", set_name)
 
+    # b/c of monkeypatch, we are not using 'lncdapp' test fixture
+    lncdapp = ScheduleApp(sql_obj=ph(create_db.connection), cal_obj='Not Used')
+
     # open app with fake db connection
-    w = ScheduleApp(sql_obj=(create_db.connection), cal_obj='Not Used')
-    qtbot.add_widget(w)  # attach at testing robot
+    qtbot.add_widget(lncdapp)  # attach at testing robot
 
     # change the text in the main window
-    w.fullname.setText('% Tian')
+    lncdapp.fullname.setText('% Tian')
     # pretend to open new window
-    qtbot.mouseClick(w.add_person_button, Qt.LeftButton)
+    qtbot.mouseClick(lncdapp.add_person_button, Qt.LeftButton)
 
     # did add_person_button send the name along?
-    # assert set_name.name == '% Tian'
+    assert set_name.name == '% Tian'

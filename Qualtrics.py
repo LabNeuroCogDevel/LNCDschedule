@@ -25,6 +25,8 @@ import configparser
 import shutil
 import requests
 import pandas as pd
+from anytree import Node, RenderTree
+
 
 
 def get_json_result(req):
@@ -34,7 +36,7 @@ def get_json_result(req):
     if jsn is None:
         warnings.warn('no json in request!')
         return {}
-    return req.json().get('result', {})
+    return jsn.get('result', {})
 
 
 def connstr_from_config(inifile='config.ini'):
@@ -75,6 +77,50 @@ class DlStatus:
     def is_success(self):
         """finished and complete, ready to download csv file"""
         return self and self.status == 'complete'
+
+class Survey:
+#Survey class
+#class with data, modified time, column breakdown(Tasks in battery)
+    def __init__(self, modified_time = None, survey_id = None):
+        #list that contains stuffs
+        self.collection = []
+        self.responseID = []
+        self.name = []
+        self.email = []
+
+
+        #Dict that contains individual stuffs
+
+        self.modified_time = modified_time
+        self.survey_id = survey_id
+
+        self.q_api = Qualtrics()
+
+    
+    #Get data form the survey dowmloaded
+    def set_data(self, survey):
+        #First extract modified time and ID from the surveys
+        self.modified_time = survey['lastModified']
+        self.survey_id = survey['id']
+
+    def fetch_data(self):
+        #Fetch_data based on the id chose
+        s_df = self.q_api.get_survey(survey['id'])
+        #Get all personal data and put them into a dictionary
+        self.ResponseID = s_df['ResponseID']
+        self.name = s_df['RecipientLastName']+' '+s_df['RecipientFirstName']      
+        self.email = s_df['RecipientEmail']   
+
+        survey_id = Node("survey_id") 
+        for n in name:
+            n = Node(n, parent = survey_id)
+
+
+
+
+
+
+
 
 
 class Qualtrics:
@@ -183,17 +229,26 @@ def format_colnames(infile, outfile):
 
     # (2) Reformat the column names
     for name in columns:
-        new_name = name.replace('{', '').replace('}', '').\
-                   split(':')[1].\
-                   replace('\'', '').\
-                   replace('-', '_').replace(' ', '')
-        new_cols.append(new_name)
+        try:
+            new_name = name.replace('{', '').replace('}', '').\
+                       split(':')[1].\
+                       replace('\'', '').\
+                       replace('-', '_').replace(' ', '')
+            new_cols.append(new_name)
+        except IndexError:
+            print("Outliers, name = 1")
+            new_cols.append(1)
+            continue
     # print new_cols
     df.columns = new_cols
     # (3) Create CSV file into the output directory
     df.to_csv(outfile, doublequote=True, sep='|', index=False)
     print('Reformateed and moved %s' % (outfile))
 
+def filtering(survey):
+    for s in survey:
+        if 'Screening' not in s['name'] or 'Battery' not in s['name']:
+            survey.remove(s)
 
 def download_all():
     """ get all surveys and download them (Orig)
@@ -203,12 +258,23 @@ def download_all():
     """
     import re
     q_api = Qualtrics()
+
+    #This function get all the surveys
     surveys = q_api.all_surveys()
+   
+    #Filtering out the survey without screening or barrtey
+    surveys = filtering(surveys)
     # remove old folders if they exist, create again
     create_fresh_dir('Qualtrics/Orig')
     create_fresh_dir('Qualtrics/Export')
     for survey in surveys:
+        #Get the whole survey from id
         s_df = q_api.get_survey(survey['id'])
+
+        print(s_df)
+        exit()
+
+        #Pass  the surveys to 
         if not s_df.empty:
             # orig has original data
             # export has junk rows removed
@@ -216,7 +282,7 @@ def download_all():
             origfile = "./Qualtrics/Orig/%s.csv" % name
             exportfile = "./Qualtrics/Export/%s.csv" % name
             # save files
-            s_df.to_csv(origfile)
+            s_df.to_csv(origfile, index = False, header = False)
             format_colnames(origfile, exportfile)
 
 
