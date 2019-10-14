@@ -12,11 +12,11 @@ CODEFILES = $(PYTHONCODE) $(wildcard ui/*.ui)
 
 # files behind non-file targets
 # first is default action 'make' => test
-test: coverage-report .QA/test-results.txt
+test: .QA/test-results.txt
+coverage-report: .coverage 
 all: test lint
 create-env: env/bin/activate
-lint: .QA/lint-res.txt
-coverage-report: .coverage 
+lint: .QA/lint-results.txt
 binary: dist/schedule/schedule/schedule.py
 
 env/bin/activate:
@@ -33,7 +33,7 @@ endif
 	$(PYTHONAPP) pip install -r requirements.txt
 	mkdir .QA
 
-.QA/lint-res.txt: $(PYTHONCODE)
+.QA/lint-results.txt: $(PYTHONCODE)
 	$(PYTHONAPP) pylint $(PYTHONCODE) --extension-pkg-whitelist=PyQt5 | tee $@
 
 .QA/test-results.txt: $(CODEFILES)
