@@ -1,0 +1,13 @@
+[run]
+data_file = .QA/converage-results.txt
+omit = 
+    # system files
+    /usr/*
+    */.local/*
+    # venv files
+    env/*
+    # test files
+    tests/*
+
+[html]
+directory = .QA/coverage-html

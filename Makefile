@@ -11,12 +11,12 @@ PYTHONCODE = $(wildcard *.py table/*.py)
 CODEFILES = $(PYTHONCODE) $(wildcard ui/*.ui)
 
 # files behind non-file targets
-# first is default action 'make' => test
-test: .QA/test-results.txt
-coverage-report: .coverage 
-all: test lint
+# first listed here is default action run by 'make' w/o args (=> test)
+test: .QA/test.txt
+all: test lint coverage-report
+coverage-report: .QA/coverage.txt
 create-env: env/bin/activate
-lint: .QA/lint-results.txt
+lint: .QA/lint.txt
 binary: dist/schedule/schedule/schedule.py
 
 env/bin/activate:
@@ -35,15 +35,16 @@ endif
 	$(PYTHONAPP) pip install --upgrade pip
 	$(PYTHONAPP) pip install -r requirements.txt
 
-.QA/lint-results.txt: $(PYTHONCODE) | .QA
+.QA/lint.txt: $(PYTHONCODE) | .QA
 	$(PYTHONAPP) pylint $(PYTHONCODE) --extension-pkg-whitelist=PyQt5 | tee $@
 
-.QA/test-results.txt: $(CODEFILES) | .QA
+.QA/test.txt: $(CODEFILES) | .QA
 	$(PYTHONAPP) pytest tests -v | tee $@
 
-.coverage: $(CODEFILES) 
+.QA/coverage.txt: $(CODEFILES)  | .QA
 	$(PYTHONAPP) coverage erase
-	- $(PYTHONAPP) coverage run --omit='env/*,tests/*' -m pytest 
+	# N.B. see .coveragerc, '-' means don't stop if test fails
+	- $(PYTHONAPP) coverage run -m pytest 
 	$(PYTHONAPP) coverage report
 
 # used from Windows (with `/l` mnt point) to provide .exe
