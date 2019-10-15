@@ -23,7 +23,10 @@ env/bin/activate:
 	$(PYTHONAPP) venv env
 	@echo 'Run: source env/bin/activate'
 
-install: env/bin/activate
+.QA:
+	mkdir .QA
+
+install: env/bin/activate .QA
 	# dont run if we dont have VIRTUAL_ENV
 ifdef VIRTUAL_ENV
 else
@@ -31,12 +34,11 @@ else
 endif
 	$(PYTHONAPP) pip install --upgrade pip
 	$(PYTHONAPP) pip install -r requirements.txt
-	mkdir .QA
 
-.QA/lint-results.txt: $(PYTHONCODE)
+.QA/lint-results.txt: $(PYTHONCODE) | .QA
 	$(PYTHONAPP) pylint $(PYTHONCODE) --extension-pkg-whitelist=PyQt5 | tee $@
 
-.QA/test-results.txt: $(CODEFILES)
+.QA/test-results.txt: $(CODEFILES) | .QA
 	$(PYTHONAPP) pytest tests -v | tee $@
 
 .coverage: $(CODEFILES) 
