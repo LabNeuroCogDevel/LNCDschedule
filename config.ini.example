@@ -1,0 +1,16 @@
+[SQL]
+  host    = localhost
+  dbname  = db
+  user    = uname
+  port = 5432
+
+[Calendar]
+  email = s@servicename.iam.gserviceaccount.com
+  p12   = DNE.p12
+  calID = calid@group.calendar.google.com
+  tz    = America/New_York
+  backCalID = backup@group.calendar.google.com
+[Qualtrics]
+  api_token=NA
+  datacenter=https://foo.co99
+

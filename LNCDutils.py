@@ -1,6 +1,9 @@
-import datetime, calendar
+# import calendar
+import datetime
 from enum import Enum
+import configparser
 from PyQt5 import QtWidgets
+import PasswordDialog
 
 
 class ScheduleFrom(Enum):
@@ -123,3 +126,76 @@ def update_gcal(cal, info, assign=False):
     info['vtimestamp'] = info['vtimestamp'].strftime("%a %b %d %H:%M:%S %Y")
     event = make_calendar_event(cal, info, assign)
     return event
+
+
+# ## DATABASE
+def catch_to_mkmsg(func, *kargs):
+    """generic wrapper to send excpetions to mkmsg"""
+    try:
+        func(*kargs)
+        return True
+    except Exception as err:
+        mkmsg(str(err))
+        return False
+
+
+def db_config_to_dict(config, gui=None):
+    """
+    @param config  dictionary or str path to config file
+    @param gui     QtWidgets.QApplication.instance() to prompt for user/pass
+    @return dictionary with db config
+    read config.ini file like
+      [SQL]
+       host=...
+       dbname=...
+       ..
+    """
+    # TODO: move to utils? does not depend on "self"
+    if isinstance(config, dict):
+        dbsettings = config
+    else:
+        cfg = configparser.ConfigParser()
+        cfg.read(config)
+        dbsettings = cfg._sections.get('SQL')
+        if dbsettings is None:
+            raise Exception("%s does not have SQL section!" % config)
+
+    # if the config doesn't have a username, we will try to get one
+    if not dbsettings.get('user'):
+        if gui is None or gui is False:
+            raise Exception('No username in config file' +
+                            'and no gui to authenticate requested!')
+        user_pass = PasswordDialog.user_pass(gui)
+        dbsettings['user'] = user_pass['user']
+        dbsettings['password'] = user_pass['pass']
+    return dbsettings
+
+
+def make_connstr(config_dict):
+    """
+    @param config_dict dictionary containing dbname, user, host
+                       and maybe port and password
+    @return connection string and user after reading config file
+    """
+    # only set password if its not empty
+    # otherise we can continue without using a password... maybe
+    confline = 'dbname=%(dbname)s user=%(user)s host=%(host)s'
+
+    # if we specify a port or password, use it
+    if config_dict.get('port'):
+        confline += " port=%(port)s"
+    if config_dict.get('password'):
+        confline += " password=%(password)s"
+
+    constr = confline % config_dict
+    return constr
+
+
+def connstr_from_config(config, gui=None):
+    """
+    @param config  see db_config_to_dict. str path or dict
+    @param gui     see db_config_to_dict. QtWidgets.QApplication.instance()
+    @return connection string and user after reading config file
+    """
+    config_dict = db_config_to_dict(config, gui)
+    return make_connstr(config_dict)

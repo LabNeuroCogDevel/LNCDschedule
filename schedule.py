@@ -28,7 +28,7 @@ import AddContactNotes
 # local tools
 from LNCDutils import (mkmsg, generic_fill_table, CMenuItem,
                        update_gcal, get_info_for_cal,
-                       caltodate, comboval, ScheduleFrom)
+                       caltodate, comboval, ScheduleFrom, catch_to_mkmsg)
 
 
 # google reports UTC, we are EST or EDT. get the diff between google and us
@@ -405,6 +405,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         ra_data = self.AddRA.ra_data
         self.sql.insert('ra', ra_data)
         print("adding ra: %s" % ra_data)
+        # for this RA to access the database they need to be added as a user
 
     def add_task(self):
         self.AddTask.show()
@@ -760,7 +761,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
             print('trivial error')
             print('Remove successfully')
         except psycopg2.InternalError:
-            mkmsg('Cannot remove visit 2130 b/c status is not sched or have enrolled or have tasks')
+            mkmsg('Cannot remove visit %s b/c status is not sched or have enrolled or have tasks' % vid)
 
         # finally update visit table
         self.update_visit_table()
@@ -1250,9 +1251,8 @@ class ScheduleApp(QtWidgets.QMainWindow):
             print("updating visit (%s) and rm'ing old uri (%s) from calendar" %
                   (vid, old_googleuri))
             self.ScheduleVisit.model['action'] = 'resched'
-            added = self.\
-                catch_to_mkmsg(self.sql.update_columns, 'visit_summary',
-                               'vid', vid, self.ScheduleVisit.model)
+            added = catch_to_mkmsg(self.sql.update_columns, 'visit_summary',
+                                   'vid', vid, self.ScheduleVisit.model)
         else:
             self.ScheduleVisit.model['action'] = 'sched'
             added = self.\
@@ -1636,16 +1636,15 @@ class ScheduleApp(QtWidgets.QMainWindow):
         #Refresh the people_table
         self.search_people_by_name()
 
-    def catch_to_mkmsg(self, func, *kargs):
-        """generic wrapper to send excpetions to mkmsg"""
-        try:
-            func(*kargs)
-            return True
-        except Exception as err:
-            mkmsg(str(err))
-            return False
-
     def sqlInsertOrShowErr(self, table, d):
+        """
+        @param table - table to inser to
+        @param d - data to insert
+        @return True/False if inserted
+        @sideffect - gui message if error
+        """
+        # TODO: test
+        # return catch_to_mkmsg(self.sql.insert, d)
         try:
             # self.sql.query.insert_person(**(self.AddPerson.persondata))
             # print('insering into %s: %s' % (table, d)) # sql.insert does this
@@ -1660,6 +1659,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
         """
         wrap sql.update in mkmsg
         """
+        # return catch_to_mkmsg(self.sql.update, *kargs)
         try:
             self.sql.update(*kargs)
             return(True)

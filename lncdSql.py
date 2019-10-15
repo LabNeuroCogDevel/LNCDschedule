@@ -1,11 +1,10 @@
-import configparser
 import psycopg2
 import psycopg2.sql
 import pyesql
 import re  # just for censoring password
 import sqlalchemy as sqla
 from sqlalchemy.dialects.postgresql import JSON
-import PasswordDialog
+from LNCDutils import db_config_to_dict, make_connstr
 
 
 class lncdSql():
@@ -28,7 +27,8 @@ class lncdSql():
                 self.conn = conn
                 self.engine = conn.connection
         elif config is not None:
-            constr = connstr_from_config(config, gui)
+            self.config = db_config_to_dict(config, gui)
+            constr = make_connstr(self.config)
             print('connecting: ' +
                   re.sub('password=[^\\s]+', 'password=*censored*', constr))
             self.conn = psycopg2.connect(constr)
@@ -53,6 +53,7 @@ class lncdSql():
         #  (otherwise we are probably in a test and dont want this check)
         # query will error if user not given permission
         # see sql/04_add-RAs.sql
+        self.config = config
         if config:
             print('testing db connection')
             # TODO: why do we need to rethrow error for it to stop the gui?!
@@ -182,44 +183,6 @@ class lncdSql():
             cur.execute(sql,(pid,value))
         data = cur.fetchall()
         return data
-
-
-def connstr_from_config(config, gui):
-    """
-    return connection string and user after reading config file
-    can use a gui to get user/pass if needed
-    """
-    # TODO: move to utils? does not depend on "self"
-    # read config.ini file like
-    # [SQL]
-    #  host=...
-    #  dbname=...
-    #  ..
-
-    cfg = configparser.ConfigParser()
-    cfg.read(config)
-    confline = 'dbname=%(dbname)s user=%(user)s host=%(host)s'
-    # if we specify a port, use it
-    if cfg._sections['SQL'].get('port'):
-        confline += " port=%(port)s"
-
-    # if the config doesn't have a username, we will try to get one
-    if not cfg._sections['SQL'].get('user'):
-        if gui is None or gui is False:
-            raise Exception('No username in config file' +
-                            'and no gui to authenticate requested!')
-        else:
-            user_pass = PasswordDialog.user_pass(gui)
-            cfg._sections['SQL']['user'] = user_pass['user']
-            cfg._sections['SQL']['password'] = user_pass['pass']
-
-    # only set password if its not empty
-    # otherise we can continue without using a password... maybe
-    if cfg._sections['SQL']['password']:
-        confline += " password=%(password)s"
-
-    constr = confline % cfg._sections['SQL']
-    return constr
 
 
 def cur_user(conn):

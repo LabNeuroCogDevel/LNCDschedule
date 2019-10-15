@@ -7,7 +7,7 @@ from PyQt5.QtWidgets import QApplication
 import sys
 
 # initialize QT
-app = QApplication(sys.argv)
+APP = QApplication(sys.argv)
 
 
 # using pytest-qt and pytest-pgsql
