@@ -25,9 +25,6 @@ import configparser
 import shutil
 import requests
 import pandas as pd
-from anytree import Node, RenderTree
-
-
 
 def get_json_result(req):
     """get 'result' from request response
@@ -87,38 +84,49 @@ class Survey:
         self.responseID = []
         self.name = []
         self.email = []
-
-
         #Dict that contains individual stuffs
 
         self.modified_time = modified_time
         self.survey_id = survey_id
-
         self.q_api = Qualtrics()
-
     
     #Get data form the survey dowmloaded
     def set_data(self, survey):
+        self.survey = survey
         #First extract modified time and ID from the surveys
         self.modified_time = survey['lastModified']
         self.survey_id = survey['id']
+        self.survey_name = survey['name']
 
-    def fetch_data(self):
-        #Fetch_data based on the id chose
-        s_df = self.q_api.get_survey(survey['id'])
+    def appending_data(self, dict):
+        
+        list_all = []
+        question_list = []
+        question_data  = {}
         #Get all personal data and put them into a dictionary
-        self.ResponseID = s_df['ResponseID']
-        self.name = s_df['RecipientLastName']+' '+s_df['RecipientFirstName']      
-        self.email = s_df['RecipientEmail']   
+        self.ResponseID = self.s_df['ResponseID']
+        list_all.append(self.ResponseID)
+        self.name = self.s_df['RecipientLastName']+' '+self.s_df['RecipientFirstName']    
+        list_all.append(self.name)  
+        self.email = self.s_df['RecipientEmail'] 
+        list_all.append(self.email)
 
-        survey_id = Node("survey_id") 
-        for n in name:
-            n = Node(n, parent = survey_id)
+        dict{'survey_id':list_all}
+        #For each name in the name list in list_all, find their reponses
 
 
+    def fetch_data(self, survey_id):
+        Battery_dict = {}
+        Screening_dict = {}
+        self.dict = {'Battery':Battery_dict, 'Screening':Screening_dict}
 
+        #Fetch_data based on the id chose
+        self.s_df = self.q_api.get_survey(survey_id)
 
-
+        if 'Battery' in self.survey_name:
+            self.appending_data(Battery_dict)
+        elif 'Screening' in self.survey_name:
+            self.appending_data(Screening_dict)  
 
 
 
@@ -221,7 +229,6 @@ def format_colnames(infile, outfile):
     '''This function takes the file and rename its columns with the right format,
     and generate csv file with the right column names'''
     # TODO: do this without needing to read from a file
-
     df = pd.read_csv(infile, skiprows=[0, 1], low_memory=False)
 
     columns = df.columns
@@ -247,8 +254,9 @@ def format_colnames(infile, outfile):
 
 def filtering(survey):
     for s in survey:
-        if 'Screening' not in s['name'] or 'Battery' not in s['name']:
-            survey.remove(s)
+        new_survey = [x for x in survey if 'Battery' in x['name']]    
+
+    return new_survey
 
 def download_all():
     """ get all surveys and download them (Orig)
@@ -261,18 +269,15 @@ def download_all():
 
     #This function get all the surveys
     surveys = q_api.all_surveys()
-   
     #Filtering out the survey without screening or barrtey
-    surveys = filtering(surveys)
+    #surveys = filtering(surveys)
+    print(len(surveys))
     # remove old folders if they exist, create again
     create_fresh_dir('Qualtrics/Orig')
     create_fresh_dir('Qualtrics/Export')
     for survey in surveys:
         #Get the whole survey from id
         s_df = q_api.get_survey(survey['id'])
-
-        print(s_df)
-        exit()
 
         #Pass  the surveys to 
         if not s_df.empty:
@@ -287,4 +292,4 @@ def download_all():
 
 
 if __name__ == "__main__":
-    download_all()
+        download_all()
