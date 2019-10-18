@@ -74,9 +74,9 @@
   <widget class="QLineEdit" name="task_text">
    <property name="geometry">
     <rect>
-     <x>130</x>
+     <x>90</x>
      <y>20</y>
-     <width>251</width>
+     <width>401</width>
      <height>21</height>
     </rect>
    </property>
@@ -84,9 +84,9 @@
   <widget class="QLineEdit" name="measures_text">
    <property name="geometry">
     <rect>
-     <x>130</x>
+     <x>90</x>
      <y>60</y>
-     <width>251</width>
+     <width>401</width>
      <height>21</height>
     </rect>
    </property>
@@ -97,9 +97,9 @@
   <widget class="QLineEdit" name="modes_text">
    <property name="geometry">
     <rect>
-     <x>130</x>
+     <x>90</x>
      <y>100</y>
-     <width>251</width>
+     <width>401</width>
      <height>21</height>
     </rect>
    </property>
@@ -195,12 +195,13 @@
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
 &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'Sans Serif';&quot;&gt;Have file ID cut-paste into here when add button is clicked&lt;/span&gt;&lt;/p&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'Sans Serif';&quot;&gt;Have to reset clipboard when files are added&lt;/span&gt;&lt;/p&gt;
 &lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans Serif';&quot;&gt;&lt;br /&gt;&lt;/p&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'Sans Serif';&quot;&gt;Otherwise, when a subsequent file is entered, the contents of the clipboard will be pasted in each time a character is entered or deleted&lt;/span&gt;&lt;/p&gt;
 &lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans Serif';&quot;&gt;&lt;br /&gt;&lt;/p&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'Sans Serif';&quot;&gt;Might be easier to resolve if QFileDialog is used - felt like some roadblocks to resolving it were due to two cut/pastes happening simultaneously&lt;/span&gt;&lt;/p&gt;
 &lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans Serif';&quot;&gt;&lt;br /&gt;&lt;/p&gt;
-&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans Serif';&quot;&gt;&lt;br /&gt;&lt;/p&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'Sans Serif';&quot;&gt;Cut() is not working for QLineEdit - maybe need header file?&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'Sans Serif';&quot;&gt;Test clipboard reset if this is the only thing that gets cut/paste&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
   </widget>
   <widget class="QTextEdit" name="file_location_list">
@@ -217,7 +218,9 @@ p, li { white-space: pre-wrap; }
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
 &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'Sans Serif';&quot;&gt;Have file location cut-paste into here when add button is clicked&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'Sans Serif';&quot;&gt;Look into QFileDialog for possible more elegant way of implementing this half&lt;/span&gt;&lt;/p&gt;
+&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans Serif';&quot;&gt;&lt;br /&gt;&lt;/p&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'Sans Serif';&quot;&gt;Likely need header file to include it&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
   </widget>
  </widget>
@@ -259,31 +262,47 @@ p, li { white-space: pre-wrap; }
    <sender>add_file_button</sender>
    <signal>clicked()</signal>
    <receiver>file_id_text</receiver>
-   <slot>cut()</slot>
+   <slot>selectAll()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>574</x>
-     <y>187</y>
+     <x>564</x>
+     <y>159</y>
     </hint>
     <hint type="destinationlabel">
-     <x>166</x>
-     <y>186</y>
+     <x>192</x>
+     <y>157</y>
     </hint>
    </hints>
   </connection>
   <connection>
-   <sender>file_id_text</sender>
-   <signal>textChanged(QString)</signal>
-   <receiver>file_id_list</receiver>
-   <slot>paste()</slot>
+   <sender>add_file_button</sender>
+   <signal>clicked()</signal>
+   <receiver>file_id_text</receiver>
+   <slot>cut()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>167</x>
-     <y>192</y>
+     <x>570</x>
+     <y>160</y>
     </hint>
     <hint type="destinationlabel">
-     <x>173</x>
-     <y>233</y>
+     <x>150</x>
+     <y>160</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>add_file_button</sender>
+   <signal>clicked()</signal>
+   <receiver>file_location_text</receiver>
+   <slot>selectAll()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>564</x>
+     <y>162</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>456</x>
+     <y>160</y>
     </hint>
    </hints>
   </connection>
@@ -294,28 +313,44 @@ p, li { white-space: pre-wrap; }
    <slot>cut()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>559</x>
-     <y>197</y>
+     <x>557</x>
+     <y>160</y>
     </hint>
     <hint type="destinationlabel">
-     <x>491</x>
-     <y>200</y>
+     <x>385</x>
+     <y>163</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>file_id_text</sender>
+   <signal>textEdited(QString)</signal>
+   <receiver>file_id_list</receiver>
+   <slot>paste()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>97</x>
+     <y>154</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>104</x>
+     <y>254</y>
     </hint>
    </hints>
   </connection>
   <connection>
    <sender>file_location_text</sender>
-   <signal>textChanged(QString)</signal>
+   <signal>textEdited(QString)</signal>
    <receiver>file_location_list</receiver>
    <slot>paste()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>412</x>
-     <y>196</y>
+     <x>370</x>
+     <y>160</y>
     </hint>
     <hint type="destinationlabel">
-     <x>412</x>
-     <y>242</y>
+     <x>368</x>
+     <y>248</y>
     </hint>
    </hints>
   </connection>
