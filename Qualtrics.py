@@ -79,56 +79,82 @@ class Survey:
 #Survey class
 #class with data, modified time, column breakdown(Tasks in battery)
     def __init__(self, modified_time = None, survey_id = None):
-        #list that contains stuffs
-        self.collection = []
-        self.responseID = []
-        self.name = []
-        self.email = []
-        #Dict that contains individual stuffs
+        
+        #Generic_set that contains everything
+        self.generic_set = {} #Will onyl contain Screening and Battery, May add more later
+        self.Battery_dict = {}
+        self.Screening_dict ={}
 
+        #Dict that contains individual stuffs
         self.modified_time = modified_time
         self.survey_id = survey_id
         self.q_api = Qualtrics()
-    
-    #Get data form the survey dowmloaded
-    def set_data(self, survey):
-        self.survey = survey
-        #First extract modified time and ID from the surveys
-        self.modified_time = survey['lastModified']
-        self.survey_id = survey['id']
-        self.survey_name = survey['name']
 
-    def appending_data(self, dict):
+    ################################################################
+    #User Friendly functions to read each detailed data form the big datastructure
+    #Parameters should be 'Battery'or'Screening', and Better with an ID
+    def get_all_identity(type = None, ID = None): 
+        #Get people with ID
+        print('Still; Implementing')
         
-        list_all = []
-        question_list = []
-        question_data  = {}
-        #Get all personal data and put them into a dictionary
-        self.ResponseID = self.s_df['ResponseID']
-        list_all.append(self.ResponseID)
-        self.name = self.s_df['RecipientLastName']+' '+self.s_df['RecipientFirstName']    
-        list_all.append(self.name)  
-        self.email = self.s_df['RecipientEmail'] 
-        list_all.append(self.email)
 
-        dict{'survey_id':list_all}
-        #For each name in the name list in list_all, find their reponses
+    def get_all_questions(): 
+        #Get all the test question and may be catagorize them
+        print('Still Implementing')
+
+    ################################################################
+    ################################################################
+    #Function to read in all the data and creat a big data structure
+    #Get data form the survey dowmloaded
+
+    #Structure looks like(generic_set{Battery{{id:dataframe}, .....}, Screening{{id:dataframe},.....})
+    def set_survey_data(self, survey = None, survey_id = None):
+        #if the survey_id is not provided, Assume that it is called inside a loop to retrieve all surveys
+        #Get the survey data one by one
+        #First extract modified time and ID from the surveys
+        if  survey != None:
+            self.modified_time = survey['lastModified']
+            self.survey_id = survey['id']
+            self.survey_name = survey['name']
+            #Split by Battery and Screening, create each instance of dataframe object
+            #Everytime refresh the generic_set with new sets
+            return self.fetch_data(self.survey_id)
+        
+            #Retrieve the data of the specific survey_id if only provided survey_id
+        elif self.survey_id != None:
+            self.survey_name = survey['name']
+            self.survey_id = survey_id
+            return self.fetch_data(self.survey_id)
+
+        else:
+            print('data not within Battery or Screening')
+            return
 
 
-    def fetch_data(self, survey_id):
-        Battery_dict = {}
-        Screening_dict = {}
-        self.dict = {'Battery':Battery_dict, 'Screening':Screening_dict}
-
+    def fetch_data(self, survey_id = None):
+        #Variable that stores the dataframe dataset
         #Fetch_data based on the id chose
         self.s_df = self.q_api.get_survey(survey_id)
 
         if 'Battery' in self.survey_name:
-            self.appending_data(Battery_dict)
+            #Add each survey_id one by one
+            self.Battery_dict = self.appending_data(self.Battery_dict)
         elif 'Screening' in self.survey_name:
-            self.appending_data(Screening_dict)  
+            #Add each survey_id one by one
+            self.Screening_dict = self.appending_data(self.Screening_dict) 
 
+        #Big dictionary that contains all(Adding everytime, may be slow?)
+        self.generic_set['Battery'] = self.Battery_dict
+        self.generic_set['Screening'] = self.Screening_dict
 
+        return self.generic_set
+
+    #Function to push each s_df (dataframe to the lowest branch)
+    def appending_data(self, dictionary):
+        #Data set will just be dictionary + dataframe, because there are multiple, so just use a dictionary
+        dictionary[self.survey_id] = self.s_df
+        return dictionary
+    ###################################################################
 
 
 class Qualtrics:
@@ -229,7 +255,7 @@ def format_colnames(infile, outfile):
     '''This function takes the file and rename its columns with the right format,
     and generate csv file with the right column names'''
     # TODO: do this without needing to read from a file
-    df = pd.read_csv(infile, skiprows=[0, 1], low_memory=False)
+    df = pd.read_csv(infile) #skiprows=[0, 1], low_memory=False)
 
     columns = df.columns
     new_cols = []
@@ -254,9 +280,14 @@ def format_colnames(infile, outfile):
 
 def filtering(survey):
     for s in survey:
-        new_survey = [x for x in survey if 'Battery' in x['name']]    
+        new_survey = [x for x in survey if ('Battery' in x['name'] or 'Screening' in x['name'])]    
 
     return new_survey
+#The function that links to the outer world
+
+def download_s(name):
+    
+
 
 def download_all():
     """ get all surveys and download them (Orig)
@@ -266,11 +297,12 @@ def download_all():
     """
     import re
     q_api = Qualtrics()
+    q_survey = Survey()
 
     #This function get all the surveys
     surveys = q_api.all_surveys()
     #Filtering out the survey without screening or barrtey
-    #surveys = filtering(surveys)
+    surveys = filtering(surveys)
     print(len(surveys))
     # remove old folders if they exist, create again
     create_fresh_dir('Qualtrics/Orig')
@@ -278,6 +310,8 @@ def download_all():
     for survey in surveys:
         #Get the whole survey from id
         s_df = q_api.get_survey(survey['id'])
+        #Set that contains everything
+        set_all = q_survey.set_survey_data(survey)
 
         #Pass  the surveys to 
         if not s_df.empty:
