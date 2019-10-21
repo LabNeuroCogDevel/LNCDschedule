@@ -25,6 +25,12 @@ import configparser
 import shutil
 import requests
 import pandas as pd
+import difflib
+
+#Define a global surveys
+
+surveys = None
+
 
 def get_json_result(req):
     """get 'result' from request response
@@ -108,7 +114,7 @@ class Survey:
     #Get data form the survey dowmloaded
 
     #Structure looks like(generic_set{Battery{{id:dataframe}, .....}, Screening{{id:dataframe},.....})
-    def set_survey_data(self, survey = None, survey_id = None):
+    def set_survey_data(self, survey = None, survey_id = None, name = None):
         #if the survey_id is not provided, Assume that it is called inside a loop to retrieve all surveys
         #Get the survey data one by one
         #First extract modified time and ID from the surveys
@@ -126,9 +132,67 @@ class Survey:
             self.survey_id = survey_id
             return self.fetch_data(self.survey_id)
 
+        elif name != None:
+            li = ['type', 'sex', 'study', 'age', 'timepoint']
+            #Assume that name is already a dictionary
+            #Check if all keys needed is there
+            if all(c in name for c in li):
+                word_matching(name['study'], name['sex'], name['age'], name['timepoint'], name['type'] )
+
+
+            else:
+                print('data not intact')
+                exit()
+
         else:
             print('data not within Battery or Screening')
             return
+    #Study either PET or BrainMechR01
+    #Sex wither Male or Female
+    def word_matching(study, sex, age, timepoint, typ):
+        ##############################
+        #For now must get all the survey first
+        if surveys is None: #Or could just read it all over again in later implementation
+            exit()
+        
+        #List that stores all the names
+        name_list = []
+        search_key = study
+        dictionary_study = {'BrainMechR01':'7T', 'PET/FMRI': 'PET/FMRI'}
+        dictionary_age_Battery= {
+        '(18, 33)': range(18, 33),
+        '(14, 17)': range(14, 17),
+        '(11, 13)': range(11, 13)
+
+        }
+        #Transform the study
+        study = [val for key, val in dictionary_study.items() if search_key in key] 
+        #Transform the sex
+        #sex could be used directly?
+        #Transform the age
+        search_age = age
+        age = [key for key, val in dictionary_age_Battery .items() if search_age in val]
+
+        #Create a fuzzy string first
+        if 'Battery' in typ:
+            fuzzy = study +' '+ sex +' '+ age +' '+ typ
+        else:
+            fuzzy = study +' '+ typ +' '+ sex +' '+ age
+        
+        #Get all the name from the survey
+        for survey in surveys:
+            name_list.append(survey['name'])
+
+        result_name = difflib.get_close_matches(fuzzy, name_list, 1)[0]
+        score = difflib.SequenceMatcher(None, fuzzy, result_name).ratio()
+        
+        #Then use the name to find the ID
+        survey_id = [survey['id'] for survey in surveys if survey.get('name') == result_name]
+
+        
+
+
+
 
 
     def fetch_data(self, survey_id = None):
@@ -285,7 +349,7 @@ def filtering(survey):
     return new_survey
 #The function that links to the outer world
 
-def download_s(name):
+#def download_s(name):
     
 
 
