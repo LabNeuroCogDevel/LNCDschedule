@@ -23,13 +23,37 @@ import io
 import os
 import configparser
 import shutil
+import difflib
+import re
 import requests
 import pandas as pd
-import difflib
 
-#Define a global surveys
 
-surveys = None
+def demo():
+    surveys = get_all()
+    pet_7t = [s for s in surveys if s.study and s.minage >= 0]
+    len(pet_7t)
+    names = sorted([s.survey_name for s in pet_7t])
+    print(names)
+
+
+def match_db(study, age, sex, timepoint, subjid):
+    surveys = get_all()
+    matches = [s for s in surveys
+               if s.study == study
+               and s.minage <= age
+               and s.maxage >= age
+               and (s.timpepoint == 0 or s.timepoint == timepoint)
+               ]
+    if len(matches) == 0:
+        raise Exception("No results!")
+    print(matches)
+
+
+def get_all():
+    q_api = Qualtrics()
+    surveys = [LNCDSurvey(q_api, info) for info in q_api.all_surveys_info()]
+    return surveys
 
 
 def get_json_result(req):
@@ -149,30 +173,128 @@ class DlStatus:
         """finished and complete, ready to download csv file"""
         return self and self.status == 'complete'
 
-class Survey:
-#Survey class
-#class with data, modified time, column breakdown(Tasks in battery)
-    def __init__(self, modified_time = None, survey_id = None):
-        
-        #Generic_set that contains everything
-        self.generic_set = {} #Will onyl contain Screening and Battery, May add more later
-        self.Battery_dict = {}
-        self.Screening_dict ={}
 
-        #Dict that contains individual stuffs
-        self.modified_time = modified_time
-        self.survey_id = survey_id
-        self.q_api = Qualtrics()
+class Survey:
+    """Survey class
+     class with data, modified time, column breakdown(Tasks in battery)
+    """
+    def __init__(self, api=None, info=None, survey_id=None):
+        """ initilize with either a surevey_id or info"""
+
+        # place holder, filled by 'data' function
+        self._data = None
+
+        # if we don't have a qaultrics api reference, try to get one using
+        # default settings
+        if not api:
+            api = Qualtrics()
+        self.q_api = api
+
+        if not info and not survey_id:
+            raise Exception("Survey needs either id or info dictionary." +
+                            "see Qualtrics.all_surveys_info()")
+
+        # set id from info, or get info from id
+        if info is not None:
+            survey_id = info.get('id')
+        else:
+            # not optimal. get info by fetching and searching all surveys
+            all_surv = self.q_api.all_surveys_info()
+            this = [s for s in all_surv if s.get('id') == survey_id]
+            if not this:
+                raise Exception("could not find %s in all surveys" % survey_id)
+            info = this[0]
+
+        self.sid = survey_id
+        self.info = info
+        self.survey_name = info.get('name')
+
+    def data(self):
+        """ fetch (from web or cache) survey data"""
+        if not self._data:
+            self._data = self.q_api.get_survey(self.sid)
+        return self._data
+
+    def get_row(self, participant, idcol=""):
+        """get a participants data by finding"""
+        sdf = self.data()
+        row = sdf[idcol] == participant
+        if not row:
+            return {}
+        else:
+            return sdf.iloc[row].to_dict()
+
+
+class LNCDSurvey(Survey):
+    """extends Survey with LNCD particulars"""
+    def __init__(self, *args, **kargs):
+        """
+        extend survey to get age range, study type, and sex when aviable
+        for checking/searching
+        >>> q=Qualtrics.Qualtrics()
+        >>> s=Qualtrics.LNCDSurvey(q, survey_id='SV_bdejyV7MRgmOhuZ')
+        >>> assert s.survey_name == '7T Y2 Screening: Adults'
+        >>> assert s.study == 'BrainMechR01' and s.minage == 18
+        """
+        # pass all args to the actual Survey class
+        super().__init__(*args, **kargs)
+        # # survey info extracted from name
+        # set defaults
+        self.type = None
+        self.study = None
+        self.sex = None
+        self.minage = -999
+        self.maxage = 999
+        self.timepoint = 0
+
+        # and classify base on name
+
+        stype = re.search('Battery|Screening', self.survey_name)
+        if stype:
+            stype = stype.group()
+
+        # find study. None if not PET or 7T.
+        # rewrite 7T as BrainMechR01 for db lookup
+        study = re.search('7T|PET', self.survey_name)
+        if study:
+            self.study = study.group().replace('7T', 'BrainMechR01')
+
+        # Male or Female only survey?
+        sex = re.search('Male|Female', self.survey_name)
+        if sex:
+            self.sex = sex.group()
+
+        timepoint = re.search('Y(\d)', self.survey_name)
+        if timepoint:
+            self.timepoint = timepoint.group()
+
+        # find age range like 18-33, extract min and max
+        # use 'named groups' in regular expression
+        ages = re.search('\((?P<min>\d+) *- *(?P<max>\d+)\)', self.survey_name)
+        if ages:
+            self.minage = int(ages.group('min'))
+            self.maxage = int(ages.group('max'))
+        else:
+            # age range could be stored in group name
+            # only check this if no specfic range given
+            lookup = {'Adult': (18, 99), 'Hybrid': (18, 99),
+                      'Teen':  (13, 17),  'Child': (0, 12)}
+            agegrp = re.search('Adult|Teen|Adol|Child', self.survey_name)
+            if agegrp:
+                grp = agegrp.group().replace('Adol', 'Teen')
+                self.minage = lookup.get(grp)[0]
+                self.maxage = lookup.get(grp)[1]
+
 
     ################################################################
     #User Friendly functions to read each detailed data form the big datastructure
     #Parameters should be 'Battery'or'Screening', and Better with an ID
-    def get_all_identity(type = None, ID = None): 
+    def get_all_identity(self, type=None, ID=None):
         #Get people with ID
         print('Still; Implementing')
         
 
-    def get_all_questions(): 
+    def get_all_questions(self):
         #Get all the test question and may be catagorize them
         print('Still Implementing')
 
@@ -182,39 +304,6 @@ class Survey:
     #Get data form the survey dowmloaded
 
     #Structure looks like(generic_set{Battery{{id:dataframe}, .....}, Screening{{id:dataframe},.....})
-    def set_all_data(self, survey = None):#Should be as a loop
-        #if the survey_id is not provided, Assume that it is called inside a loop to retrieve all surveys
-        #Get the survey data one by one
-        #First extract modified time and ID from the surveys
-        q_api = Qualtrics()
-
-        if  survey != None:
-            self.modified_time = survey['lastModified']
-            self.survey_id = survey['id']
-            self.survey_name = survey['name']
-            #Split by Battery and Screening, create each instance of dataframe object
-            #Everytime refresh the generic_set with new sets
-            return self.fetch_data(self.survey_id)
-
-
-    def fetch_data(self, survey_id = None):
-        #Variable that stores the dataframe dataset
-        #Fetch_data based on the id chose
-        self.s_df = self.q_api.get_survey(survey_id)
-
-        if 'Battery' in self.survey_name:
-            #Add each survey_id one by one
-            self.Battery_dict = self.appending_data(self.Battery_dict)
-        elif 'Screening' in self.survey_name:
-            #Add each survey_id one by one
-            self.Screening_dict = self.appending_data(self.Screening_dict) 
-
-        #Big dictionary that contains all(Adding everytime, may be slow?)
-        self.generic_set['Battery'] = self.Battery_dict
-        self.generic_set['Screening'] = self.Screening_dict
-
-        return self.generic_set
-
     #Function to push each s_df (dataframe to the lowest branch)
     def appending_data(self, dictionary):
         #Data set will just be dictionary + dataframe, because there are multiple, so just use a dictionary
@@ -270,7 +359,7 @@ class Qualtrics:
         # consider making survey class to store info in discared rows
         return df
 
-    def all_surveys(self):
+    def all_surveys_info(self):
         """return json list of all surveys"""
         req = self.apiget('surveys')
         res = get_json_result(req)
@@ -321,7 +410,7 @@ def format_colnames(infile, outfile):
     '''This function takes the file and rename its columns with the right format,
     and generate csv file with the right column names'''
     # TODO: do this without needing to read from a file
-    df = pd.read_csv(infile) #skiprows=[0, 1], low_memory=False)
+    df = pd.read_csv(infile) # skiprows=[0, 1], low_memory=False)
 
     columns = df.columns
     new_cols = []
@@ -361,12 +450,11 @@ def download_all():
     N.B. REMOVES directories: 'Qaultrics/Orig' and 'Qualtrics/Export'
          before re-creating
     """
-    import re
     q_api = Qualtrics()
     q_survey = Survey()
 
     #This function get all the surveys
-    surveys = q_api.all_surveys()
+    surveys = q_api.all_surveys_info()
     #Filtering out the survey without screening or barrtey
     surveys = filtering(surveys)
     print(len(surveys))
