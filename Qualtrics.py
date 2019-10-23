@@ -56,6 +56,74 @@ def connstr_from_config(inifile='config.ini'):
     center = data['datacenter']
     return token, center
 
+def set_chosen_data(self, name = None):
+
+    if name != None:
+    	#Name should be a dictionary when parsed in
+        li = ['type', 'sex', 'study', 'age', 'timepoint']
+        #Assume that name is already a dictionary
+        #Check if all keys needed is there
+        if all(c in name for c in li):
+            s_id = word_matching(name['study'], name['sex'], name['age'], name['timepoint'], name['type'] )
+            #Able to get the dataframe from the Qualtrics
+            f_survey = q_api.get_survey(s_id)
+            return f_survey
+
+        else:
+            print('data not intact')
+            exit()
+
+    else:
+        print('data not within Battery or Screening')
+        return
+
+    #Study either PET or BrainMechR01
+    #Sex wither Male or Female
+def word_matching(study, sex, age, timepoint, typ):
+    ##############################
+    #For now must get all the survey first
+    if surveys is None: #Or could just read it all over again in later implementation
+        print("No survey")
+        return
+    
+    #List that stores all the names
+    name_list = []
+    search_key = study
+    dictionary_study = {'BrainMechR01':'7T', 'PET/FMRI': 'PET/FMRI'}
+    dictionary_age_Battery= {
+    '(18, 33)': range(18, 33),
+    '(14, 17)': range(14, 17),
+    '(11, 13)': range(11, 13)
+
+    }
+    #Transform the study
+    study = [val for key, val in dictionary_study.items() if search_key in key] 
+    #Transform the sex
+    #sex could be used directly?
+    #Transform the age
+    search_age = age
+    age = [key for key, val in dictionary_age_Battery .items() if search_age in val]
+
+    #Create a fuzzy string first
+    if 'Battery' in typ:
+        fuzzy = study +' '+ sex +' '+ age +' '+ typ
+    else:
+        fuzzy = study +' '+ typ +' '+ sex +' '+ age
+    
+    #Get all the name from the survey
+    for survey in surveys:
+        name_list.append(survey['name'])
+
+    result_name = difflib.get_close_matches(fuzzy, name_list, 1)[0]
+
+    #Evaluate the score of the sentence found
+    score = difflib.SequenceMatcher(None, fuzzy, result_name).ratio()
+    
+    #Then use the name to find the ID
+    survey_id = [survey['id'] for survey in surveys if survey.get('name') == result_name]
+    #Use the id to get the data from Qualtrics
+    return survey_id
+
 
 class DlStatus:
     """parse qualtircs download status results
@@ -114,10 +182,12 @@ class Survey:
     #Get data form the survey dowmloaded
 
     #Structure looks like(generic_set{Battery{{id:dataframe}, .....}, Screening{{id:dataframe},.....})
-    def set_survey_data(self, survey = None, survey_id = None, name = None):
+    def set_all_data(self, survey = None):#Should be as a loop
         #if the survey_id is not provided, Assume that it is called inside a loop to retrieve all surveys
         #Get the survey data one by one
         #First extract modified time and ID from the surveys
+        q_api = Qualtrics()
+
         if  survey != None:
             self.modified_time = survey['lastModified']
             self.survey_id = survey['id']
@@ -125,74 +195,6 @@ class Survey:
             #Split by Battery and Screening, create each instance of dataframe object
             #Everytime refresh the generic_set with new sets
             return self.fetch_data(self.survey_id)
-        
-            #Retrieve the data of the specific survey_id if only provided survey_id
-        elif self.survey_id != None:
-            self.survey_name = survey['name']
-            self.survey_id = survey_id
-            return self.fetch_data(self.survey_id)
-
-        elif name != None:
-            li = ['type', 'sex', 'study', 'age', 'timepoint']
-            #Assume that name is already a dictionary
-            #Check if all keys needed is there
-            if all(c in name for c in li):
-                word_matching(name['study'], name['sex'], name['age'], name['timepoint'], name['type'] )
-
-
-            else:
-                print('data not intact')
-                exit()
-
-        else:
-            print('data not within Battery or Screening')
-            return
-    #Study either PET or BrainMechR01
-    #Sex wither Male or Female
-    def word_matching(study, sex, age, timepoint, typ):
-        ##############################
-        #For now must get all the survey first
-        if surveys is None: #Or could just read it all over again in later implementation
-            exit()
-        
-        #List that stores all the names
-        name_list = []
-        search_key = study
-        dictionary_study = {'BrainMechR01':'7T', 'PET/FMRI': 'PET/FMRI'}
-        dictionary_age_Battery= {
-        '(18, 33)': range(18, 33),
-        '(14, 17)': range(14, 17),
-        '(11, 13)': range(11, 13)
-
-        }
-        #Transform the study
-        study = [val for key, val in dictionary_study.items() if search_key in key] 
-        #Transform the sex
-        #sex could be used directly?
-        #Transform the age
-        search_age = age
-        age = [key for key, val in dictionary_age_Battery .items() if search_age in val]
-
-        #Create a fuzzy string first
-        if 'Battery' in typ:
-            fuzzy = study +' '+ sex +' '+ age +' '+ typ
-        else:
-            fuzzy = study +' '+ typ +' '+ sex +' '+ age
-        
-        #Get all the name from the survey
-        for survey in surveys:
-            name_list.append(survey['name'])
-
-        result_name = difflib.get_close_matches(fuzzy, name_list, 1)[0]
-        score = difflib.SequenceMatcher(None, fuzzy, result_name).ratio()
-        
-        #Then use the name to find the ID
-        survey_id = [survey['id'] for survey in surveys if survey.get('name') == result_name]
-
-        
-
-
-
 
 
     def fetch_data(self, survey_id = None):
@@ -375,7 +377,7 @@ def download_all():
         #Get the whole survey from id
         s_df = q_api.get_survey(survey['id'])
         #Set that contains everything
-        set_all = q_survey.set_survey_data(survey)
+        set_all = q_survey.set_all_data(survey)
 
         #Pass  the surveys to 
         if not s_df.empty:
