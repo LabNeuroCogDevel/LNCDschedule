@@ -3,19 +3,20 @@ from PyQt5.QtWidgets import QApplication, QWidget, QInputDialog, QLineEdit, QFil
 from PyQt5 import uic, QtWidgets
 # from LNCDutils import  *
 
+    # Todo:
+    # input validation on col range floats
+    # better way to update temp_settings if able
+
 
 class AddTaskWindow(QtWidgets.QDialog):
     """
     This class provides a window for adding a Task
     """
-    # Todo:
-    # connect to database (add to self.task_data)
-    # way to delete files after they are added to the list?
-    # optional stuff outlined in issue #37
 
     def __init__(self, parent=None):
         super(AddTaskWindow, self).__init__(parent)
         self.task_data = {}
+        self.file_dict = {}
         uic.loadUi('./ui/add_task.ui', self)
         self.setWindowTitle('Add Task')
 
@@ -25,6 +26,10 @@ class AddTaskWindow(QtWidgets.QDialog):
 
         self.browse_button.clicked.connect(self.addFilePath)
         self.add_file_button.clicked.connect(self.addFile)
+
+        self.surveyid_text.textChanged.connect(self.optional)
+        self.col_range_text_1.textChanged.connect(self.optional)
+        self.col_range_text_2.textChanged.connect(self.optional)
 
     def task(self):
         self.task_data['task'] = self.task_text.text()
@@ -43,6 +48,8 @@ class AddTaskWindow(QtWidgets.QDialog):
         self.file_id_text.clear()
 
         file_loc = self.file_loc_text.text()
+        self.file_dict[file_id] = file_loc
+        self.task_data['files'] = self.file_dict
         self.file_loc_list.append(file_loc)
         self.file_loc_text.clear()
 
@@ -51,3 +58,12 @@ class AddTaskWindow(QtWidgets.QDialog):
         file_path = str(QFileDialog.getOpenFileName(parent=self, directory=file_loc)[0])
         if file_path:
             self.file_loc_text.setText(file_path)
+
+    def optional(self):
+        self.temp_settings = {}
+
+        self.temp_settings['survey'] = 'qualtrics'
+        self.temp_settings['id'] = self.surveyid_text.text()
+        self.temp_settings['range'] = [self.col_range_text_1.text(), self.col_range_text_2.text()]
+
+        self.task_data['settings'] = self.temp_settings
