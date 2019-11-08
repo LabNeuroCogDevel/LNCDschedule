@@ -1,10 +1,12 @@
 import json
+from PyQt5.QtGui import QDoubleValidator
 from PyQt5.QtWidgets import QApplication, QWidget, QInputDialog, QLineEdit, QFileDialog
 from PyQt5 import uic, QtWidgets
 # from LNCDutils import  *
 
     # Todo:
-    # delete individual file from list if necessary
+    # delete individual file from list (if necessary)
+    # make sure None type will show up in db as [NULL], not null string
 
 class AddTaskWindow(QtWidgets.QDialog):
     """
@@ -18,10 +20,11 @@ class AddTaskWindow(QtWidgets.QDialog):
         uic.loadUi('./ui/add_task.ui', self)
         self.setWindowTitle('Add Task')
 
-        min, max, precision = 0, 1000, 2
-        # self.double_validator = QDoubleValidator(min, max, precision)
-        # self.col_range_text_1.setValidator(double_validator)
-        # self.col_range_text_2.setValidator(double_validator)
+        min, max, precision = 0, 1000, 4 # Test values
+        self.double_validator = QDoubleValidator(min, max, precision)
+        self.double_validator.setNotation(self.double_validator.StandardNotation)
+        self.col_range_text_1.setValidator(self.double_validator)
+        self.col_range_text_2.setValidator(self.double_validator)
 
         self.task_text.textChanged.connect(self.task)
         self.measures_text.textChanged.connect(self.measures)
@@ -63,7 +66,7 @@ class AddTaskWindow(QtWidgets.QDialog):
         if file_path:
             self.file_loc_text.setText(file_path)
 
-    # Handling optional surveyID and col range inputs
+    # Handling optional surveyID and column range inputs
     def optional(self):
         self.temp_settings = {}
 
@@ -73,10 +76,7 @@ class AddTaskWindow(QtWidgets.QDialog):
 
         # Only set settings dict equal to the inputs if no fields are blank - otherwise don't set anything
         if self.temp_settings['id'] != "" and self.temp_settings['range'][0] != "" and self.temp_settings['range'][1] != "":
-
-            # Won't be necessary if the QDoubleValidator can be used to check input instead
             self.temp_settings['range'] = [float(self.col_range_text_1.text()), float(self.col_range_text_2.text())]
-
             self.task_data['settings'] = self.temp_settings
         else:
-            self.task_data['settings'] = None # Make sure this shows up correctly in db
+            self.task_data['settings'] = None
