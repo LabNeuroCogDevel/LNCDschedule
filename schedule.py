@@ -411,6 +411,9 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.AddTask.show()
 
     def add_task_to_db(self):
+        # Check if all optional fields are filled out when user clicks submit
+        if self.AddTask.add_optional_bool:
+            self.AddTask.task_data['settings'] = self.AddTask.temp_settings
         task_data = self.AddTask.task_data
         self.sql.insert('task', task_data)
         print("adding task: %s" % task_data)
@@ -422,8 +425,6 @@ class ScheduleApp(QtWidgets.QMainWindow):
         visit_type_data = self.AddVisitType.visit_type_data
         self.sql.insert('visit', visit_type_data)
         print("adding visit type" % visit_type_data)
-
-
 
     # check with isvalid method
     # used for ScheduleVisit and AddContact
