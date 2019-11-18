@@ -5,7 +5,11 @@ from PyQt5.QtWidgets import QApplication, QWidget, QInputDialog, QLineEdit, QFil
 # from LNCDutils import  *
 
     # Todo:
-    # delete individual files from list
+    # be able to correctly represent filedict through insertions and deletions
+    #         - given that it has to delete only the selected item, this will have to work separately for insertions/deletions
+    #         - it already works for insertions
+    # have schedule.py make sure that filedict isn't empty before it adds to db
+    # improve formatting for file list
 
 class AddTaskWindow(QtWidgets.QDialog):
     """
@@ -19,7 +23,7 @@ class AddTaskWindow(QtWidgets.QDialog):
         uic.loadUi('./ui/add_task.ui', self)
         self.setWindowTitle('Add Task')
 
-        min, max, precision = 0, 1000, 4 # Test values
+        min, max, precision = 0, 1000, 4 # Can be changed as necessary
         self.double_validator = QDoubleValidator(min, max, precision)
         self.double_validator.setNotation(self.double_validator.StandardNotation)
         self.col_range_text_1.setValidator(self.double_validator)
@@ -31,15 +35,12 @@ class AddTaskWindow(QtWidgets.QDialog):
 
         self.browse_button.clicked.connect(self.addFilePath)
         self.add_file_button.clicked.connect(self.addFile)
+        self.remove_file_button.clicked.connect(self.removeFile)
 
         self.add_optional_bool = False
         self.surveyid_text.textChanged.connect(self.optional)
         self.col_range_text_1.textChanged.connect(self.optional)
         self.col_range_text_2.textChanged.connect(self.optional)
-
-        self.to_remove = self.file_list.itemClicked
-        # self.to_remove.row = self.file_list.row(self.to_remove)
-        self.remove_file_button.clicked.connect(self.removeFile)
 
     def task(self):
         self.task_data['task'] = self.task_text.text()
@@ -52,6 +53,7 @@ class AddTaskWindow(QtWidgets.QDialog):
         modes_result = [x.strip() for x in self.modes_text.text().split(',')]
         self.task_data['modes'] = json.dumps(modes_result)
 
+    # Add file id/file path pair to the file list
     def addFile(self):
         file_id = self.file_id_text.text()
         file_loc = self.file_loc_text.text()
@@ -59,8 +61,8 @@ class AddTaskWindow(QtWidgets.QDialog):
         self.file_loc_text.clear()
 
         self.file_dict[file_id] = file_loc
-        self.task_data['files'] = self.file_dict # maybe do the same thing here as with optional stuff when deleting files
-        self.file_list.addItem(file_id + "\t" + file_loc) # placeholder, maybe can format better
+        self.task_data['files'] = self.file_dict # this shouldn't need to be here ultimately
+        self.file_list.addItem(file_id + ' ' * 36 + file_loc) # ideally, this would be two cols that are aligned on the boundaries of the text boxes right above the list
 
     # Display file paths when 'Browse' button is selected
     def addFilePath(self):
@@ -70,8 +72,8 @@ class AddTaskWindow(QtWidgets.QDialog):
             self.file_loc_text.setText(file_path)
 
     # Remove individual file from list
-    def removeFile(self): # check if it's not null
-        self.file_list.takeItem(0) # need to find correct row
+    def removeFile(self):
+        self.file_list.takeItem(self.file_list.currentRow())
 
     # Handle optional surveyID and column range inputs
     def optional(self):
