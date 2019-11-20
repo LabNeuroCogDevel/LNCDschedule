@@ -224,7 +224,10 @@ class CheckinVisitWindow(QtWidgets.QDialog):
         del d['lunaid']
         d['ids'] = json.dumps([{"etype": "LunaID",
                                 "id": "%s" % self.model['lunaid']}])
+
+        #All the tasks that is assigned later to be pushed to db
         d['tasks'] = json.dumps(self.model['tasks'])
+    
 
         # lets see it
         print("\ninserting into visit_checkin_view:")
@@ -248,6 +251,11 @@ class CheckinVisitWindow(QtWidgets.QDialog):
         sql.update('visit', 'vstatus', self.model['vid'], 'checkedin', 'vid')
         sql.insert('visit_action', {'vid': self.model['vid'], 'ra': self.model['ra'], 'action': 
         'checkedin'})
+
+        #Insert the task to the database
+        tasks = self.model['tasks'] #a list
+        for t in tasks:
+            sql.insert('visit_task', {'vid': self.model['vid'], 'task': t, 'measures': None})
 
 
 # usage:  python3 CheckinVisit.py 3952

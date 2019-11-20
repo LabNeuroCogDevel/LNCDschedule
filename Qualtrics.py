@@ -80,7 +80,7 @@ def connstr_from_config(inifile='config.ini'):
     center = data['datacenter']
     return token, center
 
-def set_chosen_data(self, name = None):
+def set_chosen_data(name = None):
 
     if name != None:
     	#Name should be a dictionary when parsed in
@@ -89,13 +89,15 @@ def set_chosen_data(self, name = None):
         #Check if all keys needed is there
         if all(c in name for c in li):
             s_id = word_matching(name['study'], name['sex'], name['age'], name['timepoint'], name['type'] )
+            print(s_id)
             #Able to get the dataframe from the Qualtrics
-            f_survey = q_api.get_survey(s_id)
+            #Return a string instead of a list.(Wondering how come it is a list)
+            f_survey = q_api.get_survey(s_id[0])
             return f_survey
 
         else:
             print('data not intact')
-            exit()
+            return
 
     else:
         print('data not within Battery or Screening')
@@ -121,15 +123,18 @@ def word_matching(study, sex, age, timepoint, typ):
 
     }
     #Transform the study
-    study = [val for key, val in dictionary_study.items() if search_key in key] 
+    if search_key != '7T' and search_key != 'PET/FMRI':
+        study = [val for key, val in dictionary_study.items() if search_key in key] 
     #Transform the sex
     #sex could be used directly?
     #Transform the age
     search_age = age
     age = [key for key, val in dictionary_age_Battery .items() if search_age in val]
+    age = age[0]
 
     #Create a fuzzy string first
     if 'Battery' in typ:
+        print(study, sex, age, typ)
         fuzzy = study +' '+ sex +' '+ age +' '+ typ
     else:
         fuzzy = study +' '+ typ +' '+ sex +' '+ age
