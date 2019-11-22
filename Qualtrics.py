@@ -84,11 +84,11 @@ def set_chosen_data(name = None):
 
     if name != None:
     	#Name should be a dictionary when parsed in
-        li = ['type', 'sex', 'study', 'age', 'timepoint']
+        li = ['task', 'sex', 'study', 'age']
         #Assume that name is already a dictionary
         #Check if all keys needed is there
         if all(c in name for c in li):
-            s_id = word_matching(name['study'], name['sex'], name['age'], name['timepoint'], name['type'] )
+            s_id = word_matching(name['study'], name['sex'], name['age'], name['task'] ) #Add timepoint?
             print(s_id)
             #Able to get the dataframe from the Qualtrics
             #Return a string instead of a list.(Wondering how come it is a list)
@@ -105,7 +105,7 @@ def set_chosen_data(name = None):
 
     #Study either PET or BrainMechR01
     #Sex wither Male or Female
-def word_matching(study, sex, age, timepoint, typ):
+def word_matching(study, sex, age, typ):
     ##############################
     #For now must get all the survey first
     if surveys is None: #Or could just read it all over again in later implementation

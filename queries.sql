@@ -24,6 +24,18 @@ select
  from person_search_view
  where lunaid = %(lunaid)s
  limit 10
+ 
+--name: get_name
+select fname, lname from person
+where pid = %(pid)s
+
+--name: q_qualtrics
+select 
+task, sex, study, age, pid from
+visit_summary left join visit_task on visit_summary.vid = visit_task.vid
+              left join person on visit_summary.pid = person.pid
+              where visit_summary.vid = %(vid)s
+              and visit_summary.task = %(task)s
 
 -- name: subject_search
 select 
