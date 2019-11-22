@@ -411,9 +411,13 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.AddTask.show()
 
     def add_task_to_db(self):
-        # Check if all optional fields are filled out when user clicks submit
+
+        # Make sure the dictionaries that are added to the db are not empty or partially-full
         if self.AddTask.add_optional_bool:
             self.AddTask.task_data['settings'] = self.AddTask.temp_settings
+        if self.AddTask.file_dict:
+            self.AddTask.task_data['files'] = self.AddTask.file_dict
+
         task_data = self.AddTask.task_data
         self.sql.insert('task', task_data)
         print("adding task: %s" % task_data)

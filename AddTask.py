@@ -5,11 +5,7 @@ from PyQt5.QtWidgets import QApplication, QWidget, QInputDialog, QLineEdit, QFil
 # from LNCDutils import  *
 
     # Todo:
-    # be able to correctly represent filedict through insertions and deletions
-    #         - given that it has to delete only the selected item, this will have to work separately for insertions/deletions
-    #         - it already works for insertions
-    # have schedule.py make sure that filedict isn't empty before it adds to db
-    # improve formatting for file list
+    # improve how file list items are formatted
 
 class AddTaskWindow(QtWidgets.QDialog):
     """
@@ -61,7 +57,6 @@ class AddTaskWindow(QtWidgets.QDialog):
         self.file_loc_text.clear()
 
         self.file_dict[file_id] = file_loc
-        self.task_data['files'] = self.file_dict # this shouldn't need to be here ultimately
         self.file_list.addItem(file_id + ' ' * 36 + file_loc) # ideally, this would be two cols that are aligned on the boundaries of the text boxes right above the list
 
     # Display file paths when 'Browse' button is selected
@@ -71,9 +66,10 @@ class AddTaskWindow(QtWidgets.QDialog):
         if file_path:
             self.file_loc_text.setText(file_path)
 
-    # Remove individual file from list
+    # Remove individual file from list and file dictionary
     def removeFile(self):
-        self.file_list.takeItem(self.file_list.currentRow())
+        list_item = self.file_list.takeItem(self.file_list.currentRow())
+        del self.file_dict[[x.strip() for x in list_item.text().split(' ')][0]]
 
     # Handle optional surveyID and column range inputs
     def optional(self):
