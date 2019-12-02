@@ -4,6 +4,7 @@ import pandas as pd
 
 #Get the name from the database
 def retrieve_name(vid, pid, task):
+
 	task_list = []
 	name_li = ['task', 'sex', 'study', 'age']
 	research = []
@@ -37,8 +38,7 @@ def retrieve_name(vid, pid, task):
 		d_qu.loc[d_qu['RecipientFirstName'] == l_f_name[0], d_qu['RecipientLastName'] == l_f_name[1] ]
 
 	elif task == '7TBattery':
-		
-
+		d_qu.loc[d_qu['RecipientFirstName'] == l_f_name[0], d_qu['RecipientLastName'] == l_f_name[1] ]
 
 	#Find the row with specific Lunaid in the dataframe
 

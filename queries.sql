@@ -31,11 +31,11 @@ where pid = %(pid)s
 
 --name: q_qualtrics
 select 
-task, sex, study, age, pid from
+task, sex, study, age, person.pid from
 visit_summary left join visit_task on visit_summary.vid = visit_task.vid
               left join person on visit_summary.pid = person.pid
               where visit_summary.vid = %(vid)s
-              and visit_summary.task = %(task)s
+              and visit_task.task = %(task)s
 
 -- name: subject_search
 select 
