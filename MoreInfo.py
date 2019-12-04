@@ -5,6 +5,7 @@ import pprint
 from psycopg2 import IntegrityError
 import lncdSql, sys
 from PyQt5.QtWidgets import QLabel
+from Q_retrieve import retrieve_name
 """
 This class provides a window for demonstrating information
 data in checkin
@@ -40,8 +41,15 @@ class MoreInfoWindow(QtWidgets.QDialog):
         #stuffs on the first column
         for item in study_tasks:
             self.tasks_list.insertItems(0,item)
-    
+
+    def task_extract(self,vid,task):
+        retrieve_name(vid, task)
+
     def table_fill(self):
+        
+        #This line will later push the result to the database
+        self.task_extract(vid = self.vid, task = self.task)
+
         if self.task is None:
             #Don't query for the measures of the task
             print("No tasks have been selected")

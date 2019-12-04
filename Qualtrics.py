@@ -81,14 +81,14 @@ def connstr_from_config(inifile='config.ini'):
     return token, center
 
 def set_chosen_data(name = None):
-
+    q_api = Qualtrics()
     if name != None:
-    	#Name should be a dictionary when parsed in
+        #Name should be a dictionary when parsed in
         li = ['task', 'sex', 'study', 'age']
         #Assume that name is already a dictionary
         #Check if all keys needed is there
         if all(c in name for c in li):
-            s_id = word_matching(name['study'], name['sex'], name['age'], name['task'] ) #Add timepoint?
+            s_id = word_matching(name['study'], name['sex'], name['age'], name['task'], q_api ) #Add timepoint?
             print(s_id)
             #Able to get the dataframe from the Qualtrics
             #Return a string instead of a list.(Wondering how come it is a list)
@@ -103,45 +103,76 @@ def set_chosen_data(name = None):
         print('data not within Battery or Screening')
         return
 
+def range1(start, end):
+    return range(start, end+1)
+
     #Study either PET or BrainMechR01
     #Sex wither Male or Female
-def word_matching(study, sex, age, typ):
+def word_matching(study, sex, age, typ, q_api):
     ##############################
-    #For now must get all the survey first
-    if surveys is None: #Or could just read it all over again in later implementation
-        print("No survey")
-        return
+    # #For now must get all the survey first
+    # if surveys is None: #Or could just read it all over again in later implementation
+    #     print("No survey")
+    #     return
     
     #List that stores all the names
     name_list = []
     search_key = study
     dictionary_study = {'BrainMechR01':'7T', 'PET/FMRI': 'PET/FMRI'}
     dictionary_age_Battery= {
-    '(18, 33)': range(18, 33),
-    '(14, 17)': range(14, 17),
-    '(11, 13)': range(11, 13)
+    '(34, 100)': range1(34, 100),
+    '(18, 33)': range1(18, 33),
+    '(14, 17)': range1(14, 17),
+    '(11, 13)': range1(11, 13),
+    '(0, 11)': range1(0, 11)
 
     }
+
+    if search_key !=  'PET/FMRI' and  search_key !=  '7T' and  search_key !=  'BrainMechR01':
+        study = ''
+        print('study does not exist')
     #Transform the study
-    if search_key != '7T' and search_key != 'PET/FMRI':
-        study = [val for key, val in dictionary_study.items() if search_key in key] 
+    elif search_key != '7T' and search_key != 'PET/FMRI':
+        study = [val for key, val in dictionary_study.items() if search_key in key]
+
+    # print(study)
+    # print('------------')
+
     #Transform the sex
     #sex could be used directly?
     #Transform the age
     search_age = age
-    age = [key for key, val in dictionary_age_Battery .items() if search_age in val]
+    # print(int(search_age))
+    # print('------------')
+    # print(search_age)
+    # print('')
+    age = [key for key, val in dictionary_age_Battery .items() if int(search_age) in val]
+    # print(age)
+    
     age = age[0]
 
     #Create a fuzzy string first
     if 'Battery' in typ:
         print(study, sex, age, typ)
-        fuzzy = study +' '+ sex +' '+ age +' '+ typ
-    else:
+        typ = 'Battery'
+        fuzzy = study +' '+ sex +' '+ age +' '+ ' Survey '+typ
+    elif 'Screening' in typ:
+        print(study, typ, sex, age)
+        typ = 'Screening'
         fuzzy = study +' '+ typ +' '+ sex +' '+ age
-    
+    else:
+        print('Something is wrong')
+
+    surveys = q_api.all_surveys_info()
     #Get all the name from the survey
     for survey in surveys:
         name_list.append(survey['name'])
+    ########################################
+    #Let the RA decide which name is correct!!!!!
+    print(name_list)
+    print('-----------------')
+    print(fuzzy)
+    print('==================')
 
     result_name = difflib.get_close_matches(fuzzy, name_list, 1)[0]
 
