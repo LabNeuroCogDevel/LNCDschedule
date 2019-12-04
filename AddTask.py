@@ -4,9 +4,6 @@ from PyQt5 import uic, QtWidgets
 from PyQt5.QtWidgets import QApplication, QWidget, QInputDialog, QLineEdit, QFileDialog, QListWidget, QListWidgetItem
 # from LNCDutils import  *
 
-    # Todo:
-    # improve how file list items are formatted
-
 class AddTaskWindow(QtWidgets.QDialog):
     """
     This class provides a window for adding a Task
@@ -19,12 +16,6 @@ class AddTaskWindow(QtWidgets.QDialog):
         uic.loadUi('./ui/add_task.ui', self)
         self.setWindowTitle('Add Task')
 
-        min, max, precision = 0, 1000, 4 # Can be changed as necessary
-        self.double_validator = QDoubleValidator(min, max, precision)
-        self.double_validator.setNotation(self.double_validator.StandardNotation)
-        self.col_range_text_1.setValidator(self.double_validator)
-        self.col_range_text_2.setValidator(self.double_validator)
-
         self.task_text.textChanged.connect(self.task)
         self.measures_text.textChanged.connect(self.measures)
         self.modes_text.textChanged.connect(self.modes)
@@ -32,6 +23,13 @@ class AddTaskWindow(QtWidgets.QDialog):
         self.browse_button.clicked.connect(self.addFilePath)
         self.add_file_button.clicked.connect(self.addFile)
         self.remove_file_button.clicked.connect(self.removeFile)
+
+        # Input validation for optional inputs
+        min, max, precision = 0, 1000, 4 # Can be changed as necessary
+        self.double_validator = QDoubleValidator(min, max, precision)
+        self.double_validator.setNotation(self.double_validator.StandardNotation)
+        self.col_range_text_1.setValidator(self.double_validator)
+        self.col_range_text_2.setValidator(self.double_validator)
 
         self.add_optional_bool = False
         self.surveyid_text.textChanged.connect(self.optional)
@@ -51,13 +49,14 @@ class AddTaskWindow(QtWidgets.QDialog):
 
     # Add file id/file path pair to the file list
     def addFile(self):
-        file_id = self.file_id_text.text()
+        file_id  = self.file_id_text.text()
         file_loc = self.file_loc_text.text()
         self.file_id_text.clear()
         self.file_loc_text.clear()
 
         self.file_dict[file_id] = file_loc
-        self.file_list.addItem(file_id + ' ' * 36 + file_loc) # ideally, this would be two cols that are aligned on the boundaries of the text boxes right above the list
+        padding_str = (' ' * 20)
+        self.file_list.addItem('{:<16}'.format(file_id) + padding_str + '{:<64}'.format(file_loc))
 
     # Display file paths when 'Browse' button is selected
     def addFilePath(self):
