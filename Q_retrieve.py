@@ -19,7 +19,6 @@ def retrieve_name(vid, task):
     # print('-----------')
     l_f_name = sql.query.get_name(pid = data[4])
     l_id = sql.query.get_lunaid_from_pid(pid = data[4])
-    
     # print('-----------')
     # print(l_f_name[0][0], l_f_name[0][1])
     # print('-----------')
@@ -43,6 +42,10 @@ def retrieve_name(vid, task):
     # print(name)
     # print('++++++++++')
     d_qu = set_chosen_data(name)
+    d_qu = d_qu.drop(d_qu.index[0])
+    print(d_qu)
+
+    # print(d_qu)
 
     # print(d_qu.RecipientFirstName[2])
     # print('++++++++++++++++++++++')
@@ -52,14 +55,13 @@ def retrieve_name(vid, task):
     # print('+++++++++++++')
     if task == '7TScreening':
         #Here you go with the row data
-        data = d_qu.loc[d_qu['RecipientFirstName']==l_f_name[0][0]]
-        data = d_qu.loc[d_qu['RecipientLastName'] == l_f_name[0][1]]
+        data = d_qu.loc[(d_qu['RecipientFirstName']==l_f_name[0][0]) & (d_qu['RecipientLastName'] == l_f_name[0][1])]
 
     elif task == '7TBattery':
-        data = d_qu.loc[d_qu['RecipientFirstName']==l_f_name[0][0], d_qu['RecipientLastName'] == l_f_name[0][1]]
-
+        data = d_qu.loc[d_qu['ExternalDataReference']==l_id[0][0]]
     #Got the data into database
     print(data)
+    return data
 
 
 

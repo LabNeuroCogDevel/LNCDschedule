@@ -393,6 +393,11 @@ class Qualtrics:
         df = pd.read_csv(content, encoding='utf-8')
         # TODO: clean up columns a la format_colnames
         # consider making survey class to store info in discared rows
+        #Delete the first column
+        # df = df.drop(df.index[0])
+        # print(df)
+        # print('-+-+-+-+-+-+-+-+-+-+')
+
         return df
 
     def all_surveys_info(self):
@@ -412,6 +417,7 @@ class Qualtrics:
         req = self.apipost('responseexports/', data)
         info = get_json_result(req)
         print("first pass: %s" % info)
+        # print('++++++++++++++++++++')
 
         # look up % comlete until download is finished building on their side
         export_id = info.get('id')

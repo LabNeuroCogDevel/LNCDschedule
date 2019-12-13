@@ -43,7 +43,7 @@ class MoreInfoWindow(QtWidgets.QDialog):
             self.tasks_list.insertItems(0,item)
 
     def task_extract(self,vid,task):
-        retrieve_name(vid, task)
+        data = retrieve_name(vid, task)
 
     def table_fill(self):
         
