@@ -150,12 +150,18 @@ def word_matching(study, sex, age, typ, q_api):
     # print(age)
     
     age = age[0]
+    
+    if isinstance(study, list):
+        study = study[0]
 
     #Create a fuzzy string first
     if 'Battery' in typ:
+        print('++++++++++++++++')
         print(study, sex, age, typ)
+        print('++++++++++++++++')
         typ = 'Battery'
-        fuzzy = study +' '+ sex +' '+ age +' '+ ' Survey '+typ
+
+        fuzzy = study +' '+ sex +' '+ age +' '+ ' Survey '+ typ
     elif 'Screening' in typ:
         print(study, typ, sex, age)
         typ = 'Screening'
@@ -173,6 +179,8 @@ def word_matching(study, sex, age, typ, q_api):
     print('-----------------')
     print(fuzzy)
     print('==================')
+    print(fuzzy)
+    print(difflib.get_close_matches(fuzzy, name_list, 3))
 
     result_name = difflib.get_close_matches(fuzzy, name_list, 1)[0]
 

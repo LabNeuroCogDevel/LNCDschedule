@@ -3,6 +3,37 @@ import lncdSql
 import pandas as pd
 
 #Get the name from the database
+def get_data(d_qu, task, l_f_name, l_id):
+
+    new_header = d_qu.iloc[0] #grab the first row for the header
+    d_qu = d_qu[1:] #take the data less the header row
+    d_qu.columns = new_header #set the header row as header
+    # print(d_qu.columns)
+
+    # print(d_qu)
+
+    # print(d_qu.RecipientFirstName[2])
+    # print('++++++++++++++++++++++')
+    #append all the dataframe gotten from Qualtrics to the research list
+    # research.append[d_qu]
+    # print(l_f_name[0][1])
+    # print('+++++++++++++')
+    if task == '7TScreening':
+        print('------------')
+        print(l_f_name[0][0] )
+        #Here you go with the row data
+        data = d_qu[(d_qu['RecipientFirstName']==l_f_name[0][0]) & (d_qu['RecipientLastName'] == l_f_name[0][1])]
+
+    elif task == '7TBattery':
+        data = d_qu[d_qu['ExternalDataReference']==l_id[0][0]]
+    #Got the data into database
+    print('Data got from the researches')
+    print(data)
+    # print(d_qu[d_qu['ExternalDataReference']])
+
+    return data
+
+
 def retrieve_name(vid, task):
 
     task_list = []
@@ -39,29 +70,12 @@ def retrieve_name(vid, task):
         name[name_li[i]] = data[i]
     #Now got the name dictionary as name_list
     #Call the Qualtrics retrieving system
-    # print(name)
-    # print('++++++++++')
+    print('++++++++++')
+    print(name)
+    print('++++++++++')
     d_qu = set_chosen_data(name)
-    d_qu = d_qu.drop(d_qu.index[0])
-    print(d_qu)
 
-    # print(d_qu)
-
-    # print(d_qu.RecipientFirstName[2])
-    # print('++++++++++++++++++++++')
-    #append all the dataframe gotten from Qualtrics to the research list
-    # research.append[d_qu]
-    # print(l_f_name[0][1])
-    # print('+++++++++++++')
-    if task == '7TScreening':
-        #Here you go with the row data
-        data = d_qu.loc[(d_qu['RecipientFirstName']==l_f_name[0][0]) & (d_qu['RecipientLastName'] == l_f_name[0][1])]
-
-    elif task == '7TBattery':
-        data = d_qu.loc[d_qu['ExternalDataReference']==l_id[0][0]]
-    #Got the data into database
-    print(data)
-    return data
+    get_data(d_qu, task, l_f_name, l_id)
 
 
 
