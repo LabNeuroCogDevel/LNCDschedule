@@ -43,10 +43,15 @@ class MoreInfoWindow(QtWidgets.QDialog):
             self.tasks_list.insertItems(0,item)
 
     def task_extract(self,vid,task):
-        data = retrieve_name(vid, task)
+        data = retrieve_name(vid, task) 
+
+        print(len(data))
+        ########################################################
+        #Carry on from here 
+        exit()
+        ########################################################
 
     def table_fill(self):
-        
         #This line will later push the result to the database
         self.task_extract(vid = self.vid, task = self.task)
 

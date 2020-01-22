@@ -21,11 +21,13 @@ def get_data(d_qu, task, l_f_name, l_id):
     if task == '7TScreening':
         print('------------')
         print(l_f_name[0][0] )
+        print(l_f_name[0][1] )
         #Here you go with the row data
-        data = d_qu[(d_qu['RecipientFirstName']==l_f_name[0][0]) & (d_qu['RecipientLastName'] == l_f_name[0][1])]
+        data = d_qu[(d_qu['RecipientFirstName'].str.contains(l_f_name[0][0])) & (d_qu['RecipientLastName'].str.contains(l_f_name[0][1]))] 
+        d_qu.to_excel('testing.xlsx')
 
     elif task == '7TBattery':
-        data = d_qu[d_qu['ExternalDataReference']==l_id[0][0]]
+        data = d_qu[d_qu['ExternalDataReference'].str.contains(l_id[0][0])]
     #Got the data into database
     print('Data got from the researches')
     print(data)
@@ -70,12 +72,13 @@ def retrieve_name(vid, task):
         name[name_li[i]] = data[i]
     #Now got the name dictionary as name_list
     #Call the Qualtrics retrieving system
-    print('++++++++++')
     print(name)
-    print('++++++++++')
     d_qu = set_chosen_data(name)
+    print('+++++++++++++++++')
+    print(d_qu)
+    print('++++++++++++++++=')
 
-    get_data(d_qu, task, l_f_name, l_id)
+    return get_data(d_qu, task, l_f_name, l_id)
 
 
 
