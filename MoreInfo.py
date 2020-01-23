@@ -45,15 +45,17 @@ class MoreInfoWindow(QtWidgets.QDialog):
     def task_extract(self,vid,task):
         data = retrieve_name(vid, task) 
 
-        print(len(data))
-        ########################################################
-        #Carry on from here 
-        exit()
-        ########################################################
+        return data
+
 
     def table_fill(self):
         #This line will later push the result to the database
-        self.task_extract(vid = self.vid, task = self.task)
+        data_df = self.task_extract(vid = self.vid, task = self.task)
+        if data_df.empty:
+            mkmsg('No relatedtask for this person')
+            return
+        #Convert the dataframe to dictionary so that it could be later pushed to database 
+        data_db = data_df.to_dict('dict')
 
         if self.task is None:
             #Don't query for the measures of the task
@@ -68,7 +70,7 @@ class MoreInfoWindow(QtWidgets.QDialog):
                 pep_columns = measures.keys()
                 pep_values = measures.values()
             else:
-                mkmsg('measures is none')
+                self.add_task(data_db, self.vid, self.task)
 
             #Set up the list
             value = []
@@ -90,12 +92,19 @@ class MoreInfoWindow(QtWidgets.QDialog):
             #self.info_table.resizeColumnsToContents()
             #self.info_table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
 
+    def add_task(self, measures, vid, task):
+        data = {'task':task, 'vid':vid,'measures': str(measures)}
+
+        self.sql.insert('visit_task', data)
+        print('Successfully pushed to the database')
+
     #Function to get the task that has been clicked
     def task_clicked(self,item):
         print("item has been selected")
         row_i = self.tasks_list.row(item)
         self.task = self.tasks_list.item(row_i).text()
         print(self.task)
+
         
 
 

@@ -195,6 +195,7 @@ select
   task
   from visit_task
   where vid = %(vid)s
+
 -- name: get_measures
 select
   measures
