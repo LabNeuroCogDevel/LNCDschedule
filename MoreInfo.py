@@ -6,6 +6,7 @@ from psycopg2 import IntegrityError
 import lncdSql, sys
 from PyQt5.QtWidgets import QLabel
 from Q_retrieve import retrieve_name
+import ast 
 """
 This class provides a window for demonstrating information
 data in checkin
@@ -67,6 +68,8 @@ class MoreInfoWindow(QtWidgets.QDialog):
             #Measures contain all the measured data of one task that has been selected.
             #Add rhe task as one columns before adding all the keys
             if(measures is not None):
+                #Convert the string representation to dictionary
+                measures = ast.literal_eval(measures)
                 pep_columns = measures.keys()
                 pep_values = measures.values()
             else:
@@ -95,7 +98,7 @@ class MoreInfoWindow(QtWidgets.QDialog):
     def add_task(self, measures, vid, task):
         data = {'task':task, 'vid':vid,'measures': str(measures)}
 
-        self.sql.insert('visit_task', data)
+        self.sql.update('visit_task', 'measures', vid, str(measures), 'vid')
         print('Successfully pushed to the database')
 
     #Function to get the task that has been clicked
