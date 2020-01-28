@@ -5,8 +5,8 @@ import pprint
 from psycopg2 import IntegrityError
 import lncdSql, sys
 from PyQt5.QtWidgets import QLabel
-from Q_retrieve import retrieve_name
-import ast 
+from Q_retrieve import retrieve_name 
+from numpy import nan
 """
 This class provides a window for demonstrating information
 data in checkin
@@ -69,11 +69,15 @@ class MoreInfoWindow(QtWidgets.QDialog):
             #Add rhe task as one columns before adding all the keys
             if(measures is not None):
                 #Convert the string representation to dictionary
-                measures = ast.literal_eval(measures)
+                measures = eval(measures)
+                #Update the data to the databse
+                self.add_task(data_db, self.vid, self.task)
                 pep_columns = measures.keys()
                 pep_values = measures.values()
             else:
-                self.add_task(data_db, self.vid, self.task)
+                mkmsg('No related informaiton')
+
+            
 
             #Set up the list
             value = []
