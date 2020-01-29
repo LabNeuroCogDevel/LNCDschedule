@@ -198,7 +198,7 @@ select
 
 -- name: get_measures
 select
-  measures
+  measures, vtid
   from visit_task
   where vid = %(vid)s
   and task = %(task)s

@@ -1,11 +1,12 @@
 from PyQt5 import uic,QtCore, QtWidgets,QtGui
+from LNCDutils import  mkmsg
 from LNCDutils import  *
-import json
+import simplejson as json
 import pprint
 from psycopg2 import IntegrityError
 import lncdSql, sys
 from PyQt5.QtWidgets import QLabel
-from Q_retrieve import retrieve_name 
+from Q_retrieve import retrieve_name
 from numpy import nan
 """
 This class provides a window for demonstrating information
@@ -38,75 +39,78 @@ class MoreInfoWindow(QtWidgets.QDialog):
         study_tasks = sql.query.get_tasks(vid = vid)
         self.sql = sql
         self.vid = vid
+        # TODO: not called?
         self.table_fill
         #stuffs on the first column
         for item in study_tasks:
             self.tasks_list.insertItems(0,item)
 
-    def task_extract(self,vid,task):
-        data = retrieve_name(vid, task) 
-
-        return data
-
-
     def table_fill(self):
-        #This line will later push the result to the database
-        data_df = self.task_extract(vid = self.vid, task = self.task)
-        if data_df.empty:
-            mkmsg('No relatedtask for this person')
-            return
-        #Convert the dataframe to dictionary so that it could be later pushed to database 
-        data_db = data_df.to_dict('dict')
+        """
+        when task is clicked from left list. fill right list
+        """
 
+        # TODO: not all tasks will be Qualtrics tasks
+        #       older tasks already in the DB shouldn't fail
+
+        # check we have task
         if self.task is None:
             #Don't query for the measures of the task
             print("No tasks have been selected")
-        else:
-            measures = self.sql.query.get_measures(vid = self.vid, task = self.task)
-            #Change it to the dictionary from a list
-            measures = measures[0][0]
-            #Measures contain all the measured data of one task that has been selected.
-            #Add rhe task as one columns before adding all the keys
-            if(measures is not None):
-                #Convert the string representation to dictionary
-                measures = eval(measures)
-                #Update the data to the databse
-                self.add_task(data_db, self.vid, self.task)
-                pep_columns = measures.keys()
-                pep_values = measures.values()
+            return
+
+        # check to see if we have in db already
+        res = self.sql.query.get_measures(vid=self.vid, task=self.task)
+
+        # res should always return something!
+        # Otherwise there would be nothign to click
+        if res is None:
+            mkmsg('BUG: no db results for %s @ %s! but is still in display?!' %
+                  (self.vid, self.task))
+            return
+
+        # if no measures, try Qualtrics
+        if res[0][0] is None:
+            data_df = retrieve_name(self.vid, self.task)
+            if data_df.empty:
+                mkmsg('No related qualtrics task for this person')
+                return
             else:
-                mkmsg('No related informaiton')
+                measures = data_df.to_dict('dict')
+                data_db = json.loads(json.dumps(measures, ignore_nan=True))
+                self.add_task(data_db, vtid=res[0][1])
+                
+        else:
+            measures = res[0][0]
+            if isinstance(measures, str):
+                mkmsg("ERROR in data storage. measures should be objects not strings, consider:\n" +
+                      "update visit_task set measures = NULL where vid = %s task like '%s'" % (self.vid, self.task))
+                print(res[0][0])
+                return
+                # N.B. need single quotes for bad qualitrics?
+                # TODO: remove \ escape characters?
+                measures = json.loads('"%s"' % res[0][0])
 
-            
 
-            #Set up the list
-            value = []
-            try:
-                for key, val in measures.items():
-                    if val is None:
-                        value.append(str(key)+'=>'+'None')
-                    else:
-                        value.append(str(key)+'=>'+str(val))
-                    self.list_view.insertItems(0,value)
-            except AttributeError:
-                print('Nontype')
-            #print(pep_columns)
+        # Set up the list
+        values = ["%s => %s" % (k, v) for k, v in measures.items()]
+        self.list_view.insertItems(0, values)
+        #print(pep_columns)
 
-            #Set up the table
-            #self.info_table.setColumnCount(len(pep_columns))
-            #self.info_table.setSizeAdjustPolicy(QtWidgets.QAbstractScrollArea.AdjustToContents)
-            #self.info_table.setHorizontalHeaderLabels(pep_columns)
-            #self.info_table.resizeColumnsToContents()
-            #self.info_table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
+        #Set up the table
+        #self.info_table.setColumnCount(len(pep_columns))
+        #self.info_table.setSizeAdjustPolicy(QtWidgets.QAbstractScrollArea.AdjustToContents)
+        #self.info_table.setHorizontalHeaderLabels(pep_columns)
+        #self.info_table.resizeColumnsToContents()
+        #self.info_table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
 
-    def add_task(self, measures, vid, task):
-        data = {'task':task, 'vid':vid,'measures': str(measures)}
-
-        self.sql.update('visit_task', 'measures', vid, str(measures), 'vid')
+    def add_task(self, measures, vtid):
+        self.sql.update('visit_task', 'measures', vtid,
+                        new_value=measures, id_column='vtid')
         print('Successfully pushed to the database')
 
     #Function to get the task that has been clicked
-    def task_clicked(self,item):
+    def task_clicked(self, item):
         print("item has been selected")
         row_i = self.tasks_list.row(item)
         self.task = self.tasks_list.item(row_i).text()
