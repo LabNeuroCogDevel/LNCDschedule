@@ -62,6 +62,7 @@ class MoreInfoWindow(QtWidgets.QDialog):
             #Don't query for the measures of the task
             print("No tasks have been selected")
         else:
+            self.add_task(data_db, self.vid, self.task)
             measures = self.sql.query.get_measures(vid = self.vid, task = self.task)
             #Change it to the dictionary from a list
             measures = measures[0][0]
@@ -71,7 +72,6 @@ class MoreInfoWindow(QtWidgets.QDialog):
                 #Convert the string representation to dictionary
                 measures = eval(measures)
                 #Update the data to the databse
-                self.add_task(data_db, self.vid, self.task)
                 pep_columns = measures.keys()
                 pep_values = measures.values()
             else:
