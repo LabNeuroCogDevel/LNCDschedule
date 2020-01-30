@@ -63,4 +63,4 @@ def test_addvisittype_returns(qtbot):
     assert w.visit_type_data['pid'] == '2'
 
     w.vtype_text.setText('Test Vtype 1,      Test Vtype 2')
-    assert w.visit_type_data['vtype'] == '["Vtype 1", "Vtype 2"]'
+    assert w.visit_type_data['vtype'] == '["Test Vtype 1", "Test Vtype 2"]'

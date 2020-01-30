@@ -26,7 +26,7 @@ env/bin/activate:
 .QA:
 	mkdir .QA
 
-install: env/bin/activate .QA
+install: env/bin/activate requirements.txt | .QA
 	# dont run if we dont have VIRTUAL_ENV
 ifdef VIRTUAL_ENV
 else
