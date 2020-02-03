@@ -8,6 +8,10 @@ import lncdSql, sys
 from PyQt5.QtWidgets import QLabel
 from Q_retrieve import retrieve_name
 from numpy import nan
+from PyQt5.QtWidgets import QApplication, QFileSystemModel, QTreeView, QWidget, QVBoxLayout
+from PyQt5.QtGui import QIcon
+from file_explorer import FileSearch
+
 """
 This class provides a window for demonstrating information
 data in checkin
@@ -29,6 +33,7 @@ class MoreInfoWindow(QtWidgets.QDialog):
         #Task that has been selected
         self.tasks_list.itemClicked.connect(self.task_clicked)
         self.tasks_list.itemClicked.connect(self.table_fill)
+        self.file_search.clicked.connect(self.file_explorer)
 
     def setup(self,vid,sql):
         #Clear the tasks_list every time
@@ -44,6 +49,8 @@ class MoreInfoWindow(QtWidgets.QDialog):
         #stuffs on the first column
         for item in study_tasks:
             self.tasks_list.insertItems(0,item)
+    def file_explorer(self):
+        ex = FileSearch()
 
     def table_fill(self):
         """

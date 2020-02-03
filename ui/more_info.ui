@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>991</width>
-    <height>569</height>
+    <height>565</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -42,8 +42,21 @@
      <x>150</x>
      <y>20</y>
      <width>841</width>
-     <height>541</height>
+     <height>501</height>
     </rect>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="file_search">
+   <property name="geometry">
+    <rect>
+     <x>850</x>
+     <y>530</y>
+     <width>141</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>File Search</string>
    </property>
   </widget>
  </widget>
