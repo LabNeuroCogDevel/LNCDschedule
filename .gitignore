@@ -1,30 +1,34 @@
-*~
-.*.sw[p-z]
-__pycache__/
-*\#
-.\#*
-*.autosave
+# MacOS junk
+.DS_Store
+**/.DS_Store
+
+# config/secrets
 *.ini
 *.p12
-.DS_Store
-*.pyc
 pgdump*
 pg_dump*
 *.ini*
 sql/roles.sql
+*xls
+*xlsx
+
+# assets
 *zip
-.DS_Store
-**/.DS_Store
 *csv
 Qualtrics/
+
+# packaging
 *dist/
 *build/
 *spec
 
+# testing
 .coverage
 .QA
 
 # Environments
+*.pyc
+__pycache__/
 .env
 .venv
 env/
@@ -33,7 +37,11 @@ ENV/
 env.bak/
 venv.bak/
 
-# IDEs
+# IDEs/editors
+*\#
+.\#*
 .vscode
 .idea
-
+*~
+.*.sw[p-z]
+*.autosave
