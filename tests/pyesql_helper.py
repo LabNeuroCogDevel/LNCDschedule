@@ -3,6 +3,7 @@
 import re
 import psycopg2.sql
 import sqlalchemy.engine.base
+import json
 
 
 class pyesql_helper():
@@ -93,6 +94,18 @@ def check_column(col, res, expect, exact=True):
         assert len(res) == len(expect)
 
 
+def note_to_json(key, val):
+    """
+    encode json if key calls for that (only 'notes' as of 20211129)
+    added b/c fake_db.bash uses psql to submit csvs to database
+    and requires all columns are present.
+    but empty values for json are not handled well by the mocked database
+    """
+    if key not in ['notes']:
+        return(val)  # don't care about non-json keys
+    return json.loads(val)
+
+
 def csv_none(pg, csv_source, table):
     """
     load csv like pgtest.load_csv
@@ -104,10 +117,13 @@ def csv_none(pg, csv_source, table):
     import csv
     table_obj = pg.get_table(table)
     with open(csv_source, 'r') as fdesc:
-        data_rows = list(csv.DictReader(fdesc, dialect='excel'))
+        data_rows = csv.DictReader(fdesc, dialect='excel', escapechar='\\')
+        data_rows = list(data_rows)
     # make empty string None
     data_rows = [
-        {key: None if row[key] == '' else row[key] for key in row}
+        {key: None if row[key] == ''
+         else note_to_json(key, row[key])
+         for key in row}
         for row in data_rows
     ]
     pg._conn.execute(table_obj.insert().values(data_rows))

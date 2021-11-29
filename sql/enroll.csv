@@ -1,2 +1,2 @@
-pid,id,etype
-1,10931,LunaID
+eid,pid,etype,id,edate
+1,1,LunaID,10931,
