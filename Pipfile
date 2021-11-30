@@ -4,13 +4,14 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
+cryptography = ">=3.3.2"
 "pyqt5" = "*"
 pyesql = "*"
-"psycopg2" = "*"
-"9592386" = {git = "https://github.com/LabNeuroCogDevel/LNCDcal.py"}
+"psycopg2" = "2.9.2"
+"LNCDcal" = {git = "https://github.com/LabNeuroCogDevel/LNCDcal.py"}
 pyopenssl = "*"
 
 [dev-packages]
 
 [requires]
-python_version = "3.6"
+python_version = "3.10"
