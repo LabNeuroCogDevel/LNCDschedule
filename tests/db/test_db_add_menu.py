@@ -6,7 +6,7 @@ from PyQt5.QtWidgets import QApplication
 from datetime import datetime
 
 
-APP = QApplication(sys.argv)
+# APP = QApplication(sys.argv)
 
 
 def test_add_ra_insertion(lncdapp, qtbot):

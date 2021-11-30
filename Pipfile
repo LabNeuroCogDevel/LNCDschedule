@@ -10,10 +10,17 @@ pyesql = "*"
 "psycopg2" = "2.9.2"
 "LNCDcal" = {git = "https://github.com/LabNeuroCogDevel/LNCDcal.py"}
 pyopenssl = "*"
+sqlalchemy = ">=1.4.27"
+simplejson = "*"
+pandas = "*"
+pyqt5-sip = "*"
 
 [dev-packages]
 black = "*"
 pytest = "*"
+qtbot = "*"
+pytest-pgsql = "*"
+pytest-qt = "*"
 
 [requires]
 python_version = "3.10"

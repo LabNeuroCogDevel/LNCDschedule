@@ -1,0 +1,5 @@
+#!/bin/sh
+# run tests before each push
+# use export SKIPTESTS=1 to skip running tests
+
+[ -z "$SKIPTEST" ] && scripts/tests_xvfb || exit 0

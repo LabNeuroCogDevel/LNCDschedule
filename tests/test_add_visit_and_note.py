@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import QApplication
 
 
 # initialize QT
-APP = QApplication(sys.argv)
+# APP = QApplication(sys.argv)
 
 
 def test_gui_add_visit(qtbot, lncdapp):

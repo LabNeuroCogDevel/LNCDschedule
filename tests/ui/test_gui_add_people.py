@@ -7,7 +7,8 @@ from pyesql_helper import pyesql_helper as ph
 
 
 # initialize QT
-APP = QApplication(sys.argv)
+# APP = QApplication(sys.argv)
+# 20211130 - removed to stop segfault
 
 
 def test_addperson_returns(qtbot):

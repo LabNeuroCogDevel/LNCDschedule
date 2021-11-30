@@ -7,7 +7,8 @@ from PyQt5.QtWidgets import QApplication
 from pyesql_helper import csv_none
 
 # initialize QT
-APP = QApplication(sys.argv)
+# APP = QApplication(sys.argv)
+# 20211130 - removed to stop segfault
 
 
 def test_notes_populate(qtbot, lncdapp):

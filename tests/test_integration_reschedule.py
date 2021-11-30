@@ -13,7 +13,7 @@ from LNCDcal import LNCDcal
 
 
 # initialize QT
-APP = QApplication(sys.argv)
+# APP = QApplication(sys.argv)
 
 
 def test_gui_reschedule(qtbot, lncdapp):

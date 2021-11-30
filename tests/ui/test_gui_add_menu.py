@@ -3,13 +3,13 @@ import AddStudy
 import AddTask
 import AddVisitType
 from PyQt5.QtWidgets import QApplication
-from PyQt5.QtCore import Qt
 import sys
 
 # from pyesql_helper import pyesql_helper as phz
 
 # initialize QT
-app = QApplication(sys.argv)
+# APP = QApplication(sys.argv)
+# 20211130 - removed to stop segfault
 
 
 def test_addra_returns(qtbot):

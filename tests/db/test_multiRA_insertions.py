@@ -7,7 +7,8 @@ from pyesql_helper import csv_none
 
 # initialize QT
 # -- otherwise we get "Aborted" when running just this file
-APP = QApplication(sys.argv)
+#    removed b/c causes segfault. test seems to run fine w/o (20211130)
+# APP = QApplication(sys.argv)
 
 # N.B.
 #  run and get debugger shell when fails

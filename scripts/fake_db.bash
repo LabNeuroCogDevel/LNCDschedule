@@ -11,7 +11,7 @@ DB=lncddb_test
 USER=postgres
 psqlcmd(){ psql -U $USER "$@"; }
 
-cd $(dirname $0)
+cd $(dirname $0)/../sql
 # replace 01_makedb.sql with $DB
 echo "drop database if exists $DB; create database $DB;" | psqlcmd
 # and then run all the others

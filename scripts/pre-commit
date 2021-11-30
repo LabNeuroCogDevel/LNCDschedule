@@ -1,0 +1,9 @@
+#!/bin/sh
+# code format afer before commit
+set -e
+
+# Redirect output to stderr.
+exec 1>&2
+cd $(dirname $0)/../.. # go to root
+command -v black >/dev/null || exit 0
+black .
