@@ -23,12 +23,12 @@ def test_db_config_to_dict():
     cfg = "config.ini.example"
     # [SQL]
     # host    = localhost
-    # dbname  = db
-    # user    = uname
+    # dbname  = lncddb_test
+    # user    = postgres
     # port = 5432
     assert (
         make_connstr(db_config_to_dict(cfg))
-        == "dbname=db user=uname host=localhost port=5432"
+        == "dbname=lncddb_test user=postgres host=localhost port=5432"
     )
 
 
