@@ -20,13 +20,13 @@ def test_notes_populate(qtbot, lncdapp):
     # attach tester to window
     qtbot.add_widget(lncdapp)  # attach qt testing robot
     # search by name - defined in person.csv and matching note.csv
-    lncdapp.fullname.setText('Will Foran')
+    lncdapp.fullname.setText("Will Foran")
     # select the first row in the table
     index = lncdapp.people_table.model().index(0, 1)
     lncdapp.people_table.setCurrentIndex(index)
     # qtbot.stop() # to check out if selection changed
 
     # assert that we found the expected note
-    nidx = lncdapp.note_columns.index('note')
+    nidx = lncdapp.note_columns.index("note")
     note = lncdapp.note_table_data[0][nidx]
-    assert note == 'Test Note'
+    assert note == "Test Note"

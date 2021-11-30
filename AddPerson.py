@@ -14,15 +14,16 @@ class AddPersonWindow(QtWidgets.QDialog):
 
     def __init__(self, parent=None, sources=None):
         self.persondata = {
-            'fname': None,
-            'lname': None,
-            'dob': None,
-            'sex': None,
-            'hand': None,
-            'source': None}
+            "fname": None,
+            "lname": None,
+            "dob": None,
+            "sex": None,
+            "hand": None,
+            "source": None,
+        }
         super(AddPersonWindow, self).__init__(parent)
-        uic.loadUi('./ui/add_person.ui', self)
-        self.setWindowTitle('Add Person')
+        uic.loadUi("./ui/add_person.ui", self)
+        self.setWindowTitle("Add Person")
 
         # change this to true when validation works
         self._want_to_close = False
@@ -33,16 +34,15 @@ class AddPersonWindow(QtWidgets.QDialog):
                 self.source_cbox.addItem(p_src, p_src)
 
         # wire up buttons and boxes
-        self.dob_edit.selectionChanged.connect(lambda: self.allvals('dob'))
-        self.hand_edit.activated.connect(lambda: self.allvals('hand'))
-        self.sex_edit.activated.connect(lambda: self.allvals('sex'))
-        self.fname_edit.textChanged.connect(lambda: self.allvals('fname'))
-        self.lname_edit.textChanged.connect(lambda: self.allvals('lname'))
+        self.dob_edit.selectionChanged.connect(lambda: self.allvals("dob"))
+        self.hand_edit.activated.connect(lambda: self.allvals("hand"))
+        self.sex_edit.activated.connect(lambda: self.allvals("sex"))
+        self.fname_edit.textChanged.connect(lambda: self.allvals("fname"))
+        self.lname_edit.textChanged.connect(lambda: self.allvals("lname"))
         # ## source
         # text either dropdown value or entered text (if 'Other' is selected)
         self.source_cbox.currentTextChanged.connect(self.update_cbox)
-        self.source_text_edit.textChanged.\
-            connect(lambda: self.allvals('source'))
+        self.source_text_edit.textChanged.connect(lambda: self.allvals("source"))
 
     def update_cbox(self, selected):
         """
@@ -50,11 +50,11 @@ class AddPersonWindow(QtWidgets.QDialog):
         text field is set by dropdown, unless 'Other' is selected
         then text field is enabled and a new value can be typed in
         """
-        if selected != 'Other':
+        if selected != "Other":
             self.source_text_edit.setText(selected)
             self.source_text_edit.setDisabled(True)
         else:
-            self.source_text_edit.setText('')
+            self.source_text_edit.setText("")
             self.source_text_edit.setDisabled(False)
 
     def setpersondata(self, dict_in):
@@ -67,49 +67,49 @@ class AddPersonWindow(QtWidgets.QDialog):
         # remove '%' from any input
         for k in self.persondata.keys():
             if k in dict_in:
-                self.persondata[k] = dict_in[k].replace('%', '')
+                self.persondata[k] = dict_in[k].replace("%", "")
         # set name text items
-        self.fname_edit.setText(self.persondata['fname'])
-        self.lname_edit.setText(self.persondata['lname'])
+        self.fname_edit.setText(self.persondata["fname"])
+        self.lname_edit.setText(self.persondata["lname"])
 
-    def allvals(self, key='all'):
+    def allvals(self, key="all"):
         """
         set data from gui edit value
         optionally be specific
         """
-        print('updating %s' % key)
-        if(key in ['dob', 'all']):
-            self.persondata['dob'] = caltodate(self.dob_edit)
-        print(self.persondata['dob'])
-        if(key in ['hand', 'all']):
-            self.persondata['hand'] = comboval(self.hand_edit)
-        if(key in ['sex', 'all']):
-            self.persondata['sex'] = comboval(self.sex_edit)
-        if(key in ['fname', 'all']):
-            self.persondata['fname'] = self.fname_edit.text()
-        if(key in ['lname', 'all']):
-            self.persondata['lname'] = self.lname_edit.text()
+        print("updating %s" % key)
+        if key in ["dob", "all"]:
+            self.persondata["dob"] = caltodate(self.dob_edit)
+        print(self.persondata["dob"])
+        if key in ["hand", "all"]:
+            self.persondata["hand"] = comboval(self.hand_edit)
+        if key in ["sex", "all"]:
+            self.persondata["sex"] = comboval(self.sex_edit)
+        if key in ["fname", "all"]:
+            self.persondata["fname"] = self.fname_edit.text()
+        if key in ["lname", "all"]:
+            self.persondata["lname"] = self.lname_edit.text()
         # todo, toggle visibility and pick combo or text
-        if(key in ['source', 'all']):
-            self.persondata['source'] = self.source_text_edit.text()
+        if key in ["source", "all"]:
+            self.persondata["source"] = self.source_text_edit.text()
 
     def isvalid(self):
-        """ do we have good data? just check that no key is null """
-        self.allvals('all')
+        """do we have good data? just check that no key is null"""
+        self.allvals("all")
         print("add person is valid?\n%s" % str(self.persondata))
         for k in self.persondata.keys():
-            if self.persondata[k] is None or self.persondata[k] == '':
+            if self.persondata[k] is None or self.persondata[k] == "":
                 msg = "%s is empty" % k
                 print(msg)
-                return((False, msg))
+                return (False, msg)
 
         # TODO: check dob is not today
 
-        print(self.persondata['dob'])
-        entered_year = str(self.persondata['dob']).split('-')[0]
-        #Error checking the age of created person
+        print(self.persondata["dob"])
+        entered_year = str(self.persondata["dob"]).split("-")[0]
+        # Error checking the age of created person
         now = datetime.datetime.now()
-        if(int(entered_year) >= now.year):
-            return((False, 'this person seems to be extraordinarily immature(age <= 1)'))
+        if int(entered_year) >= now.year:
+            return (False, "this person seems to be extraordinarily immature(age <= 1)")
         self._want_to_close = True
-        return((True, 'Valid!'))
+        return (True, "Valid!")

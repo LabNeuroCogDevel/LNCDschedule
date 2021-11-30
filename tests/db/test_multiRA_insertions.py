@@ -22,8 +22,9 @@ def test_multi_ra_gui(qtbot):
     # just enter the first 2 and always go 1 then 2 ?
 
     import MultiRA
+
     win = MultiRA.ChosenMultipleRAWindow()
-    win.setup(['ra1', 'ra2', 'ra3'])
+    win.setup(["ra1", "ra2", "ra3"])
     win.show()
 
     # select one
@@ -31,10 +32,10 @@ def test_multi_ra_gui(qtbot):
     qtbot.mouseDClick(win.choices, Qt.LeftButton)
 
     win.ras.item(2).setSelected(True)
-    time.sleep(.100)
+    time.sleep(0.100)
     win.ras.setFocus()
     qtbot.keyClick(win.ras, Qt.Key_Enter, delay=100)  # 100ms to let signal hit
-    assert win.get_data() == ['ra3']
+    assert win.get_data() == ["ra3"]
 
     # unselect it
     win.ras.setFocus()
@@ -45,19 +46,18 @@ def test_multi_ra_gui(qtbot):
     print(win.get_data())
 
 
-
 def test_db_multi_ra_insertion(lncdapp, qtbot):
-    """ can we assign more than one RA to a visit? """
+    """can we assign more than one RA to a visit?"""
 
     # Test the function of assing multi_RA
     # RAs defined in sql/ra.txt (ra1 to ra4)
-    fake_ra_selected = ['ra1', 'ra2', 'ra4']
+    fake_ra_selected = ["ra1", "ra2", "ra4"]
 
     # ## setup visit ##
     vid = 1
     # create vid 1 with sql/visit_summary.csv
     # not done by lncdapp in conftest.py fixture. so load it here
-    csv_none(lncdapp.pgtest, 'sql/visit_summary.csv', 'visit_summary')
+    csv_none(lncdapp.pgtest, "sql/visit_summary.csv", "visit_summary")
 
     # not needed because gcal part fails silently.
     # maybe a problem for other things?
@@ -75,7 +75,7 @@ def test_db_multi_ra_insertion(lncdapp, qtbot):
     ra_assigned = lncdapp.pgtest.connection.execute(
         """select ra from visit_action
          where vid = vid and action = 'assigned'"""
-        ).fetchall()
+    ).fetchall()
 
     # ## check all are RAs are assigned in db ##
     # same length
@@ -86,11 +86,11 @@ def test_db_multi_ra_insertion(lncdapp, qtbot):
 
 
 def test_db_multi_ra_change_assigned(lncdapp):
-    """ mutli ra also re-assigns prevously assigned """
+    """mutli ra also re-assigns prevously assigned"""
 
-    csv_none(lncdapp.pgtest, 'sql/visit_summary.csv', 'visit_summary')
-    lncdapp.multira_to_db_operaiton(['ra1', 'ra2'], 1)
-    lncdapp.multira_to_db_operaiton(['ra3', 'ra4'], 1)
+    csv_none(lncdapp.pgtest, "sql/visit_summary.csv", "visit_summary")
+    lncdapp.multira_to_db_operaiton(["ra1", "ra2"], 1)
+    lncdapp.multira_to_db_operaiton(["ra3", "ra4"], 1)
 
     pytest.skip()
     # TODO: remove skip and

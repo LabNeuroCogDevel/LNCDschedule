@@ -6,7 +6,7 @@ import sqlalchemy.engine.base
 import json
 
 
-class pyesql_helper():
+class pyesql_helper:
     """
     fake cursor structure needed by pyesql
     resolve:
@@ -18,13 +18,14 @@ class pyesql_helper():
     pyesql:       conn.cursor().execute(); conn.fetchall()
     pytest-pgsql: conn.execute()
     """
+
     def __init__(self, conn):
         self.connection = conn
         self.results = None
 
     @property
     def __class__(self):
-        """ get around a check in insert """
+        """get around a check in insert"""
         return sqlalchemy.engine.base.Connection
 
     def execute(self, *kargs):
@@ -50,7 +51,7 @@ class pyesql_helper():
         return the work of execute for pattern:
            conn.execute(); res=conn.fetchall()
         """
-        return(self.results)
+        return self.results
 
     def fetchone(self):
         """
@@ -68,10 +69,10 @@ class pyesql_helper():
            cursor() returns a refernce to the class itself
         so all the needed methods are in this one class: pyesql_helper
         """
-        return(self)
+        return self
 
     def close(self):
-        """ do nothing? """
+        """do nothing?"""
         return self
 
 
@@ -101,8 +102,8 @@ def note_to_json(key, val):
     and requires all columns are present.
     but empty values for json are not handled well by the mocked database
     """
-    if key not in ['notes']:
-        return(val)  # don't care about non-json keys
+    if key not in ["notes"]:
+        return val  # don't care about non-json keys
     return json.loads(val)
 
 
@@ -115,16 +116,14 @@ def csv_none(pg, csv_source, table):
     :param table: fake db table name to put the data in
     """
     import csv
+
     table_obj = pg.get_table(table)
-    with open(csv_source, 'r') as fdesc:
-        data_rows = csv.DictReader(fdesc, dialect='excel', escapechar='\\')
+    with open(csv_source, "r") as fdesc:
+        data_rows = csv.DictReader(fdesc, dialect="excel", escapechar="\\")
         data_rows = list(data_rows)
     # make empty string None
     data_rows = [
-        {key: None if row[key] == ''
-         else note_to_json(key, row[key])
-         for key in row}
+        {key: None if row[key] == "" else note_to_json(key, row[key]) for key in row}
         for row in data_rows
     ]
     pg._conn.execute(table_obj.insert().values(data_rows))
-
