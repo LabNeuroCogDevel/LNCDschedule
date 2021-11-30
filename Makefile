@@ -1,5 +1,5 @@
 # non-file targets
-.PHONY: install clean lint test coverage-report binary all
+.PHONY: install clean lint test coverage-report binary all lncddb_test
 # no built in rules
 .SUFFIXES:
 MAKEFLAGS += --no-builtin-rules
@@ -23,6 +23,8 @@ all: test lint coverage-report
 coverage-report: .QA/coverage.txt
 lint: .QA/lint.txt
 binary: dist/schedule/schedule/schedule.py
+lncddb_test: sql/*csv
+	scripts/fake_db.bash
 clean:
 	find . -name __pycache__ -type d -exec rm {} \+
 .QA:
@@ -37,7 +39,7 @@ clean:
 install_local: requirements.txt | .QA .git/hooks/pre-commit .git/hooks/pre-push
 	$(PYTHONAPP) pip install --upgrade pip
 	$(PYTHONAPP) pip install -r requirements.txt
-	
+
 install: Pipfile | .QA .git/hooks/pre-commit .git/hooks/pre-push
 	@echo also see make install_local to use requirements.txt
 	pipenv install --dev
@@ -65,4 +67,4 @@ dist/schedule/schedule/schedule.py: $(CODEFILES)
 dist/schedule/schedule: dist/schedule/schedule/schedule.py
 	rm -r /l/bea_res/Applications/schedule
 	cp -r dist/schedule/ /l/bea_res/Applications/
-	
+
