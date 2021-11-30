@@ -1,4 +1,14 @@
 #!/bin/sh
+set -e
 #
+# always run black (when it exists)
+#
+
+# Redirect output to stderr.
+exec 1>&2
+command -v black >/dev/null || exit 0
+black $(cd $(dirname $0)/..;pwd)
+
 python=$(which python3 || which python)
-$python -m pytest -v tests
+[ -z "$SKIPTEST" ] || $python -m pytest -v tests
+
