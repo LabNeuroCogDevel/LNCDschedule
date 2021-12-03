@@ -138,9 +138,9 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # ## menu
         menubar = self.menuBar()
         fileMenu = menubar.addMenu("&New")
-        CMenuItem("RA", fileMenu, self.add_ra)
-        CMenuItem("Study", fileMenu, self.add_studies)
-        CMenuItem("Task", fileMenu, self.add_task)
+        CMenuItem("RA", fileMenu, self.AddRA.show)
+        CMenuItem("Study", fileMenu, self.AddStudy.show)
+        CMenuItem("Task", fileMenu, self.AddTask.show)
         CMenuItem("Visit Type", fileMenu, self.add_visit_type)
 
         # search settings
@@ -421,20 +421,11 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.sql.insert("study", study_data)
         print("adding studies: %s" % study_data)
 
-    def add_studies(self):
-        self.AddStudy.show()
-
-    def add_ra(self):
-        self.AddRA.show()
-
     def add_ra_to_db(self):
         ra_data = self.AddRA.ra_data
         self.sql.insert("ra", ra_data)
         print("adding ra: %s" % ra_data)
         # for this RA to access the database they need to be added as a user
-
-    def add_task(self):
-        self.AddTask.show()
 
     def add_task_to_db(self):
 
