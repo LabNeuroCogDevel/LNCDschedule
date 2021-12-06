@@ -25,6 +25,7 @@ import CheckinVisit
 import MoreInfo
 import VisitsCards
 import AddContactNotes
+import PersonTable
 
 # local tools
 from LNCDutils import (
@@ -121,6 +122,10 @@ class ScheduleApp(QtWidgets.QMainWindow):
             mkmsg("ERROR: cannot load calendar or DB!\n%s" % str(err))
             return
 
+        # this is sketchy
+        # use table widget defined in PersonTable (called PromotedPersonTable in ui file)
+        self.PromotedPersonTable.embed(self.sql)
+
         # ## who is using the app?
         self.RA = self.sql.db_user
         print("RA: %s" % self.RA)
@@ -203,8 +208,9 @@ class ScheduleApp(QtWidgets.QMainWindow):
         self.people_table.setHorizontalHeaderLabels(self.person_columns)
         self.people_table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
         # wire up clicks
-        self.people_table.itemSelectionChanged.connect(self.people_item_select)
-        self.people_table.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)
+        #self.people_table.itemSelectionChanged.connect(self.people_item_select)
+        #self.people_table.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)
+        self.PromotedPersonTable.person_changed.connect(self.people_row_seleted)
 
         # ## people context menu
         def select_and_note():
@@ -644,6 +650,18 @@ class ScheduleApp(QtWidgets.QMainWindow):
             # go through each column of the row and color it
             for j in range(self.people_table.columnCount()):
                 self.people_table.item(row_i, j).setBackground(drop_color)
+
+   def people_row_seleted(self, row):
+        "what to do with signal from PersonTable. row is dict"
+        # main model
+        print(f"selection: {row}")
+        print("people table: subject selected: %s" % row['pid'])
+        self.render_person(pid=row['pid'],
+                           fullname=row['fullname'],
+                           age=row['age'],
+                           sex=row['sex'],
+                           lunaid=row['lunaid'])
+        self.render_schedule(ScheduleFrom.PERSON)
 
     def people_item_select(self, thing=None):
         """

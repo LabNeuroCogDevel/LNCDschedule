@@ -4,18 +4,19 @@
 import re
 from lncdSql import lncdSql
 from PyQt5 import uic, QtCore, QtGui, QtWidgets
-from LNCDutils import comboval, mkmsg
+from LNCDutils import comboval, mkmsg, background_drop_color
 
 
 class PersonTable(QtWidgets.QWidget):
     """table specificly for holding people"""
 
     # when a new person is selected emit row that changed
-    person_changed = QtCore.pyqtSignal(int)
+    person_changed = QtCore.pyqtSignal(dict) #NB dict=QvarationMap string keys only
 
-    def __init__(self, sql):
+    def __init__(self, parent=None, sql=None):
         """expects to get a QtTable widget to reuse"""
-        super().__init__()
+        #QtWidgets.__init__(self, parent)
+        super().__init__(parent)
         self.sql = sql
         uic.loadUi("./ui/person_widget.ui", self)
         self.person_columns = [
@@ -45,9 +46,10 @@ class PersonTable(QtWidgets.QWidget):
         # by name
         self.fullname.textChanged.connect(self.search_people_by_name)
         self.fullname.setText("")
-        self.search_people_by_name(
-            self.fullname.text() + "%"
-        )  # doesnt already happens, why?
+        # doesnt already happens, why?
+        # self.search_people_by_name(
+        #     self.fullname.text() + "%"
+        # ) 
 
         # by lunaid
         self.subjid_search.textChanged.connect(self.search_people_by_id)
@@ -188,21 +190,54 @@ class PersonTable(QtWidgets.QWidget):
         # Whenever the people table subjects have been selected
         #  grey out the checkin button
         self.row_i = self.people_table.currentRow()
-        self.person_changed.emit(self.row_i)
+        self.person_changed.emit(self.current_person())
 
         # Color row when clicked -- indicate action target for right click
-        # self.click_color(self.people_table, self.row_i)
+        self.click_color(self.row_i)
 
     def current_person(self):
         """return info about selected person"""
         d = self.people_table_data[self.row_i]
-        return d
+
+        #"fullname", "lunaid", "age", "dob", "sex", "lastvisit", "maxdrop", "studies",
+        info = dict(zip(self.person_columns,d))
+        info['pid'] = d[8] # pid not shown
+        return info
         # # main model
         # self.checkin_button.setEnabled(False)
         # print('people table: subject selected: %s' % d[8])
         # self.render_person(pid=d[8], fullname=d[0], age=d[2],
         #                    sex=d[4], lunaid=d[1])
         # self.render_schedule(ScheduleFrom.PERSON)
+
+    def bg_reset(self):
+        """repaint background for all cells. drop rows colored differently
+        also see: LNCDutils.background_reset (does not do drops)
+        """
+        drop_column_idx = 6
+        for row_i in range(self.people_table.rowCount()):
+            drop_type = self.people_table.item(row_i, drop_column_idx).text()
+            bg_qtcolor = background_drop_color(drop_type)
+            for col_i in range(self.people_table.columnCount()):
+                self.people_table.item(row_i, col_i).setBackground(bg_qtcolor)
+
+    def click_color(self, row_i):
+        """
+        change color of all cells in a row.
+        not tracking what was previusly clicked.
+        insetad resetting all colors"""
+        self.bg_reset()
+        select_rgb = (191, 243, 228)
+        select_color = QtGui.QColor(*select_rgb)
+        for col_i in range(self.people_table.columnCount()):
+            # when table changes row_i may no longer exist (None)
+            if self.people_table.item(row_i, col_i):
+                self.people_table.item(row_i, col_i).setBackground(select_color)
+
+    def embed(self, sql):
+        self.sql = sql
+        self.search_people_by_name("%")
+        #self.setGeometry(0, 0, self.width() + 20, self.height() + 20)
 
 
 class PersonOnlyApp(QtWidgets.QMainWindow):
@@ -220,7 +255,7 @@ class PersonOnlyApp(QtWidgets.QMainWindow):
         lay = QtWidgets.QVBoxLayout(centralwidget)
         # Box Layout to organize our GUI
         # labels
-        person_table = PersonTable(self.sql)
+        person_table = PersonTable(self, self.sql)
         lay.addWidget(person_table)
         self.setGeometry(0, 0, person_table.width() + 20, person_table.height() + 20)
         self.person_table = person_table
@@ -234,7 +269,7 @@ if __name__ == "__main__":
 
     APP = QtWidgets.QApplication(sys.argv)
     sql = lncdSql("config_dev.ini", gui=QtWidgets.QApplication.instance())
-    WIN = PersonOnlyApp(sql)
+    WIN = PersonOnlyApp(sql=sql)
 
     study_list = [r[0] for r in sql.query.list_studies()]
     WIN.person_table.add_studies(study_list)
