@@ -13,16 +13,16 @@ class PersonTable(QtWidgets.QWidget):
     """table specificly for holding people"""
 
     # when a new person is selected emit new person info
-    person_changed = QtCore.pyqtSignal(dict) #NB dict=QvarationMap string keys only
+    person_changed = QtCore.pyqtSignal(dict)  # NB dict=QvarationMap string keys only
 
     def __init__(self, parent=None, sql=None):
         """expects to get a QtTable widget to reuse"""
-        #QtWidgets.__init__(self, parent)
+        # QtWidgets.__init__(self, parent)
         super().__init__(parent)
         self.sql = sql
         uic.loadUi("./ui/person_widget.ui", self)
 
-        # returns table has 9 columns but not showing last (pid) 
+        # returns table has 9 columns but not showing last (pid)
         self.person_columns = [
             "fullname",
             "lunaid",
@@ -37,13 +37,13 @@ class PersonTable(QtWidgets.QWidget):
         # current selection
         self.row_i = -1
         self.NoDropCheck = None  # maybe menu checkbox
-        self.luna_search_settings = None # will be actiongroup
+        self.luna_search_settings = None  # will be actiongroup
 
         self.setup_table()
         self.setup_textboxes()
         self.setup_right_click()
         self.setup_add_person()
-        
+
         # trigger model for editting person info
         self.EditPeople = EditPeople.EditPeopleWindow(self)
         self.EditPeople.accepted.connect(self.change_person_to_db)
@@ -63,7 +63,7 @@ class PersonTable(QtWidgets.QWidget):
         # doesnt already happens, why?
         # self.search_people_by_name(
         #     self.fullname.text() + "%"
-        # ) 
+        # )
 
         # by lunaid
         self.subjid_search.textChanged.connect(self.search_people_by_id)
@@ -102,13 +102,13 @@ class PersonTable(QtWidgets.QWidget):
             self.people_item_select()
             raise Exception("not implemented")
             # TODO: emit signal to update note
-            #self.add_notes_pushed()
+            # self.add_notes_pushed()
 
         CMenuItem("Add Note/Drop", self.people_table, select_and_note)
         CMenuItem("Add ID", self.people_table)
         CMenuItem("Edit Person", self.people_table, self.change_person)
 
-    def setup_search_menu_opts(self,menubar):
+    def setup_search_menu_opts(self, menubar):
         "add search menu wiht drops and lunaid settings. used by main app"
         # search settings
         searchMenu = menubar.addMenu("&Search")
@@ -135,7 +135,6 @@ class PersonTable(QtWidgets.QWidget):
         searchMenu.addAction(lonly)
         searchMenu.addAction(lno)
 
-
     def change_person_to_db(self):
         """
         submitted edit from edit_person
@@ -143,8 +142,8 @@ class PersonTable(QtWidgets.QWidget):
         """
         self.EditPeople.update_sql(self.sql)
         info = self.EditPeople.updated_info()
-        self.fullname.setText(info['fullname'])
-        #self.search_people_by_name(info['fullname'])
+        self.fullname.setText(info["fullname"])
+        # self.search_people_by_name(info['fullname'])
 
     def change_person(self):
         """
@@ -155,7 +154,7 @@ class PersonTable(QtWidgets.QWidget):
         # if render_person is none: throw error message to click first
 
         info = self.current_person()
-        info['dob'] = str(info['dob'])
+        info["dob"] = str(info["dob"])
         # launch module
         self.EditPeople.edit_person(info)
         self.EditPeople.show()
@@ -210,13 +209,19 @@ class PersonTable(QtWidgets.QWidget):
         }
         search = self.update_search_params(search)
 
-
         # finally query and update table
         res = self.sql.query.name_search(**search)
         self.fill_search_table(res)
 
-
-    def update_search_params(self, search={"fullname": "%", "maxlunaid": 99999, "minlunaid": -1, "maxdrop": "family"}):
+    def update_search_params(
+        self,
+        search={
+            "fullname": "%",
+            "maxlunaid": 99999,
+            "minlunaid": -1,
+            "maxdrop": "family",
+        },
+    ):
         "search settings optionally from menus in NoDropCheck and luna_search_settings"
         # exclude dropped?
         if self.NoDropCheck and self.NoDropCheck.isChecked():
@@ -302,7 +307,7 @@ class PersonTable(QtWidgets.QWidget):
         self.row_i = self.people_table.currentRow()
         # TODO: okay to return DF of empty?
         # might want to clear other things when no results
-        if self.row_i >-1:
+        if self.row_i > -1:
             self.person_changed.emit(self.current_person())
 
         # Color row when clicked -- indicate action target for right click
@@ -312,16 +317,16 @@ class PersonTable(QtWidgets.QWidget):
         """return info about selected person"""
         d = self.people_table_data[self.row_i]
 
-        #"fullname", "lunaid", "age", "dob", "sex", "lastvisit", "maxdrop", "studies",
-        info = dict(zip(self.person_columns,d))
-        info['pid'] = d[8] # pid not shown
+        # "fullname", "lunaid", "age", "dob", "sex", "lastvisit", "maxdrop", "studies",
+        info = dict(zip(self.person_columns, d))
+        info["pid"] = d[8]  # pid not shown
 
         # dont get fname and lname from table
         # could word split, but need to be accurate at least for edit module
         if self.sql:
-            res = self.sql.query.get_name(pid=info['pid'])
-            info['fname'] = res[0][0]
-            info['lname'] = res[0][1]
+            res = self.sql.query.get_name(pid=info["pid"])
+            info["fname"] = res[0][0]
+            info["lname"] = res[0][1]
         return info
         # # main model
         # self.checkin_button.setEnabled(False)

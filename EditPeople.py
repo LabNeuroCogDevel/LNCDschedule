@@ -66,7 +66,7 @@ class EditPeopleWindow(QtWidgets.QDialog):
             return info
 
         info[to_change] = self.edit_model["changes"]
-        info['fullname'] = "%(fname)s %(lname)s" % info
+        info["fullname"] = "%(fname)s %(lname)s" % info
         return info
 
     def update_sql(self, sql):
@@ -79,5 +79,6 @@ class EditPeopleWindow(QtWidgets.QDialog):
 
         print("person2db: pid %(pid)d: updated %(ctype)s->%(changes)s" % data)
 
-        sqlUpdateOrShowErr(sql,
-            "person", data["ctype"], data["pid"], data["changes"], "pid")
+        sqlUpdateOrShowErr(
+            sql, "person", data["ctype"], data["pid"], data["changes"], "pid"
+        )

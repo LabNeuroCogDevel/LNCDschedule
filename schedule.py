@@ -23,7 +23,7 @@ import CheckinVisit
 import MoreInfo
 import VisitsCards
 import AddContactNotes
-import PersonTable  # need by uic import of promoted widget 
+import PersonTable  # need by uic import of promoted widget
 
 # local tools
 from LNCDutils import (
@@ -148,7 +148,6 @@ class ScheduleApp(QtWidgets.QMainWindow):
         CMenuItem("Visit Type", fileMenu, self.add_visit_type)
         # add Drops removed, All LunaIDs Only, Without LunaIDs
         self.PromotedPersonTable.setup_search_menu_opts(menubar)
-
 
         # Visit_table search settings
         visitsSearchMenu = menubar.addMenu("&Visit_table Search")
@@ -388,14 +387,11 @@ class ScheduleApp(QtWidgets.QMainWindow):
             return False
         return True
 
-
-
     # #### PEOPLE #####
 
     """
     connector for on text change of fullname textline search bar
     """
-
 
     # by attributes
 
@@ -454,14 +450,15 @@ class ScheduleApp(QtWidgets.QMainWindow):
     def people_row_seleted(self, row):
         "what to do with signal from PersonTable. row is dict"
         # main model
-        print("people table: subject selected: %s" % row['pid'])
-        self.render_person(pid=row['pid'],
-                           fullname=row['fullname'],
-                           age=row['age'],
-                           sex=row['sex'],
-                           lunaid=row['lunaid'])
+        print("people table: subject selected: %s" % row["pid"])
+        self.render_person(
+            pid=row["pid"],
+            fullname=row["fullname"],
+            age=row["age"],
+            sex=row["sex"],
+            lunaid=row["lunaid"],
+        )
         self.render_schedule(ScheduleFrom.PERSON)
-
 
     def render_person(self, pid, fullname, age, sex, lunaid=None):
         """
@@ -878,8 +875,8 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
     def edit_notes_to_db(self):
         data = self.EditNotes.edit_model
-        sqlUpdateOrShowErr(self.sql,
-            "note", data["ctype"], data["vid"], data["changes"], "vid"
+        sqlUpdateOrShowErr(
+            self.sql, "note", data["ctype"], data["vid"], data["changes"], "vid"
         )
         self.update_note_table()
 
@@ -903,7 +900,6 @@ class ScheduleApp(QtWidgets.QMainWindow):
         print("update_note_table pid: %s" % self.disp_model["pid"])
         self.note_table_data = self.sql.query.note_by_pid(pid=self.disp_model["pid"])
         generic_fill_table(self.note_table, self.note_table_data)
-
 
     # #### SCHEDULE #####
 
@@ -1362,8 +1358,8 @@ class ScheduleApp(QtWidgets.QMainWindow):
     def update_contact_to_db(self):
         """run sql update and refresh contact table"""
         data = self.EditContact.edit_model
-        sqlUpdateOrShowErr(self.sql,
-            "contact", data["ctype"], data["cid"], data["changes"], "cid"
+        sqlUpdateOrShowErr(
+            self.sql, "contact", data["ctype"], data["cid"], data["changes"], "cid"
         )
         self.update_contact_table()
 
@@ -1447,7 +1443,6 @@ class ScheduleApp(QtWidgets.QMainWindow):
         except Exception as err:
             mkmsg(str(err))
             return False
-
 
 
 # actually launch everything
