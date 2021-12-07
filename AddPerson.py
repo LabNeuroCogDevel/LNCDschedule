@@ -113,3 +113,33 @@ class AddPersonWindow(QtWidgets.QDialog):
             return (False, "this person seems to be extraordinarily immature(age <= 1)")
         self._want_to_close = True
         return (True, "Valid!")
+
+    def launch_with_name(self, fullname):
+        name = fullname.split(" ")
+        print("add person: spliting name at len %d" % len(name))
+        fname = name[0] if len(name) >= 1 else ""
+        lname = " ".join(name[1:]) if len(name) >= 2 else ""
+        d = {"fname": fname, "lname": lname}
+        self.setpersondata(d)
+        self.show()
+
+    def add_person_to_db(self, sql):
+        """person to db"""
+        print("add person to db persondata: %s" % self.persondata)
+        # pop up window and return if not valid
+        (valid, msg) = self.isvalid()
+        if not valid:
+            mkmsg("Person info not valid?! %s" % msg)
+            return
+
+        # put error into dialog box
+        try:
+            # self.sql.query.insert_person(**(self.persondata))
+            data = self.persondata
+            data["adddate"] = datetime.datetime.now()
+            pidres = sql.insert("person", data)
+        except Exception as err:
+            mkmsg(str(err))
+            return
+
+        return self.persondata["fname"] + " " + self.persondata["lname"]

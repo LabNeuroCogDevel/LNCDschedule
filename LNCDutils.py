@@ -238,3 +238,16 @@ def background_drop_color(drop_type):
     drop_qtcolor = QtGui.QColor(*rgb)
     return drop_qtcolor
 
+
+# Later better map all the data into one variable so that it's easy to see.
+def sqlUpdateOrShowErr(sql, *kargs):
+    """
+    wrap sql.update in mkmsg
+    """
+    # return catch_to_mkmsg(self.sql.update, *kargs)
+    try:
+        sql.update(*kargs)
+        return True
+    except Exception as err:
+        mkmsg(str(err))
+        return False
