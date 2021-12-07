@@ -31,10 +31,10 @@ def test_gui_reschedule(qtbot, lncdapp):
     # attach tester to window
     qtbot.add_widget(lncdapp)  # attach qt testing robot
     # search by name - defined in person.csv and matching note.csv
-    lncdapp.fullname.setText("Test Subj")
+    lncdapp.PromotedPersonTable.fullname.setText("Test Subj")
     # select the first row in the table
-    index = lncdapp.people_table.model().index(0, 1)
-    lncdapp.people_table.setCurrentIndex(index)
+    index = lncdapp.PromotedPersonTable.people_table.model().index(0, 1)
+    lncdapp.PromotedPersonTable.people_table.setCurrentIndex(index)
     # and in the visits table
     index = lncdapp.visit_table.model().index(0, 1)
     lncdapp.visit_table.setCurrentIndex(index)
@@ -84,10 +84,10 @@ def test_gui_reschedule_cal(qtbot, lncdapp):
     # attach tester to window
     qtbot.add_widget(lncdapp)  # attach qt testing robot
     # search by name - defined in person.csv and matching note.csv
-    lncdapp.fullname.setText("NoNotes Subj")
+    lncdapp.PromotedPersonTable.fullname.setText("NoNotes Subj")
     # select the first row in the table
-    index = lncdapp.people_table.model().index(0, 1)
-    lncdapp.people_table.setCurrentIndex(index)
+    index = lncdapp.PromotedPersonTable.people_table.model().index(0, 1)
+    lncdapp.PromotedPersonTable.people_table.setCurrentIndex(index)
 
     # remove isvalid check (which updates vtype with box value)
     lncdapp.ScheduleVisit.isvalid = lambda: {"valid": True, "msg": "OK"}

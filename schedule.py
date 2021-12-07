@@ -393,20 +393,6 @@ class ScheduleApp(QtWidgets.QMainWindow):
     connector for on text change of fullname textline search bar
     """
 
-    # by attributes
-
-    def fill_search_table(self, res):
-        self.people_table_data = res
-        self.people_table.setRowCount(len(res))
-        # seems like we need to fill each item individually
-        # loop across rows (each result) and then into columns (each value)
-        for row_i, row in enumerate(res):
-            for col_i, value in enumerate(row):
-                item = QtWidgets.QTableWidgetItem(str(value))
-                self.people_table.setItem(row_i, col_i, item)
-        if res:
-            self.changing_color(row_i, res)
-
     def note_item_select(self):
         row_i = self.note_table.currentRow()
         # Color row when clicked -- indicate action target for right click
@@ -639,17 +625,17 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # Get rid of the color in other tables
         if table == self.note_table:
             self.refresh_blank(self.contact_table)
-            self.refresh_blank(self.people_table)
+            #self.refresh_blank(self.people_table)
             self.refresh_blank(self.visit_table)
 
         if table == self.visit_table:
             self.refresh_blank(self.contact_table)
-            self.refresh_blank(self.people_table)
+            #self.refresh_blank(self.people_table)
             self.refresh_blank(self.note_table)
 
         elif table == self.contact_table:
             self.refresh_blank(self.visit_table)
-            self.refresh_blank(self.people_table)
+            #self.refresh_blank(self.people_table)
             self.refresh_blank(self.note_table)
 
         elif table == self.people_table:
@@ -1415,10 +1401,6 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # insert into note
         note_dict = {**data, "vid": vid, "dropcode": self.AddNotes.get_drop()}
         self.sqlInsertOrShowErr("note", note_dict)
-
-        # Update the maxdrop on people table
-        row_i = self.people_table.currentRow()
-        lunaid = self.people_table.item(row_i, 1).text()
 
         # whatever we've done, we need to update the view
         self.update_note_table()
