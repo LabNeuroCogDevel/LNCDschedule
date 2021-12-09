@@ -218,6 +218,7 @@ INSERT into dropcode (dropcode,droplevel) values ('IMPORTANT',       'nodrop'); 
 INSERT into dropcode (dropcode,droplevel) values ('NOT',       'nodrop'); -- dont need this anymore 
 
 INSERT into dropcode (dropcode,droplevel) values ('NOINTEREST','future'); -- 
+INSERT into dropcode (dropcode,droplevel) values ('SUPPLEMENT','future'); --
 INSERT into dropcode (dropcode,droplevel) values ('HARD_SUBJ' ,'future'); -- 
 INSERT into dropcode (dropcode,droplevel) values ('TASK_ISSUE','sometasks');
 INSERT into dropcode (dropcode,droplevel) values ('TECH_ISSUE','visit');

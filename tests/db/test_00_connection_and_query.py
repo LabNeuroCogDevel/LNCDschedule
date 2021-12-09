@@ -9,8 +9,10 @@ from lncdSql import lncdSql
 from pyesql_helper import check_column, pyesql_helper as ph
 
 
-@pytest.mark.skipif(not os.path.isfile('config_dev.ini'),
-                    reason="need config_dev.ini to test config.ini")
+@pytest.mark.skipif(
+    not os.path.isfile("config_dev.ini"),
+    reason="need config_dev.ini to test config.ini",
+)
 def test_read_config_and_connect():
     """
     tests read db in config_dev.ini
@@ -18,9 +20,8 @@ def test_read_config_and_connect():
     """
     cfg = configparser.ConfigParser()
     cfg.read("config_dev.ini")
-    constr = 'dbname=%(dbname)s user=%(user)s ' + \
-             'host=%(host)s password=%(password)s'
-    conn = psycopg2.connect(constr % cfg._sections['SQL'])
+    constr = "dbname=%(dbname)s user=%(user)s " + "host=%(host)s password=%(password)s"
+    conn = psycopg2.connect(constr % cfg._sections["SQL"])
     conn.set_session(autocommit=True)
     assert conn is not None
 
@@ -31,6 +32,5 @@ def test_list_ras(create_db):
      -- by itself, not that useful. But guide for testing other sql tests
     (create_db in conftest.py, autoloaded by pytest)
     """
-    ras = lncdSql(None, conn=ph(create_db.connection)).\
-        query.list_ras()
-    check_column(0, ras, ['ra1', 'ra2', 'ra3', 'ra4'])
+    ras = lncdSql(None, conn=ph(create_db.connection)).query.list_ras()
+    check_column(0, ras, ["ra1", "ra2", "ra3", "ra4"])

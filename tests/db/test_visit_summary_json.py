@@ -9,46 +9,64 @@ def test_db_visit_and_update(create_db):
     lsql = lncdSql(None, conn=ph(create_db.connection))
     time = dt.datetime.now()
     newtime = time + dt.timedelta(days=3)
-    fake_visit = {'pid': 1,
-                  'study': 'AStudy',
-                  'vtimestamp': time,
-                  'vtype': 'Scan',
-                  'cohort': 'control',
-                  'ra': 'ra1',
-                  'notes': None}
-    lsql.insert('visit_summary', fake_visit)
-    assert create_db.connection.\
-        execute('select vtimestamp from visit where vid = 1').\
-        scalar() == time
+    fake_visit = {
+        "pid": 1,
+        "study": "AStudy",
+        "vtimestamp": time,
+        "vtype": "Scan",
+        "cohort": "control",
+        "ra": "ra1",
+        "notes": None,
+    }
+    lsql.insert("visit_summary", fake_visit)
+    assert (
+        create_db.connection.execute(
+            "select vtimestamp from visit where vid = 1"
+        ).scalar()
+        == time
+    )
 
-    lsql.update(table_name='visit', new_column='vtimestamp',
-                id_value=1, new_value=newtime, id_column='vid')
+    lsql.update(
+        table_name="visit",
+        new_column="vtimestamp",
+        id_value=1,
+        new_value=newtime,
+        id_column="vid",
+    )
 
-    assert create_db.connection.\
-        execute('select vtimestamp from visit where vid = 1').\
-        scalar() == newtime
+    assert (
+        create_db.connection.execute(
+            "select vtimestamp from visit where vid = 1"
+        ).scalar()
+        == newtime
+    )
 
 
 def test_db_visit_and_note(create_db):
-    """ add a note with visit_summary
+    """add a note with visit_summary
     tests json insert with sqlalchemy"""
     lsql = lncdSql(None, conn=ph(create_db.connection))
     time = dt.datetime.now()
-    fake_visit = {'pid': 1,
-                  'study': 'AStudy',
-                  'vtimestamp': time,
-                  'vtype': 'Scan',
-                  'cohort': 'control',
-                  'ra': 'ra1',
-                  'notes': ['test Note']}
-    lsql.insert('visit_summary', fake_visit)
+    fake_visit = {
+        "pid": 1,
+        "study": "AStudy",
+        "vtimestamp": time,
+        "vtype": "Scan",
+        "cohort": "control",
+        "ra": "ra1",
+        "notes": ["test Note"],
+    }
+    lsql.insert("visit_summary", fake_visit)
 
     # added visit
-    assert create_db.connection.\
-        execute('select vtimestamp from visit where vid = 1').\
-        scalar() == time
+    assert (
+        create_db.connection.execute(
+            "select vtimestamp from visit where vid = 1"
+        ).scalar()
+        == time
+    )
 
     # added note
-    assert create_db.connection.\
-        execute('select vid from note where vid = 1').\
-        scalar() == 1
+    assert (
+        create_db.connection.execute("select vid from note where vid = 1").scalar() == 1
+    )

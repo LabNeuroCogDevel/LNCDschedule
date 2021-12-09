@@ -1,5 +1,5 @@
-ra,abbr,upmcid
-ra1,RA,upmcid1
-ra2,AR,upmcid2
-ra3,RR,upmcid3
-ra4,AA,upmcid4
+ra,upmcid,abbr,start_date,end_date,bday,studies
+ra1,upmcid1,RA,,,,
+ra2,upmcid2,AR,,,,
+ra3,upmcid3,RR,,,,
+ra4,upmcid4,AA,,,,

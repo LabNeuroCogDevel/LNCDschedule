@@ -39,12 +39,14 @@ def demo():
 
 def match_db(study, age, sex, timepoint, subjid):
     surveys = get_all()
-    matches = [s for s in surveys
-               if s.study == study
-               and s.minage <= age
-               and s.maxage >= age
-               and (s.timpepoint == 0 or s.timepoint == timepoint)
-               ]
+    matches = [
+        s
+        for s in surveys
+        if s.study == study
+        and s.minage <= age
+        and s.maxage >= age
+        and (s.timpepoint == 0 or s.timepoint == timepoint)
+    ]
     if len(matches) == 0:
         raise Exception("No results!")
     print(matches)
@@ -61,12 +63,12 @@ def get_json_result(req):
     return {} if error or missing"""
     jsn = req.json()
     if jsn is None:
-        warnings.warn('no json in request!')
+        warnings.warn("no json in request!")
         return {}
-    return jsn.get('result', {})
+    return jsn.get("result", {})
 
 
-def connstr_from_config(inifile='config.ini'):
+def connstr_from_config(inifile="config.ini"):
     """read from config like:
     [Qualtrics]
      api_token=
@@ -75,137 +77,145 @@ def connstr_from_config(inifile='config.ini'):
     cfg = configparser.ConfigParser()
     cfg.read(inifile)
 
-    data = dict(cfg.items('Qualtrics'))
-    token = data['api_token']
-    center = data['datacenter']
+    data = dict(cfg.items("Qualtrics"))
+    token = data["api_token"]
+    center = data["datacenter"]
     return token, center
 
-def set_chosen_data(name = None):
+
+def set_chosen_data(name=None):
     q_api = Qualtrics()
     if name != None:
-        #Name should be a dictionary when parsed in
-        li = ['task', 'sex', 'study', 'age']
-        #Assume that name is already a dictionary
-        #Check if all keys needed is there
+        # Name should be a dictionary when parsed in
+        li = ["task", "sex", "study", "age"]
+        # Assume that name is already a dictionary
+        # Check if all keys needed is there
         if all(c in name for c in li):
-            s_id = word_matching(name['study'], name['sex'], name['age'], name['task'], q_api ) #Add timepoint?
+            s_id = word_matching(
+                name["study"], name["sex"], name["age"], name["task"], q_api
+            )  # Add timepoint?
             print(s_id)
-            #Able to get the dataframe from the Qualtrics
-            #Return a string instead of a list.(Wondering how come it is a list)
+            # Able to get the dataframe from the Qualtrics
+            # Return a string instead of a list.(Wondering how come it is a list)
             f_survey = q_api.get_survey(s_id[0])
             return f_survey
 
         else:
-            print('data not intact')
+            print("data not intact")
             return
 
     else:
-        print('data not within Battery or Screening')
+        print("data not within Battery or Screening")
         return
 
-def range1(start, end):
-    return range(start, end+1)
 
-    #Study either PET or BrainMechR01
-    #Sex wither Male or Female
+def range1(start, end):
+    return range(start, end + 1)
+
+    # Study either PET or BrainMechR01
+    # Sex wither Male or Female
+
+
 def word_matching(study, sex, age, typ, q_api):
     ##############################
     # #For now must get all the survey first
     # if surveys is None: #Or could just read it all over again in later implementation
     #     print("No survey")
     #     return
-    
-    #List that stores all the names
+
+    # List that stores all the names
     name_list = []
     search_key = study
-    dictionary_study = {'BrainMechR01':'7T', 'PET/FMRI': 'PET/FMRI'}
-    dictionary_age_Battery= {
-    '(34, 100)': range1(34, 100),
-    '(18, 33)': range1(18, 33),
-    '(14, 17)': range1(14, 17),
-    '(11, 13)': range1(11, 13),
-    '(0, 11)': range1(0, 11)
-
+    dictionary_study = {"BrainMechR01": "7T", "PET/FMRI": "PET/FMRI"}
+    dictionary_age_Battery = {
+        "(34, 100)": range1(34, 100),
+        "(18, 33)": range1(18, 33),
+        "(14, 17)": range1(14, 17),
+        "(11, 13)": range1(11, 13),
+        "(0, 11)": range1(0, 11),
     }
 
-    if search_key !=  'PET/FMRI' and  search_key !=  '7T' and  search_key !=  'BrainMechR01':
-        study = ''
-        print('study does not exist')
-    #Transform the study
-    elif search_key != '7T' and search_key != 'PET/FMRI':
+    if search_key != "PET/FMRI" and search_key != "7T" and search_key != "BrainMechR01":
+        study = ""
+        print("study does not exist")
+    # Transform the study
+    elif search_key != "7T" and search_key != "PET/FMRI":
         study = [val for key, val in dictionary_study.items() if search_key in key]
 
     # print(study)
     # print('------------')
 
-    #Transform the sex
-    #sex could be used directly?
-    #Transform the age
+    # Transform the sex
+    # sex could be used directly?
+    # Transform the age
     search_age = age
     # print(int(search_age))
     # print('------------')
     # print(search_age)
     # print('')
-    age = [key for key, val in dictionary_age_Battery .items() if int(search_age) in val]
+    age = [key for key, val in dictionary_age_Battery.items() if int(search_age) in val]
     # print(age)
-    
+
     age = age[0]
-    
+
     if isinstance(study, list):
         study = study[0]
 
-    #Create a fuzzy string first
-    if 'Battery' in typ:
-        print('++++++++++++++++')
+    # Create a fuzzy string first
+    if "Battery" in typ:
+        print("++++++++++++++++")
         print(study, sex, age, typ)
-        print('++++++++++++++++')
-        typ = 'Battery'
+        print("++++++++++++++++")
+        typ = "Battery"
 
-        fuzzy = study +' '+ sex +' '+ age +' '+ ' Survey '+ typ
-    elif 'Screening' in typ:
+        fuzzy = study + " " + sex + " " + age + " " + " Survey " + typ
+    elif "Screening" in typ:
         print(study, typ, sex, age)
-        typ = 'Screening'
-        fuzzy = study +' '+ typ +' '+ sex +' '+ age
+        typ = "Screening"
+        fuzzy = study + " " + typ + " " + sex + " " + age
     else:
-        print('Something is wrong')
+        print("Something is wrong")
 
     surveys = q_api.all_surveys_info()
-    #Get all the name from the survey
+    # Get all the name from the survey
     for survey in surveys:
-        name_list.append(survey['name'])
+        name_list.append(survey["name"])
     ########################################
-    #Let the RA decide which name is correct!!!!!
+    # Let the RA decide which name is correct!!!!!
     print(name_list)
-    print('-----------------')
+    print("-----------------")
     print(fuzzy)
-    print('==================')
+    print("==================")
     print(fuzzy)
     print(difflib.get_close_matches(fuzzy, name_list, 3))
 
     result_name = difflib.get_close_matches(fuzzy, name_list, 1)[0]
 
-    #Evaluate the score of the sentence found
+    # Evaluate the score of the sentence found
     score = difflib.SequenceMatcher(None, fuzzy, result_name).ratio()
-    
-    #Then use the name to find the ID
-    survey_id = [survey['id'] for survey in surveys if survey.get('name') == result_name]
-    #Use the id to get the data from Qualtrics
+
+    # Then use the name to find the ID
+    survey_id = [
+        survey["id"] for survey in surveys if survey.get("name") == result_name
+    ]
+    # Use the id to get the data from Qualtrics
     return survey_id
 
 
 class DlStatus:
     """parse qualtircs download status results
     provide __bool__ to report "finished" (useful for while not loop)"""
-    __slots__ = ['done', 'status', 'percent', 'file']
+
+    __slots__ = ["done", "status", "percent", "file"]
 
     def __init__(self, req):
         # check we still have values
         print(req.json())
         res = get_json_result(req)
-        self.status = res.get('status', 'NoSurvey')
-        self.percent = res.get('percentComplete', 0)
-        self.file = res.get('file', None)
-        if self.status in ['NoSurvey', 'failed', 'complete']:
+        self.status = res.get("status", "NoSurvey")
+        self.percent = res.get("percentComplete", 0)
+        self.file = res.get("file", None)
+        if self.status in ["NoSurvey", "failed", "complete"]:
             self.done = True
         else:
             self.done = False
@@ -215,15 +225,16 @@ class DlStatus:
 
     def is_success(self):
         """finished and complete, ready to download csv file"""
-        return self and self.status == 'complete'
+        return self and self.status == "complete"
 
 
 class Survey:
     """Survey class
-     class with data, modified time, column breakdown(Tasks in battery)
+    class with data, modified time, column breakdown(Tasks in battery)
     """
+
     def __init__(self, api=None, info=None, survey_id=None):
-        """ initilize with either a surevey_id or info"""
+        """initilize with either a surevey_id or info"""
 
         # place holder, filled by 'data' function
         self._data = None
@@ -235,26 +246,28 @@ class Survey:
         self.q_api = api
 
         if not info and not survey_id:
-            raise Exception("Survey needs either id or info dictionary." +
-                            "see Qualtrics.all_surveys_info()")
+            raise Exception(
+                "Survey needs either id or info dictionary."
+                + "see Qualtrics.all_surveys_info()"
+            )
 
         # set id from info, or get info from id
         if info is not None:
-            survey_id = info.get('id')
+            survey_id = info.get("id")
         else:
             # not optimal. get info by fetching and searching all surveys
             all_surv = self.q_api.all_surveys_info()
-            this = [s for s in all_surv if s.get('id') == survey_id]
+            this = [s for s in all_surv if s.get("id") == survey_id]
             if not this:
                 raise Exception("could not find %s in all surveys" % survey_id)
             info = this[0]
 
         self.sid = survey_id
         self.info = info
-        self.survey_name = info.get('name')
+        self.survey_name = info.get("name")
 
     def data(self):
-        """ fetch (from web or cache) survey data"""
+        """fetch (from web or cache) survey data"""
         if not self._data:
             self._data = self.q_api.get_survey(self.sid)
         return self._data
@@ -271,6 +284,7 @@ class Survey:
 
 class LNCDSurvey(Survey):
     """extends Survey with LNCD particulars"""
+
     def __init__(self, *args, **kargs):
         """
         extend survey to get age range, study type, and sex when aviable
@@ -293,66 +307,69 @@ class LNCDSurvey(Survey):
 
         # and classify base on name
 
-        stype = re.search('Battery|Screening', self.survey_name)
+        stype = re.search("Battery|Screening", self.survey_name)
         if stype:
             stype = stype.group()
 
         # find study. None if not PET or 7T.
         # rewrite 7T as BrainMechR01 for db lookup
-        study = re.search('7T|PET', self.survey_name)
+        study = re.search("7T|PET", self.survey_name)
         if study:
-            self.study = study.group().replace('7T', 'BrainMechR01')
+            self.study = study.group().replace("7T", "BrainMechR01")
 
         # Male or Female only survey?
-        sex = re.search('Male|Female', self.survey_name)
+        sex = re.search("Male|Female", self.survey_name)
         if sex:
             self.sex = sex.group()
 
-        timepoint = re.search('Y(\d)', self.survey_name)
+        timepoint = re.search("Y(\d)", self.survey_name)
         if timepoint:
             self.timepoint = timepoint.group()
 
         # find age range like 18-33, extract min and max
         # use 'named groups' in regular expression
-        ages = re.search('\((?P<min>\d+) *- *(?P<max>\d+)\)', self.survey_name)
+        ages = re.search("\((?P<min>\d+) *- *(?P<max>\d+)\)", self.survey_name)
         if ages:
-            self.minage = int(ages.group('min'))
-            self.maxage = int(ages.group('max'))
+            self.minage = int(ages.group("min"))
+            self.maxage = int(ages.group("max"))
         else:
             # age range could be stored in group name
             # only check this if no specfic range given
-            lookup = {'Adult': (18, 99), 'Hybrid': (18, 99),
-                      'Teen':  (13, 17),  'Child': (0, 12)}
-            agegrp = re.search('Adult|Teen|Adol|Child', self.survey_name)
+            lookup = {
+                "Adult": (18, 99),
+                "Hybrid": (18, 99),
+                "Teen": (13, 17),
+                "Child": (0, 12),
+            }
+            agegrp = re.search("Adult|Teen|Adol|Child", self.survey_name)
             if agegrp:
-                grp = agegrp.group().replace('Adol', 'Teen')
+                grp = agegrp.group().replace("Adol", "Teen")
                 self.minage = lookup.get(grp)[0]
                 self.maxage = lookup.get(grp)[1]
 
-
     ################################################################
-    #User Friendly functions to read each detailed data form the big datastructure
-    #Parameters should be 'Battery'or'Screening', and Better with an ID
+    # User Friendly functions to read each detailed data form the big datastructure
+    # Parameters should be 'Battery'or'Screening', and Better with an ID
     def get_all_identity(self, type=None, ID=None):
-        #Get people with ID
-        print('Still; Implementing')
-        
+        # Get people with ID
+        print("Still; Implementing")
 
     def get_all_questions(self):
-        #Get all the test question and may be catagorize them
-        print('Still Implementing')
+        # Get all the test question and may be catagorize them
+        print("Still Implementing")
 
     ################################################################
     ################################################################
-    #Function to read in all the data and creat a big data structure
-    #Get data form the survey dowmloaded
+    # Function to read in all the data and creat a big data structure
+    # Get data form the survey dowmloaded
 
-    #Structure looks like(generic_set{Battery{{id:dataframe}, .....}, Screening{{id:dataframe},.....})
-    #Function to push each s_df (dataframe to the lowest branch)
+    # Structure looks like(generic_set{Battery{{id:dataframe}, .....}, Screening{{id:dataframe},.....})
+    # Function to push each s_df (dataframe to the lowest branch)
     def appending_data(self, dictionary):
-        #Data set will just be dictionary + dataframe, because there are multiple, so just use a dictionary
+        # Data set will just be dictionary + dataframe, because there are multiple, so just use a dictionary
         dictionary[self.survey_id] = self.s_df
         return dictionary
+
     ###################################################################
 
 
@@ -361,6 +378,7 @@ class Qualtrics:
     fetch Qualtrics survey list and data
     see `connstr_from_config` for api config setup (`config.ini`)
     """
+
     def __init__(self, cfgini="config.ini"):
         token, center = connstr_from_config(cfgini)
         self.apiurl = "{0}.qualtrics.com/API/v3/".format(center)
@@ -368,7 +386,7 @@ class Qualtrics:
             "Content-Type": "application/json",
             "X-API-TOKEN": token,
             "Accept": "*/*",
-            "accept-encoding": "gzip, deflate"
+            "accept-encoding": "gzip, deflate",
         }
 
     def apiget(self, url_part, **kargs):
@@ -395,13 +413,13 @@ class Qualtrics:
         unzip = zipfile.ZipFile(io.BytesIO(res.content))
         files = unzip.infolist()
         if len(files) != 1:
-            warnings.warn('qualtircs zip: not one file: %s' % files)
+            warnings.warn("qualtircs zip: not one file: %s" % files)
             return pd.DataFrame()
         content = unzip.open(files[0])
-        df = pd.read_csv(content, encoding='utf-8')
+        df = pd.read_csv(content, encoding="utf-8")
         # TODO: clean up columns a la format_colnames
         # consider making survey class to store info in discared rows
-        #Delete the first column
+        # Delete the first column
         # df = df.drop(df.index[0])
         # print(df)
         # print('-+-+-+-+-+-+-+-+-+-+')
@@ -410,9 +428,9 @@ class Qualtrics:
 
     def all_surveys_info(self):
         """return json list of all surveys"""
-        req = self.apiget('surveys')
+        req = self.apiget("surveys")
         res = get_json_result(req)
-        return res.get('elements', None)
+        return res.get("elements", None)
         # TOOD: next page
         # https://github.com/ropensci/qualtRics/blob/master/R/all_surveys.R#L63
 
@@ -422,20 +440,20 @@ class Qualtrics:
         data = '{"format":"csv", "surveyId":"%s"}' % sid
 
         # tell qualtrics to start making the zip file of the survey
-        req = self.apipost('responseexports/', data)
+        req = self.apipost("responseexports/", data)
         info = get_json_result(req)
         print("first pass: %s" % info)
         # print('++++++++++++++++++++')
 
         # look up % comlete until download is finished building on their side
-        export_id = info.get('id')
-        checkurl = 'responseexports/' + export_id
+        export_id = info.get("id")
+        checkurl = "responseexports/" + export_id
         dlstatus = False
         while not dlstatus:
             dlstatus = DlStatus(self.apiget(checkurl))
 
         if not dlstatus.is_success():
-            warnings.warn('download status reports failure')
+            warnings.warn("download status reports failure")
             return pd.DataFrame()
 
         return self.extract_survey(export_id)
@@ -443,24 +461,23 @@ class Qualtrics:
 
 # Create a folder
 def create_fresh_dir(target_date):
-    """ removes current directory and recreates
-    """
+    """removes current directory and recreates"""
     direc = "./" + target_date
 
     if not os.path.exists(direc):
         os.makedirs(direc)
-        print('New directory %s has been created' % (target_date))
+        print("New directory %s has been created" % (target_date))
     else:
         shutil.rmtree(direc)
         os.makedirs(direc)
-        print('New directory %s has been created' % (target_date))
+        print("New directory %s has been created" % (target_date))
 
 
 def format_colnames(infile, outfile):
-    '''This function takes the file and rename its columns with the right format,
-    and generate csv file with the right column names'''
+    """This function takes the file and rename its columns with the right format,
+    and generate csv file with the right column names"""
     # TODO: do this without needing to read from a file
-    df = pd.read_csv(infile) # skiprows=[0, 1], low_memory=False)
+    df = pd.read_csv(infile)  # skiprows=[0, 1], low_memory=False)
 
     columns = df.columns
     new_cols = []
@@ -468,10 +485,14 @@ def format_colnames(infile, outfile):
     # (2) Reformat the column names
     for name in columns:
         try:
-            new_name = name.replace('{', '').replace('}', '').\
-                       split(':')[1].\
-                       replace('\'', '').\
-                       replace('-', '_').replace(' ', '')
+            new_name = (
+                name.replace("{", "")
+                .replace("}", "")
+                .split(":")[1]
+                .replace("'", "")
+                .replace("-", "_")
+                .replace(" ", "")
+            )
             new_cols.append(new_name)
         except IndexError:
             print("Outliers, name = 1")
@@ -480,22 +501,26 @@ def format_colnames(infile, outfile):
     # print new_cols
     df.columns = new_cols
     # (3) Create CSV file into the output directory
-    df.to_csv(outfile, doublequote=True, sep='|', index=False)
-    print('Reformateed and moved %s' % (outfile))
+    df.to_csv(outfile, doublequote=True, sep="|", index=False)
+    print("Reformateed and moved %s" % (outfile))
+
 
 def filtering(survey):
     for s in survey:
-        new_survey = [x for x in survey if ('Battery' in x['name'] or 'Screening' in x['name'])]    
+        new_survey = [
+            x for x in survey if ("Battery" in x["name"] or "Screening" in x["name"])
+        ]
 
     return new_survey
-#The function that links to the outer world
 
-#def download_s(name):
-    
+
+# The function that links to the outer world
+
+# def download_s(name):
 
 
 def download_all():
-    """ get all surveys and download them (Orig)
+    """get all surveys and download them (Orig)
     resave with first two rows removed (Export)
     N.B. REMOVES directories: 'Qaultrics/Orig' and 'Qualtrics/Export'
          before re-creating
@@ -503,31 +528,31 @@ def download_all():
     q_api = Qualtrics()
     q_survey = Survey()
 
-    #This function get all the surveys
+    # This function get all the surveys
     surveys = q_api.all_surveys_info()
-    #Filtering out the survey without screening or barrtey
+    # Filtering out the survey without screening or barrtey
     surveys = filtering(surveys)
     print(len(surveys))
     # remove old folders if they exist, create again
-    create_fresh_dir('Qualtrics/Orig')
-    create_fresh_dir('Qualtrics/Export')
+    create_fresh_dir("Qualtrics/Orig")
+    create_fresh_dir("Qualtrics/Export")
     for survey in surveys:
-        #Get the whole survey from id
-        s_df = q_api.get_survey(survey['id'])
-        #Set that contains everything
+        # Get the whole survey from id
+        s_df = q_api.get_survey(survey["id"])
+        # Set that contains everything
         set_all = q_survey.set_all_data(survey)
 
-        #Pass  the surveys to 
+        # Pass  the surveys to
         if not s_df.empty:
             # orig has original data
             # export has junk rows removed
-            name = re.sub(r'[/ \t\\]+', '_', survey['name'])
+            name = re.sub(r"[/ \t\\]+", "_", survey["name"])
             origfile = "./Qualtrics/Orig/%s.csv" % name
             exportfile = "./Qualtrics/Export/%s.csv" % name
             # save files
-            s_df.to_csv(origfile, index = False, header = False)
+            s_df.to_csv(origfile, index=False, header=False)
             format_colnames(origfile, exportfile)
 
 
 if __name__ == "__main__":
-        download_all()
+    download_all()

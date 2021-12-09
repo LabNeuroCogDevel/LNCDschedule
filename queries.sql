@@ -136,7 +136,7 @@ select
 
 -- name: visit_by_vid
 select
- pid,study,vtype, "action", vscore, age, note, to_char(vtimestamp,'YYYY-MM-DD') 
+ pid,study,vtype, "action", vscore, age, notes, to_char(vtimestamp,'YYYY-MM-DD')
  from visit_summary
   where vid = %(vid)s
   -- and "action" = 'checkedin'

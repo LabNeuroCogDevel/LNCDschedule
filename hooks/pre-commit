@@ -1,4 +1,0 @@
-#!/bin/sh
-#
-python=$(which python3 || which python)
-$python -m pytest -v tests

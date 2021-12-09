@@ -8,4 +8,4 @@ def test_getuser(create_db):
     sql = lncdSql(config=None, conn=ph(create_db.connection))
     assert sql.db_user is not None
     # test db user is always postgres
-    assert sql.db_user == 'postgres'
+    assert sql.db_user == "postgres"

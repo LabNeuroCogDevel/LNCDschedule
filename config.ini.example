@@ -1,7 +1,7 @@
 [SQL]
   host    = localhost
-  dbname  = db
-  user    = uname
+  dbname  = lncddb_test
+  user    = postgres
   port = 5432
 
 [Calendar]
@@ -13,4 +13,3 @@
 [Qualtrics]
   api_token=NA
   datacenter=https://foo.co99
-

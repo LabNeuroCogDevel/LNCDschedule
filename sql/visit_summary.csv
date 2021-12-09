@@ -1,2 +1,2 @@
-pid,vtimestamp,study,vtype,visitno,ra,cohort,dur_hr
-2,2000-01-01 12:34,AStudy,Scan,1,ra1,control,2
+pid,vid,vtimestamp,vtype,vscore,visitno,googleuri,age,study,cohort,action,ra,dur_hr,notes,dvisit,dperson
+2,1,2000-01-01 12:34,Scan,5,1,NOT_A_LINK_URI_FAKEDB,99,AStudy,control,,ra1,2,"[\"note\"]",,

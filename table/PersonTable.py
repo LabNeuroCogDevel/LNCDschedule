@@ -4,27 +4,33 @@
 import re
 from lncdSql import lncdSql
 from PyQt5 import uic, QtCore, QtGui, QtWidgets
-from LNCDutils import (comboval, mkmsg)
+from LNCDutils import comboval, mkmsg
 
 
 class PersonTable(QtWidgets.QWidget):
-    """ table specificly for holding people """
+    """table specificly for holding people"""
 
     # when a new person is selected emit row that changed
     person_changed = QtCore.pyqtSignal(int)
 
     def __init__(self, sql):
-        """ expects to get a QtTable widget to reuse """
+        """expects to get a QtTable widget to reuse"""
         super().__init__()
         self.sql = sql
-        uic.loadUi('./ui/person_widget.ui', self)
+        uic.loadUi("./ui/person_widget.ui", self)
         self.person_columns = [
-            'fullname', 'lunaid', 'age', 'dob',
-            'sex', 'lastvisit', 'maxdrop', 'studies']
+            "fullname",
+            "lunaid",
+            "age",
+            "dob",
+            "sex",
+            "lastvisit",
+            "maxdrop",
+            "studies",
+        ]
         self.people_table.setColumnCount(len(self.person_columns))
         self.people_table.setHorizontalHeaderLabels(self.person_columns)
-        self.people_table.setEditTriggers(
-            QtWidgets.QAbstractItemView.NoEditTriggers)
+        self.people_table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
         # wire up clicks
         self.people_table.itemSelectionChanged.connect(self.people_item_select)
         self.people_table.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)
@@ -32,16 +38,16 @@ class PersonTable(QtWidgets.QWidget):
         self.row_i = -1
         # TODO: this must be wired to menu
         self.NoDropCheck = False
-        #if self.NoDropCheck.isChecked():
+        # if self.NoDropCheck.isChecked():
         #    search['maxdrop'] = 'nodrop'
 
         # ## setup person search field
         # by name
         self.fullname.textChanged.connect(self.search_people_by_name)
-        self.fullname.setText('')
+        self.fullname.setText("")
         self.search_people_by_name(
-            self.fullname.text() +
-            '%')  # doesnt already happens, why?
+            self.fullname.text() + "%"
+        )  # doesnt already happens, why?
 
         # by lunaid
         self.subjid_search.textChanged.connect(self.search_people_by_id)
@@ -56,19 +62,25 @@ class PersonTable(QtWidgets.QWidget):
 
     def search_people_by_att(self, *argv):
         # Error check
-        if(self.max_age_search.text() == '' or
-           self.min_age_search.text() == '' or
-           not self.max_age_search.text().isdigit() or
-           not self.min_age_search.text().isdigit()):
-            mkmsg("One of the input on the input box is either " +
-                  "empty or not a number, nothing will work. " +
-                  "Please fix it and try again")
+        if (
+            self.max_age_search.text() == ""
+            or self.min_age_search.text() == ""
+            or not self.max_age_search.text().isdigit()
+            or not self.min_age_search.text().isdigit()
+        ):
+            mkmsg(
+                "One of the input on the input box is either "
+                + "empty or not a number, nothing will work. "
+                + "Please fix it and try again"
+            )
             return
 
-        d = {'study': comboval(self.study_search),
-             'sex': comboval(self.sex_search),
-             'minage': self.min_age_search.text(),
-             'maxage': self.max_age_search.text()}
+        d = {
+            "study": comboval(self.study_search),
+            "sex": comboval(self.sex_search),
+            "minage": self.min_age_search.text(),
+            "maxage": self.max_age_search.text(),
+        }
         print("search attr: %s" % d)
         res = self.sql.query.att_search(**d)
         # res = self.sql.query.att_search(
@@ -82,30 +94,31 @@ class PersonTable(QtWidgets.QWidget):
 
         # only update if we've entered 3 or more characters
         # .. but let wildcard (%) go through
-        if(len(fullname) < 3 and not re.search('%', fullname)):
+        if len(fullname) < 3 and not re.search("%", fullname):
             return
 
         # use maxdrop and lunaid range to add exclusions
         search = {
-            'fullname': fullname,
-            'maxlunaid': 99999,
-            'minlunaid': -1,
-            'maxdrop': 'family'}
+            "fullname": fullname,
+            "maxlunaid": 99999,
+            "minlunaid": -1,
+            "maxdrop": "family",
+        }
 
         # exclude dropped?
         if self.NoDropCheck:
-            search['maxdrop'] = 'nodrop'
+            search["maxdrop"] = "nodrop"
 
         # luna id status (all/without/only)
         # TODO: wire to menu
         # setting = self.luna_search_settings.checkedAction()
         setting = None
         if setting is not None:
-            setting = re.sub('&', '', setting.text())
-            if re.search('LunaIDs Only', setting):
-                search['minlunaid'] = 1
-            elif re.search('Without LunaIDs', setting):
-                search['maxlunaid'] = 1
+            setting = re.sub("&", "", setting.text())
+            if re.search("LunaIDs Only", setting):
+                search["minlunaid"] = 1
+            elif re.search("Without LunaIDs", setting):
+                search["maxlunaid"] = 1
 
         # finally query and update table
         res = self.sql.query.name_search(**search)
@@ -113,10 +126,10 @@ class PersonTable(QtWidgets.QWidget):
 
     # seach by id
     def search_people_by_id(self, lunaid):
-        if(lunaid == '' or not lunaid.isdigit()):
+        if lunaid == "" or not lunaid.isdigit():
             mkmsg("LunaID should only be numbers")
             return
-        if(len(lunaid) != 5):
+        if len(lunaid) != 5:
             try:
                 res = self.sql.query.lunaid_search_all(lunaid=lunaid)
             except ValueError:
@@ -150,18 +163,20 @@ class PersonTable(QtWidgets.QWidget):
         """
         # drop_j = self.person_columns.index('maxdrop')
         drop_j = 6
-        drop_colors = {'subject': QtGui.QColor(249, 179, 139),
-                       'visit': QtGui.QColor(240, 230, 140),
-                       'future': QtGui.QColor(240, 240, 240),
-                       'unknown': QtGui.QColor(203, 233, 109)}
+        drop_colors = {
+            "subject": QtGui.QColor(249, 179, 139),
+            "visit": QtGui.QColor(240, 230, 140),
+            "future": QtGui.QColor(240, 240, 240),
+            "unknown": QtGui.QColor(203, 233, 109),
+        }
 
         # N.B. this could go in previous for loop. left here for clarity
         for row_i, row in enumerate(res):
             droplevel = row[drop_j]
             # don't do anything if we don't have a color for this drop level
-            if droplevel is None or droplevel == 'nodrop':
+            if droplevel is None or droplevel == "nodrop":
                 continue
-            drop_color = drop_colors.get(droplevel, drop_colors['unknown'])
+            drop_color = drop_colors.get(droplevel, drop_colors["unknown"])
             # go through each column of the row and color it
             for j in range(self.people_table.columnCount()):
                 self.people_table.item(row_i, j).setBackground(drop_color)
@@ -179,9 +194,9 @@ class PersonTable(QtWidgets.QWidget):
         # self.click_color(self.people_table, self.row_i)
 
     def current_person(self):
-        """ return info about selected person """
+        """return info about selected person"""
         d = self.people_table_data[self.row_i]
-        return(d)
+        return d
         # # main model
         # self.checkin_button.setEnabled(False)
         # print('people table: subject selected: %s' % d[8])
@@ -191,7 +206,8 @@ class PersonTable(QtWidgets.QWidget):
 
 
 class PersonOnlyApp(QtWidgets.QMainWindow):
-    """ wrap widget up for testing it out"""
+    """wrap widget up for testing it out"""
+
     def __init__(self, sql):
         super().__init__()
         self.sql = sql
@@ -206,9 +222,7 @@ class PersonOnlyApp(QtWidgets.QMainWindow):
         # labels
         person_table = PersonTable(self.sql)
         lay.addWidget(person_table)
-        self.setGeometry(0, 0,
-                         person_table.width() + 20,
-                         person_table.height() + 20)
+        self.setGeometry(0, 0, person_table.width() + 20, person_table.height() + 20)
         self.person_table = person_table
         self.show()
 
@@ -219,8 +233,7 @@ if __name__ == "__main__":
     import sys
 
     APP = QtWidgets.QApplication(sys.argv)
-    sql = lncdSql('config_dev.ini',
-                  gui=QtWidgets.QApplication.instance())
+    sql = lncdSql("config_dev.ini", gui=QtWidgets.QApplication.instance())
     WIN = PersonOnlyApp(sql)
 
     study_list = [r[0] for r in sql.query.list_studies()]

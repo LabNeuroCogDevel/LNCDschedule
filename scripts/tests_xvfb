@@ -1,0 +1,24 @@
+#!/bin/sh
+# run tests maybe with fake X11 server 
+# TODO: .travis.yml should use this
+#
+set -eu
+trap '[ -n "$Xvfbpid" ] && kill $Xvfbpid' EXIT
+
+# go to root for pytest
+cd $(dirname $0)/..
+
+Xvfbpid=
+[ -v NOXVFB ] || NOXVFB=
+set -x
+if command -v Xvfb && [ -z "$NOXVFB" ]; then
+   export DISPLAY=":99"
+   Xvfb $DISPLAY -screen 0 1920x1200x24  -ac +extension GLX +render -noreset &
+   Xvfbpid="$!" # trap will kill Xvfb when we exit
+fi
+
+# pipenv is probably best (see pipenv install --dev)
+# but we can try to use system (python3 to be safe, but python if thats what we have) 
+python=$(which pipenv 2>/dev/null || which python3 2>/dev/null || which python)
+[ $(basename "$python") = "pipenv" ] && python="pipenv run python"
+$python -m pytest -v tests
