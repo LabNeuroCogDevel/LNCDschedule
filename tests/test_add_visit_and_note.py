@@ -25,14 +25,16 @@ def test_gui_add_visit(qtbot, lncdapp):
     # attach tester to window
     qtbot.add_widget(lncdapp)
     # search by name - defined in person.csv and matching note.csv
-    lncdapp.fullname.setText("NoNotes Subj")
+    lncdapp.PromotedPersonTable.fullname.setText("NoNotes Subj")
     # select the first row in the table
-    index = lncdapp.people_table.model().index(0, 1)
-    lncdapp.people_table.setCurrentIndex(index)
+    index = lncdapp.PromotedPersonTable.people_table.model().index(0, 1)
+    lncdapp.PromotedPersonTable.people_table.setCurrentIndex(index)
 
     assert lncdapp.schedule_button.text() == "Schedule"
 
     # fake updating the visit model
+    current_person = lncdapp.PromotedPersonTable.current_person()
+    pid = current_person["pid"]
     now = datetime.datetime.now()
     lncdapp.ScheduleVisit.model = {
         "vtimestamp": now,
@@ -40,7 +42,7 @@ def test_gui_add_visit(qtbot, lncdapp):
         "vtype": "Scan",
         "visitno": 1,
         "ra": "ra1",
-        "pid": 3,
+        "pid": pid,
         "cohort": "control",
         "dur_hr": 2,
         "notes": None,
@@ -56,7 +58,8 @@ def test_gui_add_visit(qtbot, lncdapp):
     # success adding?
     assert (
         lncdapp.pgtest.connection.execute(
-            "select vtimestamp from visit where vid = 1"
+            "with maxvid as (select max(vid) as vid from visit) \
+            select vtimestamp from visit join maxvid mv on visit.vid = mv.vid"
         ).scalar()
         == now
     )
@@ -70,9 +73,15 @@ def test_gui_add_visit(qtbot, lncdapp):
     assert lncdapp.schedule_button.text() == "Reschedule"
 
     # note in note table
-    index = lncdapp.note_table.model().index(0, 1)
+    newest_note_idx = lncdapp.note_table.rowCount() - 1
+    note_col = lncdapp.note_columns.index("note")  # first column
+
+    # dont need to jump there
+    # but if we're debugging, nice to see what value is being pulled
+    index = lncdapp.note_table.model().index(newest_note_idx, note_col)
     lncdapp.note_table.setCurrentIndex(index)
+
     assert (
-        lncdapp.note_table.item(0, lncdapp.note_columns.index("note")).text()
+        lncdapp.note_table.item(newest_note_idx, note_col).text()
         == "visit_summary Test Note"
     )

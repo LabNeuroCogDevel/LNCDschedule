@@ -17,22 +17,24 @@ def test_search_by_name(qtbot, lncdapp):
     qtbot.add_widget(lncdapp)  # attach qt testing robot
     # search by name
     #   test assumes there is only one 'Foran', first name 'Will'
-    lncdapp.fullname.setText("% Foran")
-    res = lncdapp.people_table_data
+    lncdapp.PromotedPersonTable.fullname.setText("% Foran")
+    res = lncdapp.PromotedPersonTable.people_table_data
     # assert that we found
     assert len(res[0]) > 1
-    assert lncdapp.people_table.rowCount() >= 1
+    assert lncdapp.PromotedPersonTable.people_table.rowCount() >= 1
     assert res[0][0] == "Will Foran"
 
 
 def test_search_by_id(qtbot, lncdapp):
+    # TODO: this test may pass even when search text isn't update
+    # need to add another luna id in test data
     qtbot.add_widget(lncdapp)  # attach qt testing robot
     # search by name
     #   test assumes there is only one 'Foran', first name 'Will'
-    lncdapp.subjid_search.setText("10931")
-    res = lncdapp.people_table_data
+    lncdapp.PromotedPersonTable.subjid_search.setText("10931")
+    res = lncdapp.PromotedPersonTable.people_table_data
     # assert that we found
-    assert lncdapp.people_table.rowCount() >= 1
+    assert lncdapp.PromotedPersonTable.people_table.rowCount() >= 1
     assert res[0][0] == "Will Foran"
 
 
@@ -48,15 +50,16 @@ def test_error_bad_age(qtbot, monkeypatch, lncdapp):
         set_actual_msg.msg = args[0]
 
     set_actual_msg.msg = None
-    # patch mkmsg as imported by schedule (N.B. not patching LNCDutils.mkmsg)
-    monkeypatch.setattr("schedule.mkmsg", set_actual_msg)
+    # patch mkmsg as imported by where it is used
+    # . not patching LNCDutils.mkmsg or schedule.mkmsg
+    monkeypatch.setattr("PersonTable.mkmsg", set_actual_msg)
 
     # startup app
     # initialize widget
     qtbot.add_widget(lncdapp)  # attach qt testing robot
 
     # make the error
-    lncdapp.max_age_search.setText("one")
+    lncdapp.PromotedPersonTable.max_age_search.setText("one")
     # pause here to see whats going on
     # qtbot.stopForInteraction()
 

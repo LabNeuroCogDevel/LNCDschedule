@@ -1,5 +1,6 @@
 from PyQt5 import uic, QtCore, QtWidgets
 from LNCDutils import *
+from LNCDutils import sqlUpdateOrShowErr
 
 
 class EditPeopleWindow(QtWidgets.QDialog):
@@ -15,6 +16,7 @@ class EditPeopleWindow(QtWidgets.QDialog):
         # set default values for ui
         columns = ["ctype", "changes", "pid"]
         self.edit_model = {k: None for k in columns}
+        self.data = {}  # TODO: default keys?
 
         # load xml definition
         uic.loadUi("./ui/edit_person.ui", self)
@@ -55,3 +57,28 @@ class EditPeopleWindow(QtWidgets.QDialog):
         want_edit = str(self.ctype_box.currentText())
         default_value = self.data.get(want_edit, "")
         self.value_box.setText(default_value)
+
+    def updated_info(self):
+        "return modfied dict"
+        info = self.data
+        to_change = self.edit_model["ctype"]
+        if not to_change or to_change == "NULL":
+            return info
+
+        info[to_change] = self.edit_model["changes"]
+        info["fullname"] = "%(fname)s %(lname)s" % info
+        return info
+
+    def update_sql(self, sql):
+        "use lncdsql object to update db. will put errors in a textbox warning"
+        # nothign to do if we have NULL combo box item selected
+        data = self.edit_model
+        to_change = data["ctype"]
+        if not to_change or to_change == "NULL":
+            return
+
+        print("person2db: pid %(pid)d: updated %(ctype)s->%(changes)s" % data)
+
+        sqlUpdateOrShowErr(
+            sql, "person", data["ctype"], data["pid"], data["changes"], "pid"
+        )

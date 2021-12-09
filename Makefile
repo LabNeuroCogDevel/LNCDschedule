@@ -9,6 +9,8 @@ MAKEFLAGS += --no-builtin-rules
 PYTHONAPP := $(shell command -v pipenv 2> /dev/null)
 ifndef PYTHONAPP
 	PYTHONAPP := python3 -m
+else
+	PYTHONAPP := python3 -m ${PYTHONAPP}
 endif
 
 # files that, if changed, would need to rerun coverage/test/compile
@@ -42,7 +44,7 @@ install_local: requirements.txt | .QA .git/hooks/pre-commit .git/hooks/pre-push
 
 install: Pipfile | .QA .git/hooks/pre-commit .git/hooks/pre-push
 	@echo also see make install_local to use requirements.txt
-	pipenv install --dev
+	python -m pipenv install --dev
 
 .QA/lint.txt: $(PYTHONCODE) | .QA
 	$(PYTHONAPP) pylint $(PYTHONCODE) --extension-pkg-whitelist=PyQt5 | tee $@

@@ -2,7 +2,7 @@
 import datetime
 from enum import Enum
 import configparser
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtGui
 import PasswordDialog
 
 
@@ -214,3 +214,40 @@ def connstr_from_config(config, gui=None):
     """
     config_dict = db_config_to_dict(config, gui)
     return make_connstr(config_dict)
+
+
+def background_reset(table):
+    "set background to white for all"
+    default_color = QtGui.QColor(255, 255, 255)
+    for i in range(table.rowCount()):
+        for j in range(table.columnCount()):
+            table.item(i, j).setBackground(default_color)
+
+
+def background_drop_color(drop_type):
+    "set the cell background color based on drop status"
+    default_color = (255, 255, 255)  # white
+    drop_colors = {
+        "subject": (249, 179, 139),
+        "visit": (240, 230, 140),
+        "future": (240, 240, 240),
+        "family": (203, 233, 109),
+        "unknown": (203, 233, 109),
+    }
+    rgb = drop_colors.get(drop_type, default_color)
+    drop_qtcolor = QtGui.QColor(*rgb)
+    return drop_qtcolor
+
+
+# Later better map all the data into one variable so that it's easy to see.
+def sqlUpdateOrShowErr(sql, *kargs):
+    """
+    wrap sql.update in mkmsg
+    """
+    # return catch_to_mkmsg(self.sql.update, *kargs)
+    try:
+        sql.update(*kargs)
+        return True
+    except Exception as err:
+        mkmsg(str(err))
+        return False
