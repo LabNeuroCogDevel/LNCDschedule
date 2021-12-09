@@ -10,7 +10,7 @@ from Q_retrieve import retrieve_name
 from numpy import nan
 from PyQt5.QtWidgets import QApplication, QFileSystemModel, QTreeView, QWidget, QVBoxLayout
 from PyQt5.QtGui import QIcon
-from file_explorer import FileSearch
+# from file_explorer import FileSearch
 
 """
 This class provides a window for demonstrating information
@@ -50,7 +50,9 @@ class MoreInfoWindow(QtWidgets.QDialog):
         for item in study_tasks:
             self.tasks_list.insertItems(0,item)
     def file_explorer(self):
-        ex = FileSearch()
+        # 20201222: unsure what this would do
+        # ex = FileSearch()
+        mkmsg("not implemented")
 
     def table_fill(self):
         """
