@@ -1203,9 +1203,27 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # update gui to to person
         self.checkin_from_cal(pid)
         self.render_person_pid(pid)
-        self.fullname.setText(self.disp_model["fullname"])
+        self.PromotedPersonTable.search_people_by_name(self.disp_model["fullname"])
         # let schedule know we came from the calendar
         self.render_schedule(ScheduleFrom.CAL)
+
+    def render_person_pid(self, pid):
+        res = self.sql.query.person_by_pid(pid=pid)
+        if not res:
+            mkmsg("no info for pid %d!", pid)
+            return
+        pers = res[0]
+        # columns are:
+        # pid, lunaid fullname fname lname dob sex hand addate
+        # source curage curagefloor lastvisit numvisits nstudies ndrops ids
+        # studies visittypes maxdrop
+        fullname = pers[2]
+        self.render_person(
+            pid=pers[0], lunaid=pers[1], fullname=fullname, sex=pers[6], age=pers[10]
+        )
+
+        # updating search done by
+        # cal_item_select on cal selection change
 
     def find_pid_by_cal_desc(self, row_i):
         """
