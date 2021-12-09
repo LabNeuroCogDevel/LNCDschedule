@@ -191,8 +191,6 @@ class ScheduleApp(QtWidgets.QMainWindow):
             lambda pos: note_menu.exec_(self.note_table.mapToGlobal(pos))
         )
 
-        self.people_table.itemSelectionChanged.connect(self.dropcode_coloring)
-
         # ## visit table ##
         self.visit_columns = [
             "day",
@@ -252,14 +250,6 @@ class ScheduleApp(QtWidgets.QMainWindow):
 
         # schedule time widget
         self.timeEdit.timeChanged.connect(self.render_schedule)
-
-        # ## general db info ##
-        # study list used for checkin and search
-        self.study_list = [r[0] for r in self.sql.query.list_studies()]
-        # populate search with results
-        self.study_search.addItems(self.study_list)
-
-        # ## add person ##
 
         # ## add ContactNotes
         self.AddContactNotes = AddContactNotes.AddContactNotesWindow(self)
@@ -326,8 +316,9 @@ class ScheduleApp(QtWidgets.QMainWindow):
         #
         # # schedule #
         # init
+        study_list = [r[0] for r in self.sql.query.list_studies()]
         self.ScheduleVisit = ScheduleVisit.ScheduleVisitWindow(self)
-        self.ScheduleVisit.add_studies(self.study_list)
+        self.ScheduleVisit.add_studies(study_list)
         self.ScheduleVisit.add_vtypes([r[0] for r in self.sql.query.list_vtypes()])
 
         # wire up button, disable by default
@@ -408,30 +399,6 @@ class ScheduleApp(QtWidgets.QMainWindow):
             for j in range(self.note_table.columnCount()):
                 self.note_table.item(i, j).setBackground(QtGui.QColor(250, 231, 163))
 
-    def changing_color(self, row_i, res):
-        """
-        Change the color after the textes have been successfully inserted.
-        based on drop level
-        """
-        # drop_j = self.person_columns.index('maxdrop')
-        drop_j = 6
-        drop_colors = {
-            "subject": QtGui.QColor(249, 179, 139),
-            "visit": QtGui.QColor(240, 230, 140),
-            "future": QtGui.QColor(240, 240, 240),
-            "unknown": QtGui.QColor(203, 233, 109),
-        }
-
-        # N.B. this could go in previous for loop. left here for clarity
-        for row_i, row in enumerate(res):
-            droplevel = row[drop_j]
-            # don't do anything if we don't have a color for this drop level
-            if droplevel is None or droplevel == "nodrop":
-                continue
-            drop_color = drop_colors.get(droplevel, drop_colors["unknown"])
-            # go through each column of the row and color it
-            for j in range(self.people_table.columnCount()):
-                self.people_table.item(row_i, j).setBackground(drop_color)
 
     def people_row_seleted(self, row):
         "what to do with signal from PersonTable. row is dict"
@@ -607,12 +574,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
                     except AttributeError:
                         print("Affordable to ignore")
                     continue
-                if table is self.people_table:
-                    try:
-                        self.table_background(table, i, j)
-                    except AttributeError:
-                        print("click color: bad i j (%d,%d@%s)" % (i, j, table))
-                elif table is self.note_table:
+                if table is self.note_table:
                     try:
                         self.note_table_background(table, i, j)
                     except AttributeError:
@@ -625,23 +587,16 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # Get rid of the color in other tables
         if table == self.note_table:
             self.refresh_blank(self.contact_table)
-            #self.refresh_blank(self.people_table)
             self.refresh_blank(self.visit_table)
 
         if table == self.visit_table:
             self.refresh_blank(self.contact_table)
-            #self.refresh_blank(self.people_table)
             self.refresh_blank(self.note_table)
 
         elif table == self.contact_table:
             self.refresh_blank(self.visit_table)
-            #self.refresh_blank(self.people_table)
             self.refresh_blank(self.note_table)
 
-        elif table == self.people_table:
-            self.refresh_blank(self.visit_table)
-            self.refresh_blank(self.contact_table)
-            self.refresh_blank(self.note_table)
 
     def note_table_background(self, table, i, j):
         if table.item(i, 1).text() != "None":
@@ -671,15 +626,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
     def refresh_blank(self, table):
         for i in range(table.rowCount()):
             for j in range(table.columnCount()):
-                if table is self.people_table:
-                    try:
-                        self.table_background(table, i, j)
-                    except AttributeError:
-                        print("refresh_blank: NoneType")
-                else:
-                    table.item(i, j).setBackground(QtGui.QColor(255, 255, 255))
-
-                # table.item(i, j).setBackground(QtGui.QColor(255, 255, 255))
+                table.item(i, j).setBackground(QtGui.QColor(255, 255, 255))
 
     # Function to simplt turn off the window and do nothing
     def turn_off(self):
