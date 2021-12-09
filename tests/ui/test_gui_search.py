@@ -26,10 +26,12 @@ def test_search_by_name(qtbot, lncdapp):
 
 
 def test_search_by_id(qtbot, lncdapp):
+    # TODO: this test may pass even when search text isn't update
+    # need to add another luna id in test data
     qtbot.add_widget(lncdapp)  # attach qt testing robot
     # search by name
     #   test assumes there is only one 'Foran', first name 'Will'
-    lncdapp.subjid_search.setText("10931")
+    lncdapp.PromotedPersonTable.subjid_search.setText("10931")
     res = lncdapp.PromotedPersonTable.people_table_data
     # assert that we found
     assert lncdapp.PromotedPersonTable.people_table.rowCount() >= 1
