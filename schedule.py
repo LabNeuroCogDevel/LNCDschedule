@@ -399,7 +399,6 @@ class ScheduleApp(QtWidgets.QMainWindow):
             for j in range(self.note_table.columnCount()):
                 self.note_table.item(i, j).setBackground(QtGui.QColor(250, 231, 163))
 
-
     def people_row_seleted(self, row):
         "what to do with signal from PersonTable. row is dict"
         # main model
@@ -596,7 +595,6 @@ class ScheduleApp(QtWidgets.QMainWindow):
         elif table == self.contact_table:
             self.refresh_blank(self.visit_table)
             self.refresh_blank(self.note_table)
-
 
     def note_table_background(self, table, i, j):
         if table.item(i, 1).text() != "None":

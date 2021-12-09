@@ -51,7 +51,7 @@ def test_error_bad_age(qtbot, monkeypatch, lncdapp):
 
     set_actual_msg.msg = None
     # patch mkmsg as imported by where it is used
-    #. not patching LNCDutils.mkmsg or schedule.mkmsg
+    # . not patching LNCDutils.mkmsg or schedule.mkmsg
     monkeypatch.setattr("PersonTable.mkmsg", set_actual_msg)
 
     # startup app

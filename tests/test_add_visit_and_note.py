@@ -34,7 +34,7 @@ def test_gui_add_visit(qtbot, lncdapp):
 
     # fake updating the visit model
     current_person = lncdapp.PromotedPersonTable.current_person()
-    pid = current_person['pid']
+    pid = current_person["pid"]
     now = datetime.datetime.now()
     lncdapp.ScheduleVisit.model = {
         "vtimestamp": now,
