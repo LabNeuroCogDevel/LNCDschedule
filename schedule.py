@@ -625,17 +625,17 @@ class ScheduleApp(QtWidgets.QMainWindow):
         # Get rid of the color in other tables
         if table == self.note_table:
             self.refresh_blank(self.contact_table)
-            #self.refresh_blank(self.people_table)
+            # self.refresh_blank(self.people_table)
             self.refresh_blank(self.visit_table)
 
         if table == self.visit_table:
             self.refresh_blank(self.contact_table)
-            #self.refresh_blank(self.people_table)
+            # self.refresh_blank(self.people_table)
             self.refresh_blank(self.note_table)
 
         elif table == self.contact_table:
             self.refresh_blank(self.visit_table)
-            #self.refresh_blank(self.people_table)
+            # self.refresh_blank(self.people_table)
             self.refresh_blank(self.note_table)
 
         elif table == self.people_table:
