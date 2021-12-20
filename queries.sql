@@ -1,6 +1,9 @@
 -- name: all_lunaid
 select * from enroll natural join person where etype like 'LunaID'
 
+-- name: all_etypes
+select etype from enroll group by etype
+
 -- name: name_search
 select
  fullname,lunaid,curagefloor,dob,sex,lastvisit,maxdrop,studies,person_search_view.pid
