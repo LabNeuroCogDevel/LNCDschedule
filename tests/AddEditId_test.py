@@ -8,6 +8,19 @@ import sys
 
 APP = QApplication(sys.argv)
 
+def test_setselect(create_db, qtbot):
+    """test that fullnames gets to addperson when buttons clicked"""
+
+    sql = lncdSql(config=None, conn=ph(create_db.connection))
+    # win = AddEditId.AddEditApp(sql=sql)
+    win = AddEditId.AddEditIdWindow(sql=sql, pid="1")
+
+    # must update both id and etype to get new data
+    win.new_etype.addItems(["TESTID"])
+    win.new_etype.setCurrentText("TESTID")
+    win.new_id.setText("9999")
+    assert win.data['new'].get("etype") == "TESTID"
+
 
 def test_addid(create_db, qtbot):
     """test that fullnames gets to addperson when buttons clicked"""

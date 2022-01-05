@@ -9,6 +9,8 @@ MAKEFLAGS += --no-builtin-rules
 PYTHONAPP := $(shell command -v pipenv 2> /dev/null)
 ifndef PYTHONAPP
 	PYTHONAPP := python3 -m
+else
+	PYTHONAPP := python3 -m ${PYTHONAPP}
 endif
 
 # files that, if changed, would need to rerun coverage/test/compile

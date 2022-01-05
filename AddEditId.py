@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from lncdSql import lncdSql
-#from LNCDutils import sqlUpdateOrShowErr
+
+# from LNCDutils import sqlUpdateOrShowErr
 import PyQt5.QtWidgets as QtWidgets
 from PyQt5.QtWidgets import (
     QApplication,
@@ -24,7 +25,7 @@ class AddEditIdWindow(QDialog):
         # data model
         self.sql = sql
         self.data = {"pid": pid, "ids": []}
-        self.set_new(from_input=False)
+        self.set_new(initialize=True)
         # fixed settings
         self.setWindowTitle("Edit/Add ID")
         self.pid = QtWidgets.QLineEdit(text=pid)
@@ -43,20 +44,28 @@ class AddEditIdWindow(QDialog):
         """
         self.pid.setDisabled(True)
         self.new_button.setDisabled(True)
-        self.new_etype.activated.connect(self.validate_new)
+        self.new_etype.currentIndexChanged.connect(self.validate_new)
         self.new_id.textChanged.connect(self.validate_new)
-        self.new_button.clicked.connect(self.new_id)
-        
+        self.new_button.clicked.connect(self.add_new_id)
+
     def update_grid(self, new_dict):
-        self.data['ids'] += [new_dict]
-        row = len(self.data['ids'])
-        #self.grid.addWidget(self.new_etype, row, 1)
-        #self.grid.addWidget(self.new_id, row, 2)
-        #self.grid.addWidget(self.new_button, row, 3)
+        self.data["ids"] += [new_dict]
+        row = len(self.data["ids"])
+        # self.grid.addWidget(self.new_etype, row, 1)
+        # self.grid.addWidget(self.new_id, row, 2)
+        # self.grid.addWidget(self.new_button, row, 3)
 
     def add_new_id(self):
-        new_dict = self.data['new']  # from validate_new(), like {"etype": etype, "id": id}
-        pidres = sql.insert("enroll", {"pid": self.data['pid'], **new_dict})
+        # from validate_new(), like {"etype": etype, "id": id}
+        new_dict = self.data["new"] 
+
+        # maybe when testing we wont have self.sql
+        if not self.sql:
+            print("WARNING: no sql, not adding")
+            return
+
+        print(new_dict)
+        pidres = self.sql.insert("enroll", {"pid": self.data["pid"], **new_dict})
         if pidres:
             self.update_grid(new_dict)
         return pidres
@@ -88,7 +97,7 @@ class AddEditIdWindow(QDialog):
         # lay = QtWidgets.QVBoxLayout(centralwidget)
         # lay.addWidget(self.pid)
         # lay.addWidget(grid)
-        self.setLayout(grid)
+        self.setLayout(self.grid)
 
         # self.setGeometry(0, 0, 100, 400)
         self.show()
@@ -96,13 +105,13 @@ class AddEditIdWindow(QDialog):
     def validate_new(self):
         if self.new_etype.currentText() and self.new_id.text():
             self.new_button.setDisabled(False)
-            self.set_new(False)
+            self.set_new(initialize=False)
         else:
             self.new_button.setDisabled(True)
-            self.set_new()
+            self.set_new(initialize=True)
 
-    def set_new(self, from_input=True):
-        if not from_input:
+    def set_new(self, initialize=False):
+        if initialize:
             self.data["new"] = {"etype": None, "id": None}
         else:
             self.data["new"] = {
