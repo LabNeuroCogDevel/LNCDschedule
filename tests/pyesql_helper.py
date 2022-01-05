@@ -63,7 +63,7 @@ class pyesql_helper:
         else:
             return None
 
-    def cursor(self):
+    def cursor(self, **kargs):
         """
         Rathern than implement a fake conn that uses a fake cursor,
            cursor() returns a refernce to the class itself

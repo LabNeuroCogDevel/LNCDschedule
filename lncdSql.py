@@ -1,5 +1,6 @@
 import psycopg2
 import psycopg2.sql
+import psycopg2.extras
 import pyesql
 import re  # just for censoring password
 import sqlalchemy as sqla
@@ -197,6 +198,15 @@ class lncdSql:
             cur.execute(sql, (pid, value))
         data = cur.fetchall()
         return data
+    
+    def dict_cur(self):
+        "wrap psychopg2.extra.DictCursor factory with quick function"
+        return self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    def all_pid_enrolls(self, pid : int):
+        dict_cur = self.dict_cur()
+        dict_cur.execute("select eid, etype, id from enroll where pid = %s", pid)
+        return dict_cur.fetchall()
 
 
 def cur_user(conn):
