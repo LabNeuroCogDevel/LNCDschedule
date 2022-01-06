@@ -243,6 +243,7 @@ def background_drop_color(drop_type):
 def sqlUpdateOrShowErr(sql, *kargs):
     """
     wrap sql.update in mkmsg
+    kargs are table_name, new_column, id_value, new_value, id_column
     """
     # return catch_to_mkmsg(self.sql.update, *kargs)
     try:

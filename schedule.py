@@ -599,7 +599,7 @@ class ScheduleApp(QtWidgets.QMainWindow):
             # self.refresh_blank(self.people_table)
             self.refresh_blank(self.note_table)
 
-        #elif table == self.people_table:
+        # elif table == self.people_table:
         #    self.refresh_blank(self.visit_table)
         #    self.refresh_blank(self.contact_table)
         #    self.refresh_blank(self.note_table)

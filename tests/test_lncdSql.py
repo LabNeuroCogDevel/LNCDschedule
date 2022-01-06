@@ -9,4 +9,4 @@ def test_all_pid_enrolls(create_db):
         """insert into enroll (pid,etype,id) values (1,'TESTID','1')"""
     )
     res = sql.all_pid_enrolls(1)
-    assert 'TESTID' in [x['etype'] for x in res]
+    assert "TESTID" in [x["etype"] for x in res]
