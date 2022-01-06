@@ -7,6 +7,7 @@ from PyQt5 import uic, QtCore, QtGui, QtWidgets
 from LNCDutils import comboval, mkmsg, background_drop_color, CMenuItem
 import AddPerson
 import EditPeople
+import AddEditId
 
 
 class PersonTable(QtWidgets.QWidget):
@@ -105,7 +106,7 @@ class PersonTable(QtWidgets.QWidget):
             # self.add_notes_pushed()
 
         CMenuItem("Add Note/Drop", self.people_table, select_and_note)
-        CMenuItem("Add ID", self.people_table)
+        CMenuItem("Add ID", self.people_table, self.add_id)
         CMenuItem("Edit Person", self.people_table, self.change_person)
 
     def setup_search_menu_opts(self, menubar):
@@ -144,6 +145,11 @@ class PersonTable(QtWidgets.QWidget):
         info = self.EditPeople.updated_info()
         self.fullname.setText(info["fullname"])
         # self.search_people_by_name(info['fullname'])
+
+    def add_id(self):
+        info = self.current_person()
+        addeditid_win = AddEditId.AddEditIdWindow(self, self.sql, pid=str(info["pid"]))
+        addeditid_win.launch()
 
     def change_person(self):
         """

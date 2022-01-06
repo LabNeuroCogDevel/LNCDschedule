@@ -160,7 +160,7 @@ class AddEditIdWindow(QDialog):
         self.set_etypes()  # populate self.etypes with all known id types
         self.new_etype.addItems([None] + self.etypes)
 
-    def launch(self, ids=[]):
+    def launch(self):
         """setup and show"""
 
         self.grid.addWidget(self.new_etype, 1, 1)
