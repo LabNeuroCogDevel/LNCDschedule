@@ -44,7 +44,7 @@ install_local: requirements.txt | .QA .git/hooks/pre-commit .git/hooks/pre-push
 
 install: Pipfile | .QA .git/hooks/pre-commit .git/hooks/pre-push
 	@echo also see make install_local to use requirements.txt
-	python -m pipenv install --dev
+	pipenv install --dev # --site-packages
 
 .QA/lint.txt: $(PYTHONCODE) | .QA
 	$(PYTHONAPP) pylint $(PYTHONCODE) --extension-pkg-whitelist=PyQt5 | tee $@

@@ -63,11 +63,13 @@ class pyesql_helper:
         else:
             return None
 
-    def cursor(self):
+    def cursor(self, **kargs):
         """
         Rathern than implement a fake conn that uses a fake cursor,
            cursor() returns a refernce to the class itself
         so all the needed methods are in this one class: pyesql_helper
+        NB. works well for pyseql but not for raw postgres cursor with "cursor_factory"/DictCursor
+            use lncdSql.to_dict in tests for that
         """
         return self
 

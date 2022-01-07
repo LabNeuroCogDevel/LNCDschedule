@@ -1,5 +1,6 @@
 import psycopg2
 import psycopg2.sql
+import psycopg2.extras
 import pyesql
 import re  # just for censoring password
 import sqlalchemy as sqla
@@ -197,6 +198,26 @@ class lncdSql:
             cur.execute(sql, (pid, value))
         data = cur.fetchall()
         return data
+
+    def dict_cur(self):
+        "wrap psychopg2.extra.DictCursor factory with quick function"
+        return self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    def all_pid_enrolls(self, pid: int):
+        dict_cur = self.dict_cur()
+        dict_cur.execute("select eid, etype, id from enroll where pid = %s", pid)
+        res = dict_cur.fetchall()
+        # need to_dict only for tests. dict_cur should be enough
+        return to_dict(res, ["eid", "etype", "id"])
+
+
+def to_dict(res, keys):
+    """array of arrays to array of dicts a la DictCursor.
+    Initially for tests where dictCursor is not supported
+    """
+    if type(res) == dict:
+        return res
+    return [dict(zip(keys, r)) for r in res]
 
 
 def cur_user(conn):
